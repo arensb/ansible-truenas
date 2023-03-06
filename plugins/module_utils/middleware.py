@@ -18,7 +18,7 @@ class MiddleWare:
     # Create a MiddleWare object with a given access method, and then
     # use that?
 
-    def __init__(self, access, *args):
+    def __init__(self, access='midclt', *args):
         pass
 
     def call(self, func, *args):
