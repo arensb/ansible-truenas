@@ -11,6 +11,7 @@
 #
 # Example:
 # midclt call user.query '[["username", "=", "root" ]]'
+# midclt call plugin.defaults '{"plugin":"syncthing"}'
 
 # XXX - There are multiple ways of controlling the middleware daemon:
 # midclt is the command-lineversion, but I think the recommended way
