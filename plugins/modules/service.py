@@ -29,8 +29,10 @@ EXAMPLES = '''
 '''
 
 from ansible.module_utils.basic import AnsibleModule, missing_required_lib
-from ansible_collections.ooblick.truenas.plugins.module_utils.midclt \
-    import Midclt
+# from ansible_collections.ooblick.truenas.plugins.module_utils.midclt \
+#     import Midclt
+from ansible_collections.ooblick.truenas.plugins.module_utils.middleware \
+    import MiddleWare as MW
 
 def main():
     def start_service(service):
@@ -38,8 +40,8 @@ def main():
 
         err = None
         try:
-            err = Midclt.call("service.start",
-                              service)
+            err = mw.call("service.start",
+                          service)
             # XXX - Add ha_propagate once it's supported
         except Exception as e:
             module.fail_json(msg=f"Error starting service {service}: {e.stderr}")
@@ -50,8 +52,8 @@ def main():
 
         err = None
         try:
-            err = Midclt.call("service.stop",
-                              service)
+            err = mw.call("service.stop",
+                          service)
             # XXX - Add ha_propagate once it's supported
         except Exception as e:
             module.fail_json(msg=f"Error stopping service {service}: {e.stderr}")
@@ -62,8 +64,8 @@ def main():
 
         err = None
         try:
-            err = Midclt.call("service.restart",
-                              service)
+            err = mw.call("service.restart",
+                          service)
             # XXX - Add ha_propagate once it's supported
         except Exception as e:
             module.fail_json(msg=f"Error restarting service {service}: {e.stderr}")
@@ -74,8 +76,8 @@ def main():
 
         err = None
         try:
-            err = Midclt.call("service.reload",
-                              service)
+            err = mw.call("service.reload",
+                          service)
             # XXX - Add ha_propagate once it's supported
         except Exception as e:
             module.fail_json(msg=f"Error reloading service {service}: {e.stderr}")
@@ -98,6 +100,8 @@ def main():
         msg=''
     )
 
+    mw = MW()
+
     # Get service name
     service = module.params['name']
     # XXX - midclt call service.query [["service", "=", "ssh"]]
@@ -106,8 +110,10 @@ def main():
 
     # Get information about the service
     try:
-        err = Midclt.call("service.query",
-                          [["service", "=", service]])
+        # err = Midclt.call("service.query",
+        #                   [["service", "=", service]])
+        err = mw.call("service.query",
+                      [["service", "=", service]])
     except Exception as e:
         # XXX - Should limit it to expected exceptions
         module.fail_json(msg=f"Error getting service {service} state: {e.stderr}")
