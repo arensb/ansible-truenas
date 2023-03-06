@@ -8,7 +8,8 @@
 # sits between individual modules and the middleware, and uses
 # whichever access method is chosen.
 
-from midclt import Midclt
+from ansible_collections.ooblick.truenas.plugins.module_utils.midclt \
+    import Midclt
 
 class MiddleWare:
     # XXX - What do we want the API to be? How does the caller choose
