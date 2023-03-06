@@ -29,8 +29,6 @@ EXAMPLES = '''
 '''
 
 from ansible.module_utils.basic import AnsibleModule, missing_required_lib
-# from ansible_collections.ooblick.truenas.plugins.module_utils.midclt \
-#     import Midclt
 from ansible_collections.ooblick.truenas.plugins.module_utils.middleware \
     import MiddleWare as MW
 
@@ -123,6 +121,7 @@ def main():
 
     # XXX - Check that the service was found. What to do if it wasn't?
 
+    # XXX - Do we want these? They're purely informational.
     result['service_id'] = err[0]['id']
     result['name'] = err[0]['service']
     result['enabled'] = err[0]['enable']

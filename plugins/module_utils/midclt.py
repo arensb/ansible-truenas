@@ -31,6 +31,7 @@ from json.decoder import JSONDecodeError
 
 MIDCLT_CMD = "midclt"
 
+
 class Midclt:
     # XXX - Maybe other commands beside "call"?:
     # ping, waitready, sql, subscribe.
