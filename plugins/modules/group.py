@@ -124,44 +124,60 @@ def main():
     #    ]
     # },
     try:
-        err = mw.call("group.query",
+        group_info = mw.call("group.query",
                       [["group", "=", group]])
+        # group_info is an array. We specified a "group=<name>"
+        # filter, so we'll get either 0 or 1 elements back.
+        if len(group_info) == 0:
+            # No such group
+            group_info = None
+        else:
+            # Group exists
+            group_info = group_info[0]
     except AnsibleModuleException as e:
         module.fail_json(msg=f"Error looking up group {group}: {e.stderr}")
 
-    result['result'] = err
+    # XXX - Mostly for debugging:
+    result['group_info'] = group_info
 
-    # XXX - See what needs to be done.
-
-    # XXX - If the group doesn't exist, try to create it.
-    # group.create.
-
-    if len(err) == 0:
+    if group_info == None:
         # The group doesn't exist
-        # XXX
-        if module.params['state'] == 'present':
-            # XXX - The group is supposed to exist
-            try:
-                # XXX - Assemble arguments
-                arg = {"name": group}
-                if gid:
-                    # GID is defined. Add to specification.
-                    arg['gid'] = gid
-                # XXX - smb
-                # XXX - sudo
-                # XXX - sudo_nopasswd
-                # XXX - sudo_commands
-                arg['allow_duplicate_gid'] = bool(non_unique)
+        if state == 'present':
+            # The group is supposed to exist
+
+            # Assemble arguments
+            arg = {"name": group}
+
+            if gid is not None:
+                # GID is defined. Add to specification.
+                arg['gid'] = gid
+
+            # XXX - smb
+
+            # XXX - sudo
+
+            # XXX - sudo_nopasswd
+
+            # XXX - sudo_commands
+
+            if non_unique is not None:
+                arg['allow_duplicate_gid'] = non_unique
 
                 result['arg'] = arg
-                if module.check_mode:
-                    result['msg'] = "Would have tried to create group {group}"
-                else:
+            if module.check_mode:
+                result['msg'] = f"Would have created group {group}"
+            else:
+                try:
                     err = mw.call("group.create", arg)
-                    result['msg'] = err
 
-            except Exception as e:
-                module.fail_json(msg=f"Error creating group {group}: {e}")
+                    # XXX - Maybe rerun "group.info" and get fresh
+                    # info? Or at least update group_info with what's
+                    # currently in 'err'
+                except Exception as e:
+                    module.fail_json(msg=f"Error creating group {group}: {e}")
+
+                result['msg'] = err
+
             result['changed'] = True
         else:
             # The group isn't supposed to exist.
@@ -169,12 +185,69 @@ def main():
 
     else:
         # The group exists
-        # XXX
-        pass
+        if state == 'present':
+            # The group is supposed to exist.
+            #
+            # compare 'group_info' to the module parameters and see if
+            # anything needs to change.
 
-    # XXX - If the group does exist, see how the existing one differs
-    # from what's been specified. Put together a set of differences,
-    # and submit a group.update(?) call.
+            # Build up arguments to pass to group.update.
+            arg = {}
+
+            # gid
+            if gid is not None and group_info['gid'] != gid:
+                arg['gid'] = gid
+
+            # XXX - name - I don't think it makes sense to change
+            # the group name, since that's the way Ansible
+            # identifies it.
+
+            # XXX - smb
+            # XXX - sudo
+            # XXX - sudo_nopasswd
+            # XXX - sudo_commands [...]
+
+            if len(arg) == 0:
+                # Nothing to do
+                result['changed'] = False
+            else:
+                # Something has changed.
+
+                # allow_duplicate_gid is not a parameter like others.
+                # It pertains not to the group, but to this operation.
+                if non_unique is not None:
+                    arg['allow_duplicate_gid'] = non_unique
+
+                if module.check_mode:
+                    result['msg'] = f"Would have updated group {group}: {arg}"
+                else:
+                    try:
+                        err = mw.call("group.update",
+                                      group_info['id'],
+                                      arg)
+                    except Exception as e:
+                        # XXX
+                        module.fail_json(msg=f"Error updating group {group}: {e}")
+                result['changed'] = True
+        else:
+            # The group isn't supposed to exist.
+            if module.check_mode:
+                result['msg'] = "Would have deleted group {group}"
+            else:
+                # The id, here, is not the Unix GID. It's a unique
+                # identifier in TrueNAS's own database. Two groups
+                # with different names can have the same gid, but will
+                # always have different id.
+
+                # XXX - There's another optional parameter saying to
+                # delete all users who have this as their primary
+                # group. But that's dangerous, so let's not implement
+                # it until needed.
+                err = mw.call("group.delete",
+                              group_info['id'],
+                              )
+                result['msg'] = err
+            result['changed'] = True
 
     module.exit_json(**result)
 
