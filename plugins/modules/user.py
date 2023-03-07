@@ -188,13 +188,6 @@ def main():
 
     mw = MW()
 
-    # XXX - user.query [["username","=","ansible"]]
-    # returns a lot more detail than
-    # user.get_user_obj {"username":"ansible"}
-    # I suspect that get_user_obj() just looks up an entry in
-    # /etc/passwd, while query() has a more generalized notion of what
-    # a user is.
-
     # Assign variables from properties, for convenience
     username = module.params['name']
     password = module.params['password']
@@ -205,7 +198,14 @@ def main():
     state = module.params['state']
     delete_group = module.params['delete_group']
 
-    # XXX - Look up the user
+    # Look up the user.
+    # Note that
+    #   user.query [["username","=","ansible"]]
+    # returns a lot more detail than
+    #   user.get_user_obj {"username":"ansible"}
+    # I suspect that get_user_obj() just looks up an entry in
+    # /etc/passwd, while query() has a more generalized notion of what
+    # a user is.
     try:
         user_info = mw.call("user.query",
                             [["username", "=", username]])
@@ -228,8 +228,7 @@ def main():
         # User doesn't exist
 
         if state == 'present':
-            # User is supposed to exist
-            # XXX - user.create()
+            # User is supposed to exist, so create it.
 
             # Collect arguments to pass to user.create()
             arg = {
@@ -244,7 +243,7 @@ def main():
                 "password_disabled": password_disabled,
             }
 
-            # XXX - Look up the primary group. user.create() requires
+            # Look up the primary group. user.create() requires
             # a group number (not a GID!), but for compatibility with
             # the Ansible builtin.user module, we want to be able to
             # use a string for "group". So we need to look the group
@@ -283,7 +282,6 @@ def main():
             result['changed'] = False
     else:
         # User exists
-        # XXX
         if state == 'present':
             # User is supposed to exist
 
