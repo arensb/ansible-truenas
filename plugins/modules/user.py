@@ -217,8 +217,8 @@ def main():
         else:
             # User exists
             user_info = user_info[0]
-    except AnsibleModuleException as e:
-        module.fail_json(msg=f"Error looking up user {username}: {e.stderr}")
+    except Exception as e:
+        module.fail_json(msg=f"Error looking up user {username}: {e}")
 
     # XXX - Mostly for debugging:
     result['user_info'] = user_info
