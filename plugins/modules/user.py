@@ -46,6 +46,14 @@ options:
     type: str
     choices: [ absent, present ]
     default: present
+  delete_group:
+    description:
+      - If true, delete the user's primary group if it is not being used
+        by any other users.
+      - If false, the primary group stays, even if it is now empty.
+      - Only used when deleting a user.
+    type: bool
+    default: true
 '''
 
 EXAMPLES = '''
@@ -132,6 +140,8 @@ def main():
             # - state(absent, present)
             state=dict(type='str', default='present',
                        choices=['absent', 'present']),
+
+            delete_group=dict(type='bool', default=True)
             # - create_home(bool)
             # - move_home(bool)
             # - system(bool) - system account, whatever that means
@@ -182,6 +192,7 @@ def main():
     group_create = module.params['group_create']
     comment = module.params['comment']
     state = module.params['state']
+    delete_group = module.params['delete_group']
 
     # XXX - Look up the user
     try:
@@ -272,10 +283,16 @@ def main():
             pass
         else:
             # User is not supposed to exist
-            # XXX - user.delete()
 
-            # XXX - Delete the group as well?
-            pass
+            if module.check_mode:
+                result['msg'] = f"Would have deleted user {username}"
+            else:
+                try:
+                    err = mw.call("user.delete",
+                                  user_info['id'],
+                                  {"delete_group": delete_group})
+                except Exception as e:
+                    module.fail_json(msg=f"Error deleting user {username}: {e}")
 
     module.exit_json(**result)
 
