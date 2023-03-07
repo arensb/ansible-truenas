@@ -20,9 +20,9 @@ options:
   group:
     description:
       - The name of the user's primary group.
-      - Required unless C(group_create) is true.
+      - Required unless C(create_group) is true.
     type: str
-  group_create:
+  create_group:
     description:
       - If true, create a new group with the same name as the user.
       - If such a group already exists, it is used and no new group is
@@ -62,7 +62,7 @@ XXX
   ooblick.truenas.user:
     name: bob
     comment: "Bob the User"
-    group_create: yes
+    create_group: yes
     password: "<encrypted password string>"
 
 - name: Create an ordinary user and put them into an existing group
@@ -91,11 +91,11 @@ def main():
             # - uid(int) - If not supplied, use next one available
             # - username(str)
             name=dict(type='str', required=True, aliases=['user']),
-            # - group(int) - Required if group_create is false.
-            # - group_create(bool)
+            # - group(int) - Required if create_group is false.
+            # - create_group(bool)
 
             # XXX - I'm not sure what the sensible default here is.
-            group_create=dict(type='bool', default=False),
+            create_group=dict(type='bool', default=False),
 
             # - home(str)
             # - home_mode(str)
@@ -189,7 +189,7 @@ def main():
     password = module.params['password']
     password_disabled = module.params['password_disabled']
     group = module.params['group']
-    group_create = module.params['group_create']
+    create_group = module.params['create_group']
     comment = module.params['comment']
     state = module.params['state']
     delete_group = module.params['delete_group']
@@ -238,8 +238,8 @@ def main():
             # the Ansible builtin.user module, we want to be able to
             # use a string for "group". So we need to look the group
             # up by name.
-            if group_create:
-                arg['group_create'] = True
+            if create_group:
+                arg['create_group'] = True
             else:
                 try:
                     group_info = mw.call("group.query",
