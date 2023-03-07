@@ -78,6 +78,17 @@ XXX
     comment: "Bob the User"
     group: bobsgroup
     password_disabled: yes
+
+- name: Delete a user
+  ooblick.truenas.user:
+    name: bob
+    state: absent
+
+- name: Delete a user, but keep their primary group, even if it's now empty.
+  ooblick.truenas.user:
+    name: bob
+    state: absent
+    delete_group: no
 '''
 
 from ansible.module_utils.basic import AnsibleModule, missing_required_lib
