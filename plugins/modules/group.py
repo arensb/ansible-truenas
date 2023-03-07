@@ -7,6 +7,53 @@ __metaclass__ = type
 # midclt call group.query '[["gid","=",0]]'
 # midclt call group.query '[["builtin","=",false]]'
 
+DOCUMENTATION = '''
+---
+module: group
+short_description: Manage groups
+description:
+  - Create, destroy, and manage groups on a TrueNAS host.
+options:
+  name:
+    description:
+      - Name of the group to manage.
+    type: str
+    required: true
+  gid:
+    description:
+      - Optional I(GID) to set for the gruop
+    type: int
+  state:
+    description:
+      - Whether the group should be present or not.
+    type: str
+    choices: [ absent, present ]
+    default: present
+  non_unique:
+    description:
+      - Allow a non-unique I(GID) for the group.
+      - If I(non_unique) is true, a I(GID) must be specified.
+    type: bool
+    default: no
+seealso:
+- module: ansible.builtin.group
+author:
+- Andrew Arensburger (@arensb)
+notes:
+- Supports C(check_mode)
+'''
+
+EXAMPLES = '''
+- name: Make sure group "mygroup" exists
+  ooblick.truenas.group:
+    name: mygroup
+
+- name: Make sure group "badgroup" is gone
+  ooblick.truenas.group:
+    name: badgroup
+    state: absent
+'''
+
 from ansible.module_utils.basic import AnsibleModule, missing_required_lib
 
 from ansible_collections.ooblick.truenas.plugins.module_utils.middleware \
@@ -22,7 +69,11 @@ def main():
             # sudo(bool)
             # sudo_nopasswd(bool)
             # smb(bool) - whether the group should be mapped onto an NT group.
-            # users (list of uids)
+
+            # users (list of uids) I think it's more intuitive to
+            # specify which groups a user shouldbe in, but if someone
+            # has a use case for this, it can be added.
+
             # local(bool) - what's this?
             # id_type_both(bool) - what's this?
 
@@ -55,7 +106,23 @@ def main():
     state = module.params['state']
     non_unique = module.params['non_unique']
 
-    # XXX - Look up the group.
+    # Look up the group.
+    # group.query returns an array of objects like:
+    # {
+    #    "builtin": false,
+    #    "gid": 1000,
+    #    "group": "mygroup",
+    #    "id": 123,
+    #    "id_type_both": false,
+    #    "local": true,
+    #    "smb": true,
+    #    "sudo": false,
+    #    "sudo_commands": [],
+    #    "sudo_nopasswd": false,
+    #    "users": [
+    #        456
+    #    ]
+    # },
     try:
         err = mw.call("group.query",
                       [["group", "=", group]])
