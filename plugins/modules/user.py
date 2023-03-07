@@ -288,8 +288,95 @@ def main():
             # XXX - Make list of differences between what is and what
             # should be.
 
+            # user.query() output:
+            # [
+            #   {
+            #     "id": 37,
+            #     "uid": 1001,
+            #     "username": "arnie",
+            #     "unixhash": "*",
+            #     "smbhash": "*",
+            #     "home": "/nonexistent",
+            #     "shell": "/bin/csh",
+            #     "full_name": "",
+            #     "builtin": false,
+            #     "smb": true,
+            #     "password_disabled": true,
+            #     "locked": false,
+            #     "sudo": false,
+            #     "sudo_nopasswd": false,
+            #     "sudo_commands": [],
+            #     "microsoft_account": false,
+            #     "attributes": {},
+            #     "email": null,
+            #     "group": {
+            #       "id": 47,
+            #       "bsdgrp_gid": 1001,
+            #       "bsdgrp_group": "arnie",
+            #       "bsdgrp_builtin": false,
+            #       "bsdgrp_sudo": false,
+            #       "bsdgrp_sudo_nopasswd": false,
+            #       "bsdgrp_sudo_commands": [],
+            #       "bsdgrp_smb": false
+            #     },
+            #     "groups": [
+            #       43
+            #     ],
+            #     "sshpubkey": null,
+            #     "local": true,
+            #     "id_type_both": false
+            #   }
+            # ]
+
+            arg = {}
+
+            # elements in argument_spec:
+            # - name (username)
+            # - password (crypt)
+            # - password_disabled
+            # - comment
+            # - group (primary group)
+
+            # XXX - There's probably a way to get user.query() to
+            # return the current crypt string of a user,but I don't
+            # know what that is. Until then, we can't check whether
+            # the password needs to be changed.
+
+            # if password is not None and user_info['password'] != password:
+            #     arg['password'] = password
+
+            if comment is not None and user_info['full_name'] != comment:
+                arg['full_name'] = comment
+
+            # XXX - Add 'groups', 'append'
+            # user_info['groups'] is a list of ints. Each one is a group
+            # to look up.
+            # I think the easy way to do this is:
+            # group.query [["id", "in", [1, 2, 20, 605]]]
+            #
+            # if append is true:
+            #   check the groups in 'groups', and make sure
+            #   user is in all of them.
+            # else:
+            #   Same, but make sure user is not in any other groups.
+
             # XXX - If there are any, user.update()
-            pass
+            if len(arg) == 0:
+                # No changes
+                result['changed'] = False
+            else:
+                # Update user.
+                if module.check_mode:
+                    result['msg'] = f"Would have updated user {username}: {arg}"
+                else:
+                    try:
+                        err = mw.call("user.update",
+                                      user_info['id'],
+                                      arg)
+                    except Exception as e:
+                        module.fail_json(msg=f"Error updating user {usename} with {arg}: {e}")
+                result['changed'] = True
+
         else:
             # User is not supposed to exist
 
