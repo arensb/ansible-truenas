@@ -60,7 +60,7 @@ class Midclt:
                                               stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
             # Exited with a non-zero code
-            raise Exception(f"{MIDCLT_CMD} exited with status {e.returncode}: \"{e.stderr}\"")
+            raise Exception(f"{MIDCLT_CMD} exited with status {e.returncode}: \"{e.stdout}\"")
 
         # Parse stdout as JSON
         try:
