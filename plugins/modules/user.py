@@ -38,6 +38,13 @@ options:
     description:
       - If true, the user's password is disabled.
       - They can still log in through other methods (e.g., ssh key).
+      - This is not a flag: if you set C(password_disabled=true) on a user,
+        the password field in C(/etc/master.passwd) is set to C(*), so
+        if you set C(password_disabled=false) again, they won't be able to
+        log in with their old password.
+      - If you need that functionality, do something like prepend "*LOCK*"
+        to the crypt string when locking a user, then remove it when
+        unlocking.
     type: bool
     default: false
   state:
@@ -344,6 +351,9 @@ def main():
 
             # if password is not None and user_info['password'] != password:
             #     arg['password'] = password
+
+            if user_info['password_disabled'] != password_disabled:
+                arg['password_disabled'] = password_disabled
 
             if comment is not None and user_info['full_name'] != comment:
                 arg['full_name'] = comment
