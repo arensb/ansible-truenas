@@ -55,7 +55,6 @@ EXAMPLES = '''
 '''
 
 from ansible.module_utils.basic import AnsibleModule, missing_required_lib
-
 from ansible_collections.ooblick.truenas.plugins.module_utils.middleware \
     import MiddleWare as MW
 
@@ -173,6 +172,7 @@ def main():
                     # XXX - Maybe rerun "group.info" and get fresh
                     # info? Or at least update group_info with what's
                     # currently in 'err'
+                    result['msg'] = err
                 except Exception as e:
                     module.fail_json(msg=f"Error creating group {group}: {e}")
 
