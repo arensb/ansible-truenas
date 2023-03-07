@@ -12,6 +12,22 @@ options:
     type: str
     required: true
     aliases: [ user ]
+  comment:
+    description:
+      - The full name (I(GECOS) field) of the user.
+    type: str
+    default: ""
+  password:
+    description:
+      - User's password, as a crypted string.
+      - Required unless C(password_disabled) is true.
+    type: str
+  password_disabled:
+    description:
+      - If true, the user's password is disabled.
+      - They can still log in through other methods (e.g., ssh key).
+    type: bool
+    default: false
   state:
     description:
       - Whether the user shoujld exist or not.
@@ -43,7 +59,9 @@ def main():
             # - full_name(str)
             # - email(str|null?)
             # - password(str) - Required if password_disabled is false
+            password=dict(type='str', default='', no_log=True),
             # - password_disabled(bool)
+            password_disabled=dict(type='bool', default=False),
             # - locked(bool)
             # - microsoft_account(bool)
             # - smb(bool) - Does user have access to SMB shares?
@@ -58,6 +76,7 @@ def main():
             # - name(str)
             # - uid(int)
             # - comment(str) - GECOS
+            comment=dict(type='str', default=''),
             # - hidden(bool)
             # - non_unique(bool)
             # - seuser(str) - SELinux user type
@@ -92,6 +111,9 @@ def main():
             # - role(str) - Solaris
         ),
         supports_check_mode=True,
+        required_if=[
+            ['password_disabled', False, ['password']]
+        ]
     )
 
     result = dict(
@@ -112,6 +134,9 @@ def main():
 
     # Assign variables from properties, for convenience
     username = module.params['name']
+    password = module.params['password']
+    password_disabled = module.params['password_disabled']
+    comment = module.params['comment']
     state = module.params['state']
 
     # XXX - Look up the user
@@ -141,8 +166,17 @@ def main():
             # XXX - user.create()
 
             # Collect arguments to pass to user.create()
-            arg = { "username": username }
-            # XXX - No arguments yet.
+            arg = {
+                "username": username,
+
+                # full_name is required.
+                "full_name": comment,
+
+                # Either password_disabled == True, or password must be
+                # supplied.
+                "password": password,
+                "password_disabled": password_disabled,
+            }
 
             if module.check_mode:
                 result['msg'] = f"Would have created user {username}"
