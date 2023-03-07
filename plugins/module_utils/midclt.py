@@ -46,13 +46,12 @@ class Midclt:
         # Build the command line
         mid_args = [ MIDCLT_CMD, "call", func]
 
-        # If we were passed arguments, convert to a JSON string, and
-        # add to the command line.
+        # If we were passed arguments, convert them to JSON strings,
+        # and add to the command line.
         if len(args) > 0:
-            # Convert 'args' to a JSON string
-            argstr = json.dumps(*args)
-            # print(f"argstr: [{argstr}]")
-            mid_args.append(argstr)
+            for arg in args:
+                argstr = json.dumps(arg)
+                mid_args.append(argstr)
 
         # Run 'midclt' and get its output.
         try:
