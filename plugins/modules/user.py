@@ -250,7 +250,7 @@ def main():
             # use a string for "group". So we need to look the group
             # up by name.
             if create_group:
-                arg['create_group'] = True
+                arg['group_create'] = True
             else:
                 try:
                     group_info = mw.call("group.query",
