@@ -42,7 +42,7 @@ options:
     default: false
   state:
     description:
-      - Whether the user shoujld exist or not.
+      - Whether the user should exist or not.
     type: str
     choices: [ absent, present ]
     default: present
@@ -97,7 +97,12 @@ def main():
             # - password(str) - Required if password_disabled is false
             password=dict(type='str', default='', no_log=True),
             # - password_disabled(bool)
-            password_disabled=dict(type='bool', default=False),
+
+            # We set no_log explicitly to False, because otherwise
+            # module_utils.basic sees "password" in the name and gets
+            # worried.
+            password_disabled=dict(type='bool', default=False, no_log=False),
+
             # - locked(bool)
             # - microsoft_account(bool)
             # - smb(bool) - Does user have access to SMB shares?
