@@ -17,6 +17,18 @@ options:
       - The full name (I(GECOS) field) of the user.
     type: str
     default: ""
+  group:
+    description:
+      - The name of the user's primary group.
+      - Required unless C(group_create) is true.
+    type: str
+  group_create:
+    description:
+      - If true, create a new group with the same name as the user.
+      - If such a group already exists, it is used and no new group is
+        created.
+    type: bool
+    default: False
   password:
     description:
       - User's password, as a crypted string.
@@ -38,6 +50,26 @@ options:
 
 EXAMPLES = '''
 XXX
+- name: Create an ordinary user and their group
+  ooblick.truenas.user:
+    name: bob
+    comment: "Bob the User"
+    group_create: yes
+    password: "<encrypted password string>"
+
+- name: Create an ordinary user and put them into an existing group
+  ooblick.truenas.user:
+    name: bob
+    comment: "Bob the User"
+    group: users
+    password: "<encrypted string>"
+
+- name: Create a user without a working password
+  ooblick.truenas.user:
+    name: bob
+    comment: "Bob the User"
+    group: bobsgroup
+    password_disabled: yes
 '''
 
 from ansible.module_utils.basic import AnsibleModule, missing_required_lib
@@ -53,6 +85,10 @@ def main():
             name=dict(type='str', required=True, aliases=['user']),
             # - group(int) - Required if group_create is false.
             # - group_create(bool)
+
+            # XXX - I'm not sure what the sensible default here is.
+            group_create=dict(type='bool', default=False),
+
             # - home(str)
             # - home_mode(str)
             # - shell(str) - Choose from user.shell_choices() (reads /etc/shells)
@@ -81,6 +117,7 @@ def main():
             # - non_unique(bool)
             # - seuser(str) - SELinux user type
             # - group(str) - primary group name
+            group=dict(type='str'),
             # - groups(list) - List of group names
             # - append(bool) - whether to add to or set group list
             # - shell(str)
@@ -136,6 +173,8 @@ def main():
     username = module.params['name']
     password = module.params['password']
     password_disabled = module.params['password_disabled']
+    group = module.params['group']
+    group_create = module.params['group_create']
     comment = module.params['comment']
     state = module.params['state']
 
@@ -178,6 +217,30 @@ def main():
                 "password_disabled": password_disabled,
             }
 
+            # XXX - Look up the primary group. user.create() requires
+            # a group number (not a GID!), but for compatibility with
+            # the Ansible builtin.user module, we want to be able to
+            # use a string for "group". So we need to look the group
+            # up by name.
+            if group_create:
+                arg['group_create'] = True
+            else:
+                try:
+                    group_info = mw.call("group.query",
+                                         [["group", "=", group]])
+                except Exception as e:
+                    module.fail_json(msg=f"Error looking up group {group}: {e}")
+
+                if len(group_info) == 0:
+                    group_info = None
+                else:
+                    group_info = group_info[0]
+
+                arg['group'] = group_info['id']
+
+                # XXX - Just for debugging.
+                result['group_info'] = group_info
+
             if module.check_mode:
                 result['msg'] = f"Would have created user {username}"
             else:
@@ -205,6 +268,8 @@ def main():
         else:
             # User is not supposed to exist
             # XXX - user.delete()
+
+            # XXX - Delete the group as well?
             pass
 
     module.exit_json(**result)
