@@ -358,6 +358,22 @@ def main():
             if comment is not None and user_info['full_name'] != comment:
                 arg['full_name'] = comment
 
+            # Check primary group.
+            if group is not None and user_info['group']['bsdgrp_group'] != group:
+                # XXX - Look up group?
+                try:
+                    grp = mw.call("group.query",
+                                  [["group", "=", group]])
+                except Exception as e:
+                    module.fail_json(msg=f"Error looking up group {group}: {e}")
+
+                # As above, 'grp' is an array of 0 or 1 elements.
+                if len(grp) == 0:
+                    # The lookup was successful, and successfully
+                    # found that there's no such group.
+                    module.fail_json(msg=f"No such group: {group}")
+                arg['group'] = grp[0]['id']
+
             # XXX - Add 'groups', 'append'
             # user_info['groups'] is a list of ints. Each one is a group
             # to look up.
