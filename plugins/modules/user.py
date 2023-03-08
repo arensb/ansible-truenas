@@ -153,9 +153,8 @@ def main():
     # - attributes(obj) - Arbitrary user information
     module = AnsibleModule(
         argument_spec=dict(
-            # TrueNAS user.create:
-            # - uid(int) - If not supplied, use next one available
-            # - username(str)
+            # TrueNAS user.create arguments:
+            uid=dict(type='int'),
             name=dict(type='str', required=True, aliases=['user']),
 
             # XXX - I'm not sure what the sensible default here is.
@@ -226,6 +225,7 @@ def main():
     mw = MW()
 
     # Assign variables from properties, for convenience
+    uid = module.params['uid']
     username = module.params['name']
     password = module.params['password']
     password_disabled = module.params['password_disabled']
@@ -279,6 +279,9 @@ def main():
                 "password": password,
                 "password_disabled": password_disabled,
             }
+
+            if uid is not None:
+                arg['uid'] = uid
 
             # Look up the primary group. user.create() requires
             # a group number (not a GID!), but for compatibility with
@@ -380,6 +383,9 @@ def main():
             # - password_disabled
             # - comment
             # - group (primary group)
+
+            if uid is not None:
+                arg['uid'] = uid
 
             # XXX - There's probably a way to get user.query() to
             # return the current crypt string of a user,but I don't
