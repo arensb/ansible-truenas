@@ -463,6 +463,7 @@ def main():
                                   {"delete_group": delete_group})
                 except Exception as e:
                     module.fail_json(msg=f"Error deleting user {username}: {e}")
+            result['changed'] = True
 
     module.exit_json(**result)
 
