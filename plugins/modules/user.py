@@ -4,7 +4,10 @@ __metaclass__ = type
 # Create and manage users.
 
 DOCUMENTATION='''
-XXX
+module: user
+short_description: Manage user accounts
+description:
+  - Add, change, and delete user accounts.
 options:
   name:
     description:
@@ -12,6 +15,10 @@ options:
     type: str
     required: true
     aliases: [ user ]
+  uid:
+    description:
+      - Set the I(UID) of the user.
+    type: int
   comment:
     description:
       - The full name (I(GECOS) field) of the user.
@@ -22,13 +29,29 @@ options:
       - The name of the user's primary group.
       - Required unless C(create_group) is true.
     type: str
+  groups:
+    description:
+      - List of additional groups user will be added to.
+      - If C(append) is true, the user will be added to all of the groups
+        listed here.
+      - If C(append) is false, then in addition, the user will be removed
+        from all other groups (except the primary).
+    type: list
+  append:
+    description:
+      - If true, the user will be added to the groups listed in C(groups),
+        but not removed from any other groups.
+      - If false, the user will be added to the groups listed in C(groups),
+        and removed from any other groups.
+    type: bool
+    default: false
   create_group:
     description:
       - If true, create a new group with the same name as the user.
       - If such a group already exists, it is used and no new group is
         created.
     type: bool
-    default: False
+    default: false
   password:
     description:
       - User's password, as a crypted string.
@@ -98,46 +121,53 @@ XXX
     delete_group: no
 '''
 
+# XXX - XXX - Return the UID of new user.
+RETURN = '''
+'''
+
 from ansible.module_utils.basic import AnsibleModule, missing_required_lib
 from ansible_collections.ooblick.truenas.plugins.module_utils.middleware \
     import MiddleWare as MW
 
 def main():
+    # user.create() arguments:
+    # - uid (int)
+    # - username (str)
+    # - group(int) - Required if create_group is false.
+    # - create_group(bool)
+    # - home(str)
+    # - home_mode(str)
+    # - shell(str) - Choose from user.shell_choices() (reads /etc/shells)
+    # - full_name(str)
+    # - email(str|null?)
+    # - password(str) - Required if password_disabled is false
+    # - password_disabled(bool)
+    # - locked(bool)
+    # - microsoft_account(bool)
+    # - smb(bool) - Does user have access to SMB shares?
+    # - sudo(bool)
+    # - sudo_nopasswd(bool)
+    # - sudo_commands(bool)
+    # - sshpubkey(str|null?)
+    # - groups(list)
+    # - attributes(obj) - Arbitrary user information
     module = AnsibleModule(
         argument_spec=dict(
             # TrueNAS user.create:
             # - uid(int) - If not supplied, use next one available
             # - username(str)
             name=dict(type='str', required=True, aliases=['user']),
-            # - group(int) - Required if create_group is false.
-            # - create_group(bool)
 
             # XXX - I'm not sure what the sensible default here is.
             create_group=dict(type='bool', default=False),
 
-            # - home(str)
-            # - home_mode(str)
-            # - shell(str) - Choose from user.shell_choices() (reads /etc/shells)
-            # - full_name(str)
-            # - email(str|null?)
-            # - password(str) - Required if password_disabled is false
             password=dict(type='str', default='', no_log=True),
-            # - password_disabled(bool)
 
             # We set no_log explicitly to False, because otherwise
             # module_utils.basic sees "password" in the name and gets
             # worried.
             password_disabled=dict(type='bool', default=False, no_log=False),
 
-            # - locked(bool)
-            # - microsoft_account(bool)
-            # - smb(bool) - Does user have access to SMB shares?
-            # - sudo(bool)
-            # - sudo_nopasswd(bool)
-            # - sudo_commands(bool)
-            # - sshpubkey(str|null?)
-            # - groups(list)
-            # - attributes(obj) - Arbitrary user information
 
             # From builtin.user module
             # - name(str)
@@ -265,6 +295,10 @@ def main():
                     module.fail_json(msg=f"Error looking up group {group}: {e}")
 
                 if len(group_info) == 0:
+                    # No such group.
+                    # If we got here, presumably it's because a primary
+                    # group was set through 'group', but 'create_group'
+                    # was not set. 
                     group_info = None
                 else:
                     group_info = group_info[0]
@@ -277,6 +311,9 @@ def main():
             if module.check_mode:
                 result['msg'] = f"Would have created user {username}"
             else:
+                #
+                # Create new user
+                #
                 try:
                     err = mw.call("user.create", arg)
                     result['msg'] = err
@@ -391,7 +428,9 @@ def main():
                 # No changes
                 result['changed'] = False
             else:
+                #
                 # Update user.
+                #
                 if module.check_mode:
                     result['msg'] = f"Would have updated user {username}: {arg}"
                 else:
@@ -410,6 +449,9 @@ def main():
                 result['msg'] = f"Would have deleted user {username}"
             else:
                 try:
+                    #
+                    # Delete user.
+                    #
                     err = mw.call("user.delete",
                                   user_info['id'],
                                   {"delete_group": delete_group})
