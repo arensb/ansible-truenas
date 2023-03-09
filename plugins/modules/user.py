@@ -52,6 +52,15 @@ options:
         created.
     type: bool
     default: false
+  home:
+    description:
+      - User's home directory.
+      - Note that TrueNAS has restrictions on what this can be. As of this
+        writing, the home directory has to begin with "/tmp", or be
+        "/nonexistent".
+      - Note that if you create a user with home directory C("/nonexistent"),
+        then later change it to a real directory, that directory will not
+        be populated with dot files.
   password:
     description:
       - User's password, as a crypted string.
@@ -256,6 +265,7 @@ def main():
     create_group = module.params['create_group']
     groups = module.params['groups']
     append = module.params['append']
+    home = module.params['home']
     comment = module.params['comment']
     state = module.params['state']
     delete_group = module.params['delete_group']
@@ -310,6 +320,9 @@ def main():
 
             if uid is not None:
                 arg['uid'] = uid
+
+            if home is not None:
+                arg['home'] = home
 
             # Look up the primary group. user.create() requires
             # a group number (not a GID!), but for compatibility with
@@ -441,6 +454,9 @@ def main():
 
             if comment is not None and user_info['full_name'] != comment:
                 arg['full_name'] = comment
+
+            if home is not None and user_info['home'] != home:
+                arg['home'] = home
 
             # Check primary group.
             if group is not None and user_info['group']['bsdgrp_group'] != group:
