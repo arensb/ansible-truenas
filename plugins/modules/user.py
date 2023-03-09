@@ -564,7 +564,7 @@ def main():
                                       user_info['id'],
                                       arg)
                     except Exception as e:
-                        module.fail_json(msg=f"Error updating user {usename} with {arg}: {e}")
+                        module.fail_json(msg=f"Error updating user {username} with {arg}: {e}")
                 result['changed'] = True
 
         else:
