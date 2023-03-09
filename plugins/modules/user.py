@@ -56,6 +56,8 @@ options:
     description:
       - User's password, as a crypted string.
       - Required unless C(password_disabled) is true.
+      - Note: Currently there is no way to check whether the password
+        needs to be changed.
     type: str
   password_disabled:
     description:
