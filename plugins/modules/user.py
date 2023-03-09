@@ -174,7 +174,7 @@ def main():
             # - name(str)
             # - uid(int)
             # - comment(str) - GECOS
-            comment=dict(type='str', default=''),
+            comment=dict(type='str'),
             # - hidden(bool)
             # - non_unique(bool)
             # - seuser(str) - SELinux user type
@@ -273,14 +273,17 @@ def main():
             arg = {
                 "username": username,
 
-                # full_name is required.
-                "full_name": comment,
-
                 # Either password_disabled == True, or password must be
                 # supplied.
                 "password": password,
                 "password_disabled": password_disabled,
             }
+
+            # full_name is required.
+            if comment is None:
+                arg['full_name'] = ""
+            else:
+                arg['full_name'] = comment
 
             if uid is not None:
                 arg['uid'] = uid
