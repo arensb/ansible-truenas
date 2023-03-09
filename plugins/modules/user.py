@@ -133,17 +133,17 @@ from ansible_collections.ooblick.truenas.plugins.module_utils.middleware \
 
 def main():
     # user.create() arguments:
-    # - uid (int)
-    # - username (str)
-    # - group(int) - Required if create_group is false.
-    # - create_group(bool)
+    # x uid (int)
+    # x username (str)
+    # x group(int) - Required if create_group is false.
+    # x create_group(bool)
     # - home(str)
     # - home_mode(str)
     # - shell(str) - Choose from user.shell_choices() (reads /etc/shells)
-    # - full_name(str)
+    # x full_name(str)
     # - email(str|null?)
-    # - password(str) - Required if password_disabled is false
-    # - password_disabled(bool)
+    # ~ password(str) - Required if password_disabled is false
+    # x password_disabled(bool)
     # - locked(bool)
     # - microsoft_account(bool)
     # - smb(bool) - Does user have access to SMB shares?
@@ -151,7 +151,7 @@ def main():
     # - sudo_nopasswd(bool)
     # - sudo_commands(bool)
     # - sshpubkey(str|null?)
-    # - groups(list)
+    # x groups(list)
     # - attributes(obj) - Arbitrary user information
     module = AnsibleModule(
         argument_spec=dict(
@@ -170,25 +170,44 @@ def main():
             password_disabled=dict(type='bool', default=False, no_log=False),
 
             groups=dict(type='list'),
+            home=dict(type='path'),
+            # XXX - remove: delete home directory
+
+            # I think the way builtin.user works is, if you delete a
+            # user without 'force: yes', the old home directory sticks
+            # around.
+            #
+            # On TrueNAS, it doesn't look as though there's any way in
+            # the GUI to delete a directory, so this is something that
+            # needs to be done on the host (rm -rf ~bob), not through
+            # middleware.
+            #
+            # see 'subversion' for an example of running a command.
+            #
+            # XXX - What if the user home directory is a zfs volume?
+            # Then the user didn't create it through this interface,
+            # and is responsible for cleaning it up.
+
+            # XXX - move_home
 
             # From builtin.user module
-            # - name(str)
-            # - uid(int)
-            # - comment(str) - GECOS
+            # x name(str)
+            # x uid(int)
+            # x comment(str) - GECOS
             comment=dict(type='str'),
             # - hidden(bool)
             # - non_unique(bool)
             # - seuser(str) - SELinux user type
             # - group(str) - primary group name
             group=dict(type='str'),
-            # - groups(list) - List of group names
-            # - append(bool) - whether to add to or set group list
+            # x groups(list) - List of group names
+            # x append(bool) - whether to add to or set group list
             append=dict(type='bool', default=False),
             # - shell(str)
             # - home(path)
             # - skeleton(path) - skeleton directory
             # - password(str) - crypted password
-            # - state(absent, present)
+            # x state(absent, present)
             state=dict(type='str', default='present',
                        choices=['absent', 'present']),
 
@@ -567,6 +586,7 @@ def main():
 
     module.exit_json(**result)
 
-### Main
+
+# Main
 if __name__ == "__main__":
     main()
