@@ -361,6 +361,7 @@ def main():
                     err = mw.call("user.create", arg)
                     result['msg'] = err
                 except Exception as e:
+                    result['failed_invocation'] = arg
                     module.fail_json(msg=f"Error creating user {username}: {e}")
 
         else:
