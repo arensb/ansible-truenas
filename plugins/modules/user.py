@@ -169,6 +169,7 @@ def main():
             # worried.
             password_disabled=dict(type='bool', default=False, no_log=False),
 
+            groups=dict(type='list'),
 
             # From builtin.user module
             # - name(str)
@@ -182,6 +183,7 @@ def main():
             group=dict(type='str'),
             # - groups(list) - List of group names
             # - append(bool) - whether to add to or set group list
+            append=dict(type='bool', default=False),
             # - shell(str)
             # - home(path)
             # - skeleton(path) - skeleton directory
@@ -233,6 +235,8 @@ def main():
     password_disabled = module.params['password_disabled']
     group = module.params['group']
     create_group = module.params['create_group']
+    groups = module.params['groups']
+    append = module.params['append']
     comment = module.params['comment']
     state = module.params['state']
     delete_group = module.params['delete_group']
@@ -306,7 +310,7 @@ def main():
                     # No such group.
                     # If we got here, presumably it's because a primary
                     # group was set through 'group', but 'create_group'
-                    # was not set. 
+                    # was not set.
                     group_info = None
                 else:
                     group_info = group_info[0]
@@ -316,8 +320,20 @@ def main():
                 # XXX - Just for debugging.
                 result['group_info'] = group_info
 
+            if groups is not None and len(groups) > 0:
+                # XXX - Look up the groups in the list. Get their IDs.
+                # Add argument arg['groups'] with the list of IDs.
+                try:
+                    grouplist_info = mw.call("group.query",
+                                             [["group", "in", groups]])
+                except Exception as e:
+                    module.fail_json(msg=f"Error looking up groups: {e}")
+
+                # Get the IDs
+                arg['groups'] = [g['id'] for g in grouplist_info]
+
             if module.check_mode:
-                result['msg'] = f"Would have created user {username}"
+                result['msg'] = f"Would have created user {username} with {arg}"
             else:
                 #
                 # Create new user
@@ -433,6 +449,85 @@ def main():
             #   user is in all of them.
             # else:
             #   Same, but make sure user is not in any other groups.
+
+            # XXX - Figure out which groups the user should be in. The
+            # "groups" option to user.update() specifies the full set
+            # of groups (aside from the primary group) that the user
+            # will be in: the user will be removed from any groups not
+            # in that set. So we need to figure out what that set is.
+            #
+            # If groups is None, then the caller doesn't care what the
+            # groups are, so leave them alone. Don't even set the
+            # 'arg' option.
+            #
+            # Else, if append is False, look up the groups specified in
+            # 'groups', and set arg[groups] to that.
+            #
+            # Else, look up the existing groups on the NAS (nas_groups).
+            # Do a set addition: want_groups = groups + nas_groups
+            # if want_groups != nas_groups, then something has changed, and
+            # add arg[groups]
+
+            # XXX - 'builtin_users' is a special case: when a user is
+            # given Samba access (through the user.create(smb=true)
+            # option), they're automatically added to 'builtin_users'.
+            # https://www.truenas.com/community/threads/who-is-group.106782/
+            #
+            # However, removing SMB from the user does not remove them
+            # from builtin_users.
+
+            # if groups is not None and len(groups) > 0:
+            #     # XXX - Look up the groups in the list. Get their IDs.
+            #     # Add argument arg['groups'] with the list of IDs.
+            #     try:
+            #         grouplist_info = mw.call("group.query",
+            #                                  [["group", "in", groups]])
+            #     except Exception as e:
+            #         module.fail_json(msg=f"Error looking up groups: {e}")
+
+            #     # # Get the IDs
+            #     # arg['groups'] = [g['id'] for g in grouplist_info]
+
+            #     # XXX - Get difference between user groups and desired
+            #     # groups.
+
+            # Do we care what groups the user is in?
+            if groups is not None:
+                # Yes, we care.
+
+                # XXX - Look up the IDs of the groups in 'groups'.
+                if len(groups) == 0:
+                    grouplist_info = []
+                else:
+                    try:
+                        grouplist_info = mw.call("group.query",
+                                                 [["group", "in", groups]])
+                    except Exception as e:
+                        module.fail_json(msg=f"Error looking up groups {groups}: {e}")
+
+                # Get the set (not list) of groups the user is in on the
+                # NAS.
+                nas_groupset = set(user_info['groups'])
+                # XXX
+                result['nas_groupset'] = nas_groupset
+
+                # Get the set (not list) of group IDs specified in the
+                # 'groups' option:
+                want_groupset = { g['id'] for g in grouplist_info }
+                result['want_groupset'] = want_groupset
+
+                if append:
+                    # User should be in both sets of groups.
+                    final_groupset = want_groupset.union(nas_groupset)
+                    pass
+                else:
+                    # User should be in the groups specified by 'groups',
+                    # and no others.
+                    final_groupset = want_groupset
+
+                result['final_groupset'] = final_groupset
+                if final_groupset != nas_groupset:
+                    arg['groups'] = list(final_groupset)
 
             # XXX - If there are any, user.update()
             if len(arg) == 0:
