@@ -424,7 +424,7 @@ def main():
             # - comment
             # - group (primary group)
 
-            if uid is not None:
+            if uid is not None and user_info['uid'] != uid:
                 arg['uid'] = uid
 
             # XXX - There's probably a way to get user.query() to
