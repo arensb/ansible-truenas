@@ -28,7 +28,7 @@ options:
       - If such a group already exists, it is used and no new group is
         created.
     type: bool
-    default: false
+    default: true
   delete_group:
     description:
       - If true, delete the user's primary group if it is not being used
@@ -168,8 +168,15 @@ def main():
             uid=dict(type='int'),
             name=dict(type='str', required=True, aliases=['user']),
 
-            # XXX - I'm not sure what the sensible default here is.
-            create_group=dict(type='bool', default=False),
+            # I'm not sure what the sensible default here is. I think
+            # it's True, because builtin.user runs 'useradd' (on
+            # Linux), and that creates a new group by default. So does
+            # 'adduser' on FreeBSD. It also simplifies the playbook:
+            # you can just have
+            #   - user:
+            #       name: bob
+            # and something sensible will happen. 
+            create_group=dict(type='bool', default=True),
 
             password=dict(type='str', default='', no_log=True),
 
