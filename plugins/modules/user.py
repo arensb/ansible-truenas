@@ -94,6 +94,8 @@ options:
   uid:
     description:
       - Set the I(UID) of the user.
+      - If the I(IUID) is already taken, this will create a second user with
+        the same I(UID).
     type: int
 '''
 
@@ -470,7 +472,7 @@ def main():
 
             # Check primary group.
             if group is not None and user_info['group']['bsdgrp_group'] != group:
-                # XXX - Look up group?
+                # Look up primary group information.
                 try:
                     grp = mw.call("group.query",
                                   [["group", "=", group]])
