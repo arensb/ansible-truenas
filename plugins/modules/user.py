@@ -146,7 +146,7 @@ def main():
     # x username (str)
     # x group(int) - Required if create_group is false.
     # x create_group(bool)
-    # - home(str)
+    # x home(str)
     # - home_mode(str)
     # - shell(str) - Choose from user.shell_choices() (reads /etc/shells)
     # x full_name(str)
@@ -457,6 +457,9 @@ def main():
 
             if home is not None and user_info['home'] != home:
                 arg['home'] = home
+
+            # XXX - Figure out whether home directory permissions need to be
+            # set. This turns out to be more difficult than expected.
 
             # Check primary group.
             if group is not None and user_info['group']['bsdgrp_group'] != group:
