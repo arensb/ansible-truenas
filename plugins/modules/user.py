@@ -91,6 +91,27 @@ options:
     type: str
     choices: [ absent, present ]
     default: present
+  sudo:
+    description:
+      - Whether the user is allowed to sudo (see also C(sudo_nopasswd) and
+        C(sudo_commands)).
+      - Note: this defaults to false. So if you create a user with
+        C(sudo: yes), then comment out that line, the user will be removed
+        from sudo.
+    type: bool
+    default: false
+  sudo_nopasswd:
+    description:
+      - Allows user to sudo without a password.
+    type: bool
+    default: false
+  sudo_commands:
+    description:
+      - List of commands the user is allowed to execute using C(sudo).
+      - Each command must use an absolute path.
+      - Commands may include options, e.g., C("/bin/ls -l").
+    type: list of strings
+    default: []
   uid:
     description:
       - Set the I(UID) of the user.
@@ -158,9 +179,9 @@ def main():
     # - locked(bool)
     # - microsoft_account(bool)
     # - smb(bool) - Does user have access to SMB shares?
-    # - sudo(bool)
-    # - sudo_nopasswd(bool)
-    # - sudo_commands(bool)
+    # x sudo(bool)
+    # x sudo_nopasswd(bool)
+    # x sudo_commands(bool)
     # - sshpubkey(str|null?)
     # x groups(list)
     # - attributes(obj) - Arbitrary user information
@@ -191,6 +212,11 @@ def main():
             home=dict(type='path'),
             # XXX - remove: delete home directory. builtin.user allows
             # doing this.
+
+            sudo=dict(type='bool', default=False),
+            sudo_nopasswd=dict(type='bool', default=False,),
+            sudo_commands=dict(type='list',
+                               elements='str'),
 
             # I think the way builtin.user works is, if you delete a
             # user without 'force: yes', the old home directory sticks
@@ -279,6 +305,9 @@ def main():
     comment = module.params['comment']
     state = module.params['state']
     delete_group = module.params['delete_group']
+    sudo = module.params['sudo']
+    sudo_nopasswd = module.params['sudo_nopasswd']
+    sudo_commands = module.params['sudo_commands']
 
     # Look up the user.
     # Note that
@@ -330,6 +359,15 @@ def main():
 
             if uid is not None:
                 arg['uid'] = uid
+
+            if sudo is not None:
+                arg['sudo'] = sudo
+
+            if sudo_nopasswd is not None:
+                arg['sudo_nopasswd'] = sudo_nopasswd
+
+            if sudo_commands is not None:
+                arg['sudo_commands'] = sudo_commands
 
             if home is not None:
                 arg['home'] = home
@@ -466,6 +504,23 @@ def main():
 
             if home is not None and user_info['home'] != home:
                 arg['home'] = home
+
+            if sudo is not None and user_info['sudo'] != sudo:
+                arg['sudo'] = sudo
+
+            if sudo_nopasswd is not None and \
+               user_info['sudo_nopasswd'] != sudo_nopasswd:
+                arg['sudo_nopasswd'] = sudo_nopasswd
+
+            # Let's perform set comparison, because it doesn't matter
+            # in which order the sudo commands are listed.
+            if sudo_commands is None:
+                # sudo_commands should be empty
+                if user_info['sudo_commands'] != []:
+                    arg['sudo_commands'] = []
+            else:
+                if set(user_info['sudo_commands']) != set(sudo_commands):
+                    arg['sudo_commands'] = sudo_commands
 
             # XXX - Figure out whether home directory permissions need to be
             # set. This turns out to be more difficult than expected.
