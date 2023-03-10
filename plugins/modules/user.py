@@ -347,8 +347,7 @@ def main():
                     group_info = None
                 else:
                     group_info = group_info[0]
-
-                arg['group'] = group_info['id']
+                    arg['group'] = group_info['id']
 
                 # XXX - Just for debugging.
                 result['group_info'] = group_info
