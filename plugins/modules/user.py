@@ -9,21 +9,34 @@ short_description: Manage user accounts
 description:
   - Add, change, and delete user accounts.
 options:
-  name:
+  append:
     description:
-      - Name of the user to manage.
-    type: str
-    required: true
-    aliases: [ user ]
-  uid:
-    description:
-      - Set the I(UID) of the user.
-    type: int
+      - If true, the user will be added to the groups listed in C(groups),
+        but not removed from any other groups.
+      - If false, the user will be added to the groups listed in C(groups),
+        and removed from any other groups.
+    type: bool
+    default: false
   comment:
     description:
       - The full name (I(GECOS) field) of the user.
     type: str
     default: ""
+  create_group:
+    description:
+      - If true, create a new group with the same name as the user.
+      - If such a group already exists, it is used and no new group is
+        created.
+    type: bool
+    default: false
+  delete_group:
+    description:
+      - If true, delete the user's primary group if it is not being used
+        by any other users.
+      - If false, the primary group stays, even if it is now empty.
+      - Only used when deleting a user.
+    type: bool
+    default: true
   group:
     description:
       - The name of the user's primary group.
@@ -37,21 +50,6 @@ options:
       - If C(append) is false, then in addition, the user will be removed
         from all other groups (except the primary).
     type: list
-  append:
-    description:
-      - If true, the user will be added to the groups listed in C(groups),
-        but not removed from any other groups.
-      - If false, the user will be added to the groups listed in C(groups),
-        and removed from any other groups.
-    type: bool
-    default: false
-  create_group:
-    description:
-      - If true, create a new group with the same name as the user.
-      - If such a group already exists, it is used and no new group is
-        created.
-    type: bool
-    default: false
   home:
     description:
       - User's home directory.
@@ -61,6 +59,12 @@ options:
       - Note that if you create a user with home directory C("/nonexistent"),
         then later change it to a real directory, that directory will not
         be populated with dot files.
+  name:
+    description:
+      - Name of the user to manage.
+    type: str
+    required: true
+    aliases: [ user ]
   password:
     description:
       - User's password, as a crypted string.
@@ -87,14 +91,10 @@ options:
     type: str
     choices: [ absent, present ]
     default: present
-  delete_group:
+  uid:
     description:
-      - If true, delete the user's primary group if it is not being used
-        by any other users.
-      - If false, the primary group stays, even if it is now empty.
-      - Only used when deleting a user.
-    type: bool
-    default: true
+      - Set the I(UID) of the user.
+    type: int
 '''
 
 EXAMPLES = '''
@@ -180,7 +180,8 @@ def main():
 
             groups=dict(type='list'),
             home=dict(type='path'),
-            # XXX - remove: delete home directory
+            # XXX - remove: delete home directory. builtin.user allows
+            # doing this.
 
             # I think the way builtin.user works is, if you delete a
             # user without 'force: yes', the old home directory sticks
