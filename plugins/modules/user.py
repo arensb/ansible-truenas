@@ -70,7 +70,7 @@ options:
       - User's password, as a crypted string.
       - Required unless C(password_disabled) is true.
       - Note: Currently there is no way to check whether the password
-        needs to be changed.
+        needs to be changed, so this is used only when the user is created.
     type: str
   password_disabled:
     description:
@@ -193,7 +193,7 @@ def main():
     # x sudo(bool)
     # x sudo_nopasswd(bool)
     # x sudo_commands(bool)
-    # - sshpubkey(str|null?)
+    # x sshpubkey(str|null?)
     # x groups(list)
     # - attributes(obj) - Arbitrary user information
     module = AnsibleModule(
@@ -270,7 +270,7 @@ def main():
             shell=dict(type='str'),
             # x home(path)
             # - skeleton(path) - skeleton directory
-            # - password(str) - crypted password
+            # ~ password(str) - crypted password
             # x state(absent, present)
             state=dict(type='str', default='present',
                        choices=['absent', 'present']),
@@ -352,8 +352,8 @@ def main():
     except Exception as e:
         module.fail_json(msg=f"Error looking up user {username}: {e}")
 
-    # XXX - Mostly for debugging:
-    result['user_info'] = user_info
+    # # XXX - Mostly for debugging:
+    # result['user_info'] = user_info
 
     # First, check whether the user even exists.
     if user_info is None:
@@ -442,11 +442,8 @@ def main():
                     group_info = group_info[0]
                     arg['group'] = group_info['id']
 
-                # XXX - Just for debugging.
-                result['group_info'] = group_info
-
             if groups is not None and len(groups) > 0:
-                # XXX - Look up the groups in the list. Get their IDs.
+                # Look up the groups in the list. Get their IDs.
                 # Add argument arg['groups'] with the list of IDs.
                 try:
                     grouplist_info = mw.call("group.query",
@@ -470,6 +467,10 @@ def main():
                     result['failed_invocation'] = arg
                     module.fail_json(msg=f"Error creating user {username}: {e}")
 
+                # user.create() only returns the new user ID, but
+                # return that.
+                result['user_id'] = err
+
             result['changed'] = True
 
         else:
@@ -481,8 +482,8 @@ def main():
         if state == 'present':
             # User is supposed to exist
 
-            # XXX - Make list of differences between what is and what
-            # should be.
+            # Make list of differences between what is and what should
+            # be.
 
             # user.query() output:
             # [
@@ -739,6 +740,10 @@ def main():
                                       arg)
                     except Exception as e:
                         module.fail_json(msg=f"Error updating user {username} with {arg}: {e}")
+                    # user.update() doesn't return anything
+                    # interesting: just the numeric user ID.
+                    # Otherwise, we'd want to include that in
+                    # 'result'.
                 result['changed'] = True
 
         else:
