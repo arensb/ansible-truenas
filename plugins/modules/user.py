@@ -85,6 +85,11 @@ options:
         unlocking.
     type: bool
     default: false
+  shell:
+    description:
+      - User's shell.
+      - Must be one of the allowed shells from C(/etc/shells).
+    type: str
   ssh_authorized_keys:
     description:
       - List of ssh public keys to put in the user's C(.ssh/authorized_keys)
@@ -177,7 +182,7 @@ def main():
     # x create_group(bool)
     # x home(str)
     # - home_mode(str)
-    # - shell(str) - Choose from user.shell_choices() (reads /etc/shells)
+    # x shell(str) - Choose from user.shell_choices() (reads /etc/shells)
     # x full_name(str)
     # - email(str|null?)
     # ~ password(str) - Required if password_disabled is false
@@ -261,8 +266,9 @@ def main():
             # x groups(list) - List of group names
             # x append(bool) - whether to add to or set group list
             append=dict(type='bool', default=False),
-            # - shell(str)
-            # - home(path)
+            # x shell(str)
+            shell=dict(type='str'),
+            # x home(path)
             # - skeleton(path) - skeleton directory
             # - password(str) - crypted password
             # x state(absent, present)
@@ -322,6 +328,7 @@ def main():
     sudo_nopasswd = module.params['sudo_nopasswd']
     sudo_commands = module.params['sudo_commands']
     ssh_authorized_keys = module.params['ssh_authorized_keys']
+    shell = module.params['shell']
 
     # Look up the user.
     # Note that
@@ -365,7 +372,7 @@ def main():
                 "password_disabled": password_disabled,
             }
 
-            # full_name is required.
+            # Easy cases first
             if comment is None:
                 arg['full_name'] = ""
             else:
@@ -382,6 +389,9 @@ def main():
 
             if sudo_commands is not None:
                 arg['sudo_commands'] = sudo_commands
+
+            if shell is not None:
+                arg['shell'] = shell
 
             # XXX - Looks like there's a bug in TrueNAS: if you
             # specify a home directory but no uid, it tries to chown
@@ -539,6 +549,9 @@ def main():
 
             if comment is not None and user_info['full_name'] != comment:
                 arg['full_name'] = comment
+
+            if shell is not None and user_info['shell'] != shell:
+                arg['shell'] = shell
 
             if home is not None:
                 # If the username has also changed, need to update the
