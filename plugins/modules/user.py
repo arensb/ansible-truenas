@@ -383,7 +383,26 @@ def main():
             if sudo_commands is not None:
                 arg['sudo_commands'] = sudo_commands
 
+            # XXX - Looks like there's a bug in TrueNAS: if you
+            # specify a home directory but no uid, it tries to chown
+            # the new directory to the user's uid, but the uid
+            # evidently hasn't been assigned yet.
+            #
+            # It works in the GUI because it fills the UID in for you.
+            # And it works when home=/nonexistent because there's
+            # nothing to chown.
             if home is not None:
+                # XXX - Ought to have a variable or fact saying that
+                # this is a problem, and to work around it.
+                if uid is None:
+                    try:
+                        next_uid = mw.call("user.get_next_uid")
+                    except Exception as e:
+                        module.fail_json(msg=f"Error getting next available UID: {e}")
+                    arg['uid'] = next_uid
+
+                    result['uid'] = next_uid    # XXX - For debugging
+
                 arg['home'] = home
 
             if ssh_authorized_keys is not None:
@@ -521,8 +540,30 @@ def main():
             if comment is not None and user_info['full_name'] != comment:
                 arg['full_name'] = comment
 
-            if home is not None and user_info['home'] != home:
-                arg['home'] = home
+            if home is not None:
+                # If the username has also changed, need to update the
+                # home directory as well.
+
+                # XXX - Maybe we want to just mandate that the 'home'
+                # option has to be the full home directory.
+
+                new_username = arg['username'] if 'username' in arg \
+                    else user_info['username']
+
+                if user_info['home'] == home:
+                    # The home directory is already set correctly.
+                    # Nothing to do here.
+                    pass
+                elif user_info['home'] == f"{home}/{new_username}":
+                    # The user's existing home directory is the
+                    # specified 'option' path, followed by the
+                    # (possibly new) username.
+                    #
+                    # All is as it should be. Nothing to do here.
+                    pass
+                else:
+                    # Something has changed
+                    arg['home'] = home
 
             if sudo is not None and user_info['sudo'] != sudo:
                 arg['sudo'] = sudo
