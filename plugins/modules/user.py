@@ -204,7 +204,7 @@ def main():
             # you can just have
             #   - user:
             #       name: bob
-            # and something sensible will happen. 
+            # and something sensible will happen.
             create_group=dict(type='bool', default=True),
 
             password=dict(type='str', default='', no_log=True),
@@ -440,6 +440,8 @@ def main():
                 except Exception as e:
                     result['failed_invocation'] = arg
                     module.fail_json(msg=f"Error creating user {username}: {e}")
+
+            result['changed'] = True
 
         else:
             # User is not supposed to exist.
