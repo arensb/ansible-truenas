@@ -550,13 +550,14 @@ def main():
                     # Empty set
                     old_keys = set()
                 else:
-                    old_keys = set(user_info['sshpubkey'].split("\n"))
+                    old_keys = set(user_info['sshpubkey'].rstrip().split("\n"))
 
                 want_keys = set(ssh_authorized_keys)
 
                 if old_keys != want_keys:
                     # user.update() expects a string, not a list.
-                    arg['sshpubkey'] = "\n".join(ssh_authorized_keys)
+                    # And don't forget the \n at the end of the file.
+                    arg['sshpubkey'] = "\n".join(ssh_authorized_keys)+"\n"
 
             # Check primary group.
             if group is not None and user_info['group']['bsdgrp_group'] != group:
