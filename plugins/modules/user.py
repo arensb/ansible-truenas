@@ -85,6 +85,12 @@ options:
         unlocking.
     type: bool
     default: false
+  ssh_authorized_keys:
+    description:
+      - List of ssh public keys to put in the user's C(.ssh/authorized_keys)
+        file.
+    type: list of str
+    aliases: [ pubkeys ]
   state:
     description:
       - Whether the user should exist or not.
@@ -208,6 +214,13 @@ def main():
             # worried.
             password_disabled=dict(type='bool', default=False, no_log=False),
 
+            # XXX - There should probably be an option saying whether
+            # or not to allow other keys in .ssh/authorized_keys, the
+            # same way that 'append' says whether or not to allow
+            # additional groups.
+            ssh_authorized_keys=dict(type='list', elements='str',
+                                     aliases=['pubkeys']),
+
             groups=dict(type='list'),
             home=dict(type='path'),
             # XXX - remove: delete home directory. builtin.user allows
@@ -308,6 +321,7 @@ def main():
     sudo = module.params['sudo']
     sudo_nopasswd = module.params['sudo_nopasswd']
     sudo_commands = module.params['sudo_commands']
+    ssh_authorized_keys = module.params['ssh_authorized_keys']
 
     # Look up the user.
     # Note that
@@ -371,6 +385,9 @@ def main():
 
             if home is not None:
                 arg['home'] = home
+
+            if ssh_authorized_keys is not None:
+                arg['sshpubkey'] = "\n".join(ssh_authorized_keys)+"\n"
 
             # Look up the primary group. user.create() requires
             # a group number (not a GID!), but for compatibility with
@@ -524,6 +541,22 @@ def main():
 
             # XXX - Figure out whether home directory permissions need to be
             # set. This turns out to be more difficult than expected.
+
+            # Figure out whether any of the ssh keys need to be updated.
+            # Use sets, because order doesn't matter.
+            if ssh_authorized_keys is not None:
+                # Get the old keys
+                if user_info['sshpubkey'] is None:
+                    # Empty set
+                    old_keys = set()
+                else:
+                    old_keys = set(user_info['sshpubkey'].split("\n"))
+
+                want_keys = set(ssh_authorized_keys)
+
+                if old_keys != want_keys:
+                    # user.update() expects a string, not a list.
+                    arg['sshpubkey'] = "\n".join(ssh_authorized_keys)
 
             # Check primary group.
             if group is not None and user_info['group']['bsdgrp_group'] != group:
