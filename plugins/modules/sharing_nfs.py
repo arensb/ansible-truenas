@@ -10,6 +10,11 @@ short_description: Manage NFS sharing
 description:
   - Create, manage, and delete NFS exports.
 options:
+  alldirs:
+    description:
+      - Allows clients to mount any subdirectory of the exported directory.
+      - Can only be used on exports that contain only one directory.
+    type: bool
   name:
     description:
       - Name for this export group.
@@ -71,7 +76,7 @@ def main():
             paths=dict(type='list', elements='str', required=True),
             state=dict(type='str', default='present',
                        choices=['absent', 'present']),
-            # XXX
+            alldirs=dict(type='bool')
             ),
         supports_check_mode=True,
     )
@@ -87,6 +92,7 @@ def main():
     name = module.params['name']
     paths = module.params['paths']
     state = module.params['state']
+    alldirs = module.params['alldirs']
 
     # Look up the share.
     #
@@ -164,6 +170,8 @@ def main():
 
             # if feature is not None and:
             #     arg['feature'] = feature
+            if alldirs is not None:
+                arg['alldirs'] = alldirs
 
             if module.check_mode:
                 result['msg'] = f"Would have created NFS export \"{name}\" with {arg}"
@@ -198,9 +206,8 @@ def main():
             # be.
             arg = {}
 
-            # XXX
-            # if feature is not None and export_info['feature'] != feature:
-            #     arg['feature'] = feature
+            if alldirs is not None and export_info['alldirs'] != alldirs:
+                arg['alldirs'] = alldirs
 
             # Check whether the new set of paths is the same as the
             # old set.
