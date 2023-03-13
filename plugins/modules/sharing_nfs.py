@@ -23,28 +23,37 @@ options:
         but are not listed in C(/etc/exports).
       - True by default when a share is created.
     type: bool
+  hosts:
+    description:
+      - List of allowed hosts, either hostnames or addresses.
+      - An empty list means to allow all.
+    type: list
   mapall_user:
     description:
       - All requests (including by root) are limited to the permissions
         of this user.
+      - Set to the empty string (C("")) to remove this setting.
       - Mutually-exclusive with C(maproot_user).
     type: str
   mapall_group:
     description:
       - All requests (including by root) are limited to the permissions
         of this group.
+      - Set to the empty string (C("")) to remove this setting.
       - Mutually-exclusive with C(maproot_group).
       - Requires C(mapall_user).
     type: str
   maproot_user:
     description:
       - Requests by user root are limited to the permissions of this user.
+      - Set to the empty string (C("")) to remove this setting.
       - Mutually-exclusive with C(mapall_user).
     type: str
   maproot_group:
     description:
       - Requests by user root are also limited to the permissions of
         this group.
+      - Set to the empty string (C("")) to remove this setting.
       - Mutually-exclusive with C(mapall_group).
       - Requires C(maproot_user).
     type: str
@@ -60,6 +69,10 @@ options:
     description:
       - List of allowed networks, in CIDR notation.
       - An empty list means to allow all.
+      - Note that using incorrect CIDR may lead to this module seeing a
+        change when nothing has changed. For example, if you specify
+        "10.1.2.3/16", TrueNAS will normalize this to "10.1.0.0/16", but
+        afterward, this module will think that you want to make a change.
     type: list
   paths:
     description:
@@ -104,12 +117,17 @@ from ansible.module_utils.basic import AnsibleModule, missing_required_lib
 from ansible_collections.ooblick.truenas.plugins.module_utils.middleware \
     import MiddleWare as MW
 
+# XXX - Maybe correct bad CIDR? I think it might be as simple as:
+# import ipaddress
+# network = str(ipaddress.ip_network('10.1.2.3/16', False))
+# => '10.1.0.0/16'
+
 def main():
     # XXX - sharing.nfs.create:
     # x paths (array(str))
     # x comment (str)
     # x networks (array(str))
-    # - hosts (array(str))
+    # x hosts (array(str))
     # x alldirs (bool)
     # x ro (bool)
     # x quiet (bool)
@@ -138,6 +156,7 @@ def main():
             mapall_user=dict(type='str'),
             mapall_group=dict(type='str'),
             networks=dict(type='list', elements='str'),
+            hosts=dict(type='list', elements='str'),
         ),
         supports_check_mode=True,
         mutually_exclusive=[
@@ -171,6 +190,7 @@ def main():
     mapall_user = module.params['mapall_user']
     mapall_group = module.params['mapall_group']
     networks = module.params['networks']
+    hosts = module.params['hosts']
 
     # Look up the share.
     #
@@ -273,6 +293,9 @@ def main():
             if networks is not None:
                 arg['networks'] = networks
 
+            if hosts is not None:
+                arg['hosts'] = hosts
+
             if module.check_mode:
                 result['msg'] = f"Would have created NFS export \"{name}\" with {arg}"
             else:
@@ -365,6 +388,12 @@ def main():
             if networks is not None and \
                set(networks) != set(export_info['networks']):
                 arg['networks'] = networks
+
+            # Check whether the new set of hosts is the same as the
+            # old set.
+            if hosts is not None and \
+               set(hosts) != set(export_info['hosts']):
+                arg['hosts'] = hosts
 
             # If there are any changes, sharing.nfs.update()
             if len(arg) == 0:
