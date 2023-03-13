@@ -14,6 +14,14 @@ options:
     description:
       - Allows clients to mount any subdirectory of the exported directory.
       - Can only be used on exports that contain only one directory.
+      - False by default when a share is created.
+    type: bool
+  enabled:
+    description:
+      - Whether or not this export should be enabled.
+      - Exports that are not enabled exist in the middleware database,
+        but are not listed in C(/etc/exports).
+      - True by default when a share is created.
     type: bool
   name:
     description:
@@ -36,6 +44,7 @@ options:
       - Suppress certain error messages. This can be used to avoid spamming
         log files with messages about known errors. See exports(5) for
         examples.
+      - False by default when a share is created.
     type: bool
   state:
     description:
@@ -84,6 +93,7 @@ def main():
                        choices=['absent', 'present']),
             alldirs=dict(type='bool'),
             quiet=dict(type='bool'),
+            enabled=dict(type='bool'),
             ),
         supports_check_mode=True,
     )
@@ -101,6 +111,7 @@ def main():
     state = module.params['state']
     alldirs = module.params['alldirs']
     quiet = module.params['quiet']
+    enabled = module.params['enabled']
 
     # Look up the share.
     #
@@ -182,6 +193,9 @@ def main():
             if quiet is not None:
                 arg['quiet'] = quiet
 
+            if enabled is not None:
+                arg['enabled'] = enabled
+
             if module.check_mode:
                 result['msg'] = f"Would have created NFS export \"{name}\" with {arg}"
             else:
@@ -221,6 +235,9 @@ def main():
             if quiet is not None and export_info['quiet'] != quiet:
                 arg['quiet'] = quiet
 
+            if enabled is not None and export_info['enabled'] != enabled:
+                arg['enabled'] = enabled
+
             # Check whether the new set of paths is the same as the
             # old set.
             # We use set comparison because the order doesn't matter.
@@ -242,6 +259,7 @@ def main():
                         err = mw.call("sharing.nfs.update",
                                       export_info['id'],
                                       arg)
+                        result['status'] = err
                     except Exception as e:
                         module.fail_json(msg=f"Error updating NFS export \"{name}\" with {arg}: {e}")
                         # Return any interesting bits from err
@@ -259,6 +277,7 @@ def main():
                     #
                     err = mw.call("sharing.nfs.delete",
                                   export_info['id'])
+                    result['status'] = err
                 except Exception as e:
                     module.fail_json(msg=f"Error deleting NFS export \"{name}\": {e}")
             result['changed'] = True
