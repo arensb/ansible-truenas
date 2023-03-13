@@ -23,6 +23,10 @@ options:
         but are not listed in C(/etc/exports).
       - True by default when a share is created.
     type: bool
+  maproot_user:
+    description:
+      - Requests by user root are limited to the permissions of this user.
+    type: str
   name:
     description:
       - Name for this export group.
@@ -101,6 +105,7 @@ def main():
             quiet=dict(type='bool'),
             enabled=dict(type='bool'),
             readonly=dict(type='bool'),
+            maproot_user=dict(type='str'),
             ),
         supports_check_mode=True,
     )
@@ -120,6 +125,7 @@ def main():
     quiet = module.params['quiet']
     enabled = module.params['enabled']
     readonly = module.params['readonly']
+    maproot_user = module.params['maproot_user']
 
     # Look up the share.
     #
@@ -207,6 +213,9 @@ def main():
             if readonly is not None:
                 arg['ro'] = readonly
 
+            if maproot_user is not None:
+                arg['maproot_user'] = maproot_user
+
             if module.check_mode:
                 result['msg'] = f"Would have created NFS export \"{name}\" with {arg}"
             else:
@@ -252,6 +261,9 @@ def main():
             if readonly is not None and export_info['readonly'] != readonly:
                 arg['ro'] = readonly
 
+            if maproot_user is not None and export_info['maproot_user'] != maproot_user:
+                arg['maproot_user'] = maproot_user
+
             # Check whether the new set of paths is the same as the
             # old set.
             # We use set comparison because the order doesn't matter.
@@ -276,7 +288,8 @@ def main():
                         result['status'] = err
                     except Exception as e:
                         module.fail_json(msg=f"Error updating NFS export \"{name}\" with {arg}: {e}")
-                        # Return any interesting bits from err
+                        # Returns a structure similar to sharing.nfs.query(),
+                        # with all the information about the export.
                         result['status'] = err['status']
                 result['changed'] = True
         else:
