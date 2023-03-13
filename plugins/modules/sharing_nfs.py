@@ -23,6 +23,12 @@ options:
       - List of directories to export.
     type: list
     required: true
+  state:
+    description:
+      - Whether this export should exist or not.
+    type: str
+    choices: [ absent, present ]
+    default: present
 '''
 
 # XXX
@@ -39,7 +45,7 @@ from ansible_collections.ooblick.truenas.plugins.module_utils.middleware \
 
 def main():
     # XXX - sharing.nfs.create:
-    # - paths (array(str))
+    # x paths (array(str))
     # x comment (str)
     # - networks (array(str))
     # - hosts (array(str))
@@ -59,7 +65,9 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             name=dict(type='str', required=True, aliases=['comment']),
-            paths=dict(type='list', elements='str', required=True)
+            paths=dict(type='list', elements='str', required=True),
+            state=dict(type='str', default='present',
+                       choices=['absent', 'present']),
             # XXX
             ),
         supports_check_mode=True,
@@ -74,6 +82,8 @@ def main():
 
     # Assign variables from properties, for convenience
     name = module.params['name']
+    paths = module.params['paths']
+    state = module.params['state']
 
     # Look up the share.
     #
@@ -102,7 +112,7 @@ def main():
     # different filesystems), but not the general case.
 
     try:
-        export_info = mw.call("resource.query",
+        export_info = mw.call("sharing.nfs.query",
                                 [["comment", "=", name]])
         if len(export_info) == 0:
             # No such export
@@ -113,7 +123,7 @@ def main():
     except Exception as e:
         module.fail_json(msg=f"Error looking up NFS export {name}: {e}")
 
-    # First, check whether the resource even exists.
+    # First, check whether the export even exists.
     if export_info is None:
         # Export doesn't exist
 
@@ -144,6 +154,7 @@ def main():
 
                 # Return whichever interesting bits sharing.nfs.create()
                 # returned.
+                # XXX
                 result['resource_id'] = err
 
             result['changed'] = True
