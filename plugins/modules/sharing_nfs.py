@@ -111,6 +111,29 @@ def main():
     # Some special cases can be solved (e.g., when a and b are on
     # different filesystems), but not the general case.
 
+    # Notes:
+    #
+    # - Two directories in the same export must be in the same zfs
+    #   filesystem. You can't have
+    #   paths:
+    #     - /mnt/pool0/fs0/somedir
+    #     - /mnt/pool0/fs1/otherdir
+    #
+    # - If two directories in the same filesystem are exported, they
+    #   must be in the same export set. You can't have:
+    #   - sharing_nfs:
+    #       name: Export 1
+    #       paths: /mnt/pool0/fs0/somedir
+    #   - sharing_nfs:
+    #       name: Export 2
+    #       paths: /mnt/pool0/fs0/otherdir
+    #
+    #   Here, "somedir" and "otherdir" must be put in the same "sharing_nfs"
+    #   block.
+    #
+    # - Likewise, can't export a directory to different networks in
+    #   different exports.
+
     try:
         export_info = mw.call("sharing.nfs.query",
                                 [["comment", "=", name]])
@@ -176,6 +199,12 @@ def main():
             # if feature is not None and export_info['feature'] != feature:
             #     arg['feature'] = feature
 
+            # Check whether the new set of paths is the same as the
+            # old set.
+            # We use set comparison because the order doesn't matter.
+            if set(module.params['paths']) != set(export_info['paths']):
+                arg['paths'] = module.params['paths']
+
             # If there are any changes, sharing.nfs.update()
             if len(arg) == 0:
                 # No changes
@@ -185,7 +214,7 @@ def main():
                 # Update the export.
                 #
                 if module.check_mode:
-                    result['msg'] = f"Would have updated NFS export \"{name}\": {arg}"
+                    result['msg'] = f"Would have updated NFS export {export_info['id']} \"{name}\": {arg}"
                 else:
                     try:
                         err = mw.call("sharing.nfs.update",
@@ -195,6 +224,7 @@ def main():
                         module.fail_json(msg=f"Error updating NFS export \"{username}\" with {arg}: {e}")
                         # Return any interesting bits from err
                         result['status'] = err['status']
+                result['changed'] = True
         else:
             # NFS export is not supposed to exist
 
