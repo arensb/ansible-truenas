@@ -166,7 +166,7 @@ XXX
     delete_group: no
 '''
 
-# XXX - XXX - Return the UID of new user.
+# XXX - Return the UID of new user.
 RETURN = '''
 '''
 
