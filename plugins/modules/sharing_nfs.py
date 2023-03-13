@@ -107,6 +107,27 @@ mutually_exclusive:
 
 # XXX
 EXAMPLES = '''
+- name: Export a filesystem
+  ooblick.truenas.sharing_nfs:
+    - name: Home export
+      paths:
+        - /mnt/pool0/home
+
+- name: Export to only one network
+  ooblick.truenas.sharing_nfs:
+    - name: Home export
+      paths:
+        - /mnt/pool0/home
+      networks:
+        - 192.168.0.0/16
+
+- name: Explicitly export to all hosts and networks
+  ooblick.truenas.sharing_nfs:
+    - name: Home export
+      paths:
+        - /mnt/pool0/home
+      hosts: []
+      networks: []
 '''
 
 # XXX
@@ -123,24 +144,6 @@ from ansible_collections.ooblick.truenas.plugins.module_utils.middleware \
 # => '10.1.0.0/16'
 
 def main():
-    # XXX - sharing.nfs.create:
-    # x paths (array(str))
-    # x comment (str)
-    # x networks (array(str))
-    # x hosts (array(str))
-    # x alldirs (bool)
-    # x ro (bool)
-    # x quiet (bool)
-    # x maproot_user (str)
-    # x maproot_group (str)
-    # x mapall_user (str)
-    # x mapall_group (str)
-    # - security (array(str))
-    # x enabled (bool)
-    #
-    # windows.win_share:
-    # = name
-    # = path
     module = AnsibleModule(
         argument_spec=dict(
             name=dict(type='str', required=True, aliases=['comment']),
