@@ -31,6 +31,12 @@ options:
         same NFS export.
     type: list
     required: true
+  quiet:
+    description:
+      - Suppress certain error messages. This can be used to avoid spamming
+        log files with messages about known errors. See exports(5) for
+        examples.
+    type: bool
   state:
     description:
       - Whether this export should exist or not.
@@ -76,7 +82,8 @@ def main():
             paths=dict(type='list', elements='str', required=True),
             state=dict(type='str', default='present',
                        choices=['absent', 'present']),
-            alldirs=dict(type='bool')
+            alldirs=dict(type='bool'),
+            quiet=dict(type='bool'),
             ),
         supports_check_mode=True,
     )
@@ -93,6 +100,7 @@ def main():
     paths = module.params['paths']
     state = module.params['state']
     alldirs = module.params['alldirs']
+    quiet = module.params['quiet']
 
     # Look up the share.
     #
@@ -168,10 +176,11 @@ def main():
                 "paths": paths,
             }
 
-            # if feature is not None and:
-            #     arg['feature'] = feature
             if alldirs is not None:
                 arg['alldirs'] = alldirs
+
+            if quiet is not None:
+                arg['quiet'] = quiet
 
             if module.check_mode:
                 result['msg'] = f"Would have created NFS export \"{name}\" with {arg}"
@@ -208,6 +217,9 @@ def main():
 
             if alldirs is not None and export_info['alldirs'] != alldirs:
                 arg['alldirs'] = alldirs
+
+            if quiet is not None and export_info['quiet'] != quiet:
+                arg['quiet'] = quiet
 
             # Check whether the new set of paths is the same as the
             # old set.
