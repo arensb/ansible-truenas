@@ -56,6 +56,11 @@ options:
     default: ""
     required: true
     aliases: [ comment ]
+  networks:
+    description:
+      - List of allowed networks, in CIDR notation.
+      - An empty list means to allow all.
+    type: list
   paths:
     description:
       - List of directories to export.
@@ -103,7 +108,7 @@ def main():
     # XXX - sharing.nfs.create:
     # x paths (array(str))
     # x comment (str)
-    # - networks (array(str))
+    # x networks (array(str))
     # - hosts (array(str))
     # x alldirs (bool)
     # x ro (bool)
@@ -132,6 +137,7 @@ def main():
             maproot_group=dict(type='str'),
             mapall_user=dict(type='str'),
             mapall_group=dict(type='str'),
+            networks=dict(type='list', elements='str'),
         ),
         supports_check_mode=True,
         mutually_exclusive=[
@@ -164,6 +170,7 @@ def main():
     maproot_group = module.params['maproot_group']
     mapall_user = module.params['mapall_user']
     mapall_group = module.params['mapall_group']
+    networks = module.params['networks']
 
     # Look up the share.
     #
@@ -263,6 +270,9 @@ def main():
             if mapall_group is not None:
                 arg['mapall_group'] = mapall_group
 
+            if networks is not None:
+                arg['networks'] = networks
+
             if module.check_mode:
                 result['msg'] = f"Would have created NFS export \"{name}\" with {arg}"
             else:
@@ -349,6 +359,12 @@ def main():
             # We use set comparison because the order doesn't matter.
             if set(paths) != set(export_info['paths']):
                 arg['paths'] = paths
+
+            # Check whether the new set of networks is the same as the
+            # old set.
+            if networks is not None and \
+               set(networks) != set(export_info['networks']):
+                arg['networks'] = networks
 
             # If there are any changes, sharing.nfs.update()
             if len(arg) == 0:
