@@ -21,6 +21,9 @@ options:
   paths:
     description:
       - List of directories to export.
+      - All paths must be in the same filesystem. And if multiple directories
+        from the same filesystem are being imported, they must be in the
+        same NFS export.
     type: list
     required: true
   state:
@@ -202,8 +205,8 @@ def main():
             # Check whether the new set of paths is the same as the
             # old set.
             # We use set comparison because the order doesn't matter.
-            if set(module.params['paths']) != set(export_info['paths']):
-                arg['paths'] = module.params['paths']
+            if set(paths) != set(export_info['paths']):
+                arg['paths'] = paths
 
             # If there are any changes, sharing.nfs.update()
             if len(arg) == 0:
@@ -214,14 +217,14 @@ def main():
                 # Update the export.
                 #
                 if module.check_mode:
-                    result['msg'] = f"Would have updated NFS export {export_info['id']} \"{name}\": {arg}"
+                    result['msg'] = f"Would have updated NFS export \"{name}\": {arg}"
                 else:
                     try:
                         err = mw.call("sharing.nfs.update",
                                       export_info['id'],
                                       arg)
                     except Exception as e:
-                        module.fail_json(msg=f"Error updating NFS export \"{username}\" with {arg}: {e}")
+                        module.fail_json(msg=f"Error updating NFS export \"{name}\" with {arg}: {e}")
                         # Return any interesting bits from err
                         result['status'] = err['status']
                 result['changed'] = True
