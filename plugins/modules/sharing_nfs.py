@@ -46,6 +46,12 @@ options:
         examples.
       - False by default when a share is created.
     type: bool
+  readonly:
+    description:
+      - Whether the directories are exported read-only, to prohibit clients
+        from writing to them.
+    type: bool
+    aliases: [ ro, read_only ]
   state:
     description:
       - Whether this export should exist or not.
@@ -72,15 +78,15 @@ def main():
     # x comment (str)
     # - networks (array(str))
     # - hosts (array(str))
-    # - alldirs (bool)
-    # - ro (bool)
-    # - quiet (bool)
+    # x alldirs (bool)
+    # x ro (bool)
+    # x quiet (bool)
     # - maproot_user (str)
     # - maproot_group (str)
     # - mapall_user (str)
     # - mapall_group (str)
     # - security (array(str))
-    # - enabled (bool)
+    # x enabled (bool)
     #
     # windows.win_share:
     # = name
@@ -94,6 +100,7 @@ def main():
             alldirs=dict(type='bool'),
             quiet=dict(type='bool'),
             enabled=dict(type='bool'),
+            readonly=dict(type='bool'),
             ),
         supports_check_mode=True,
     )
@@ -112,6 +119,7 @@ def main():
     alldirs = module.params['alldirs']
     quiet = module.params['quiet']
     enabled = module.params['enabled']
+    readonly = module.params['readonly']
 
     # Look up the share.
     #
@@ -196,6 +204,9 @@ def main():
             if enabled is not None:
                 arg['enabled'] = enabled
 
+            if readonly is not None:
+                arg['ro'] = readonly
+
             if module.check_mode:
                 result['msg'] = f"Would have created NFS export \"{name}\" with {arg}"
             else:
@@ -237,6 +248,9 @@ def main():
 
             if enabled is not None and export_info['enabled'] != enabled:
                 arg['enabled'] = enabled
+
+            if readonly is not None and export_info['readonly'] != readonly:
+                arg['ro'] = readonly
 
             # Check whether the new set of paths is the same as the
             # old set.
