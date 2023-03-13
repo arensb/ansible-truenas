@@ -23,9 +23,30 @@ options:
         but are not listed in C(/etc/exports).
       - True by default when a share is created.
     type: bool
+  mapall_user:
+    description:
+      - All requests (including by root) are limited to the permissions
+        of this user.
+      - Mutually-exclusive with C(maproot_user).
+    type: str
+  mapall_group:
+    description:
+      - All requests (including by root) are limited to the permissions
+        of this group.
+      - Mutually-exclusive with C(maproot_group).
+      - Requires C(mapall_user).
+    type: str
   maproot_user:
     description:
       - Requests by user root are limited to the permissions of this user.
+      - Mutually-exclusive with C(mapall_user).
+    type: str
+  maproot_group:
+    description:
+      - Requests by user root are also limited to the permissions of
+        this group.
+      - Mutually-exclusive with C(mapall_group).
+      - Requires C(maproot_user).
     type: str
   name:
     description:
@@ -62,6 +83,8 @@ options:
     type: str
     choices: [ absent, present ]
     default: present
+mutually_exclusive:
+  - [maproot_user, mapall_user]
 '''
 
 # XXX
@@ -85,10 +108,10 @@ def main():
     # x alldirs (bool)
     # x ro (bool)
     # x quiet (bool)
-    # - maproot_user (str)
-    # - maproot_group (str)
-    # - mapall_user (str)
-    # - mapall_group (str)
+    # x maproot_user (str)
+    # x maproot_group (str)
+    # x mapall_user (str)
+    # x mapall_group (str)
     # - security (array(str))
     # x enabled (bool)
     #
@@ -106,8 +129,20 @@ def main():
             enabled=dict(type='bool'),
             readonly=dict(type='bool'),
             maproot_user=dict(type='str'),
-            ),
+            maproot_group=dict(type='str'),
+            mapall_user=dict(type='str'),
+            mapall_group=dict(type='str'),
+        ),
         supports_check_mode=True,
+        mutually_exclusive=[
+            [ 'maproot_user', 'mapall_user' ],
+            [ 'maproot_group', 'mapall_group' ],
+        ],
+        required_by=dict(
+            # Can't have map*_group without its corresponding map*_user.
+            maproot_group=('maproot_user'),
+            mapall_group=('mapall_user'),
+        ),
     )
 
     result = dict(
@@ -126,6 +161,9 @@ def main():
     enabled = module.params['enabled']
     readonly = module.params['readonly']
     maproot_user = module.params['maproot_user']
+    maproot_group = module.params['maproot_group']
+    mapall_user = module.params['mapall_user']
+    mapall_group = module.params['mapall_group']
 
     # Look up the share.
     #
@@ -216,6 +254,15 @@ def main():
             if maproot_user is not None:
                 arg['maproot_user'] = maproot_user
 
+            if maproot_group is not None:
+                arg['maproot_group'] = maproot_group
+
+            if mapall_user is not None:
+                arg['mapall_user'] = mapall_user
+
+            if mapall_group is not None:
+                arg['mapall_group'] = mapall_group
+
             if module.check_mode:
                 result['msg'] = f"Would have created NFS export \"{name}\" with {arg}"
             else:
@@ -261,8 +308,41 @@ def main():
             if readonly is not None and export_info['readonly'] != readonly:
                 arg['ro'] = readonly
 
-            if maproot_user is not None and export_info['maproot_user'] != maproot_user:
+            if maproot_user is not None and \
+               export_info['maproot_user'] != maproot_user:
                 arg['maproot_user'] = maproot_user
+
+                # maproot_user and mapall_user are mutually exclusive.
+                # If setting one, make sure to unset the other.
+                if export_info['mapall_user'] != None:
+                    arg['mapall_user'] = None
+
+            if maproot_group is not None and \
+               export_info['maproot_group'] != maproot_group:
+                arg['maproot_group'] = maproot_group
+
+                # maproot_group and mapall_group are mutually exclusive.
+                # If setting one, make sure to unset the other.
+                if export_info['mapall_group'] != None:
+                    arg['mapall_group'] = None
+
+            if mapall_user is not None and \
+               export_info['mapall_user'] != mapall_user:
+                arg['mapall_user'] = mapall_user
+
+                # maproot_user and mapall_user are mutually exclusive.
+                # If setting one, make sure to unset the other.
+                if export_info['maproot_user'] != None:
+                    arg['maproot_user'] = None
+
+            if mapall_group is not None and \
+               export_info['mapall_group'] != mapall_group:
+                arg['mapall_group'] = mapall_group
+
+                # maproot_group and mapall_group are mutually exclusive.
+                # If setting one, make sure to unset the other.
+                if export_info['maproot_group'] != None:
+                    arg['maproot_group'] = None
 
             # Check whether the new set of paths is the same as the
             # old set.
