@@ -5,9 +5,9 @@ __metaclass__ = type
 
 # XXX
 DOCUMENTATION='''
-module:
-short_description:
-description:
+module: 
+short_description: 
+description: 
 options: 
 '''
 
@@ -55,14 +55,6 @@ def main():
             resource_info = resource_info[0]
     except Exception as e:
         module.fail_json(msg=f"Error looking up resource {name}: {e}")
-
-    # XXX - If the share doesn't:
-        # XXX - If it's supposed to exist:
-            # XXX - Create it
-        # XXX - Else, it's okay.
-    # XXX - Else, the share exists:
-        # XXX - If it's supposed to exist:
-            # XXX - Compare spec to existing 
 
     # First, check whether the resource even exists.
     if resource_info is None:
