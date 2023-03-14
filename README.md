@@ -9,7 +9,7 @@ Control a TrueNAS box using its API.
 
 This collection consists primarily of a set of Ansible modules to
 configure a TrueNAS machine, using the
-(TrueNAS API)[https://www.truenas.com/docs/api/websocket.html]
+[TrueNAS API](https://www.truenas.com/docs/api/websocket.html)
 to control the Middleware Daemon.
 
 There are several ways to talk to the Middleware, but at present this
@@ -67,4 +67,4 @@ The `plugins/modules/template` file provides a starting point for new modules.
 
 ## Authors and Contributors
 
-- Andrew Arensburger (@arensb)[https://mastodon.social/@arensb]
+- Andrew Arensburger ([@arensb](https://mastodon.social/@arensb))
