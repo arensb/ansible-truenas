@@ -67,4 +67,4 @@ The `plugins/modules/template` file provides a starting point for new modules.
 
 ## Authors and Contributors
 
-- Andrew Arensburger ((@arensb)[https://mastodon.social/@arensb])
+- Andrew Arensburger (@arensb)[https://mastodon.social/@arensb]
