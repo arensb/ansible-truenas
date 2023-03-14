@@ -3,7 +3,7 @@ __metaclass__ = type
 
 # Create and manage users.
 
-DOCUMENTATION='''
+DOCUMENTATION = '''
 ---
 module: user
 short_description: Manage user accounts
@@ -171,9 +171,10 @@ XXX
 RETURN = '''
 '''
 
-from ansible.module_utils.basic import AnsibleModule, missing_required_lib
+from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.ooblick.truenas.plugins.module_utils.middleware \
     import MiddleWare as MW
+
 
 def main():
     # user.create() arguments:
@@ -708,7 +709,7 @@ def main():
 
                 # Get the set (not list) of group IDs specified in the
                 # 'groups' option:
-                want_groupset = { g['id'] for g in grouplist_info }
+                want_groupset = {g['id'] for g in grouplist_info}
                 result['want_groupset'] = want_groupset
 
                 if append:

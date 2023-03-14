@@ -27,7 +27,6 @@ This module adds support for midclt on TrueNAS.
 import subprocess
 import json
 from json.decoder import JSONDecodeError
-#from ansible.errors import AnsibleError, AnsibleAssertionError
 
 MIDCLT_CMD = "midclt"
 
@@ -44,7 +43,7 @@ class Midclt:
         """
 
         # Build the command line
-        mid_args = [ MIDCLT_CMD, "call", func]
+        mid_args = [MIDCLT_CMD, "call", func]
 
         # If we were passed arguments, convert them to JSON strings,
         # and add to the command line.
@@ -65,6 +64,6 @@ class Midclt:
         try:
             retval = json.loads(mid_out)
         except JSONDecodeError as e:
-            raise Exception(f"Can't parse {MIDCLT_CMD} output: {mid_out}")
+            raise Exception(f"Can't parse {MIDCLT_CMD} output: {mid_out}: {e}")
 
         return retval

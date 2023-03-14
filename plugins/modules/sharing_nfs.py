@@ -4,7 +4,7 @@ __metaclass__ = type
 # Create and manage NFS shares.
 
 # XXX
-DOCUMENTATION='''
+DOCUMENTATION = '''
 ---
 module: sharing_nfs
 short_description: Manage NFS sharing
@@ -133,7 +133,7 @@ EXAMPLES = '''
 RETURN = '''
 '''
 
-from ansible.module_utils.basic import AnsibleModule, missing_required_lib
+from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.ooblick.truenas.plugins.module_utils.middleware \
     import MiddleWare as MW
 
@@ -141,6 +141,7 @@ from ansible_collections.ooblick.truenas.plugins.module_utils.middleware \
 # import ipaddress
 # network = str(ipaddress.ip_network('10.1.2.3/16', False))
 # => '10.1.0.0/16'
+
 
 def main():
     module = AnsibleModule(
@@ -162,8 +163,8 @@ def main():
         ),
         supports_check_mode=True,
         mutually_exclusive=[
-            [ 'maproot_user', 'mapall_user' ],
-            [ 'maproot_group', 'mapall_group' ],
+            ['maproot_user', 'mapall_user'],
+            ['maproot_group', 'mapall_group'],
         ],
         required_by=dict(
             # Can't have map*_group without its corresponding map*_user.
@@ -245,7 +246,7 @@ def main():
 
     try:
         export_info = mw.call("sharing.nfs.query",
-                                [["comment", "=", name]])
+                              [["comment", "=", name]])
         if len(export_info) == 0:
             # No such export
             export_info = None
@@ -349,7 +350,7 @@ def main():
 
                 # maproot_user and mapall_user are mutually exclusive.
                 # If setting one, make sure to unset the other.
-                if export_info['mapall_user'] != None:
+                if export_info['mapall_user'] is not None:
                     arg['mapall_user'] = None
 
             if maproot_group is not None and \
@@ -358,7 +359,7 @@ def main():
 
                 # maproot_group and mapall_group are mutually exclusive.
                 # If setting one, make sure to unset the other.
-                if export_info['mapall_group'] != None:
+                if export_info['mapall_group'] is not None:
                     arg['mapall_group'] = None
 
             if mapall_user is not None and \
@@ -367,7 +368,7 @@ def main():
 
                 # maproot_user and mapall_user are mutually exclusive.
                 # If setting one, make sure to unset the other.
-                if export_info['maproot_user'] != None:
+                if export_info['maproot_user'] is not None:
                     arg['maproot_user'] = None
 
             if mapall_group is not None and \
@@ -376,7 +377,7 @@ def main():
 
                 # maproot_group and mapall_group are mutually exclusive.
                 # If setting one, make sure to unset the other.
-                if export_info['maproot_group'] != None:
+                if export_info['maproot_group'] is not None:
                     arg['maproot_group'] = None
 
             # Check whether the new set of paths is the same as the

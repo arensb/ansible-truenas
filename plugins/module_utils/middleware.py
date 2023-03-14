@@ -11,6 +11,7 @@
 from ansible_collections.ooblick.truenas.plugins.module_utils.midclt \
     import Midclt
 
+
 class MiddleWare:
     # XXX - What do we want the API to be? How does the caller choose
     # an access method?

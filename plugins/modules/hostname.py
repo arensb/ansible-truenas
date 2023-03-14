@@ -8,7 +8,7 @@ __metaclass__ = type
 # - domain
 
 # XXX
-DOCUMENTATION='''
+DOCUMENTATION = '''
 ---
 module: hostname
 description:
@@ -32,7 +32,7 @@ EXAMPLES = '''
 # RETURN = '''
 # '''
 
-from ansible.module_utils.basic import AnsibleModule, missing_required_lib
+from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.ooblick.truenas.plugins.module_utils.middleware \
     import MiddleWare as MW
 
@@ -41,6 +41,7 @@ from ansible_collections.ooblick.truenas.plugins.module_utils.middleware \
 # https://www.truenas.com/docs/core/uireference/network/globalconfigscreen/
 # it sounds as though "hostname" is the current host, "hostname_b" is
 # its partner in a HA setup, and I don't know what "hostname_virtual" is for.
+
 
 def main():
     module = AnsibleModule(
@@ -76,9 +77,9 @@ def main():
         else:
             try:
                 err = mw.call("network.configuration.update",
-                              { "hostname": name })
+                              {"hostname": name})
             except Exception as e:
-                module.fail_json(msg=f"Error updating hostname with {arg}: {e}")
+                module.fail_json(msg=f"Error updating hostname to {name}: {e}")
             result['status'] = err
         result['changed'] = True
 

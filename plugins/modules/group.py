@@ -21,7 +21,7 @@ options:
     required: true
   gid:
     description:
-      - Optional I(GID) to set for the gruop
+      - Optional I(GID) to set for the group
     type: int
   state:
     description:
@@ -54,9 +54,10 @@ EXAMPLES = '''
     state: absent
 '''
 
-from ansible.module_utils.basic import AnsibleModule, missing_required_lib
+from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.ooblick.truenas.plugins.module_utils.middleware \
     import MiddleWare as MW
+
 
 def main():
     module = AnsibleModule(
@@ -124,7 +125,7 @@ def main():
     # },
     try:
         group_info = mw.call("group.query",
-                      [["group", "=", group]])
+                             [["group", "=", group]])
         # group_info is an array. We specified a "group=<name>"
         # filter, so we'll get either 0 or 1 elements back.
         if len(group_info) == 0:
@@ -133,13 +134,13 @@ def main():
         else:
             # Group exists
             group_info = group_info[0]
-    except AnsibleModuleException as e:
+    except Exception as e:
         module.fail_json(msg=f"Error looking up group {group}: {e.stderr}")
 
     # XXX - Mostly for debugging:
     result['group_info'] = group_info
 
-    if group_info == None:
+    if group_info is None:
         # The group doesn't exist
         if state == 'present':
             # The group is supposed to exist
@@ -251,6 +252,7 @@ def main():
 
     module.exit_json(**result)
 
-### Main
+
+# Main
 if __name__ == "__main__":
     main()

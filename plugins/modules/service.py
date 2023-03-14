@@ -29,9 +29,10 @@ EXAMPLES = '''
 - name: Enable a service
 '''
 
-from ansible.module_utils.basic import AnsibleModule, missing_required_lib
+from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.ooblick.truenas.plugins.module_utils.middleware \
     import MiddleWare as MW
+
 
 def main():
     def start_service(service):
@@ -185,6 +186,7 @@ def main():
     # XXX - Set result['changed']
 
     module.exit_json(**result)
+
 
 if __name__ == "__main__":
     main()

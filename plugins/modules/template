@@ -4,7 +4,7 @@ __metaclass__ = type
 # XXX - One-line description of module
 
 # XXX
-DOCUMENTATION='''
+DOCUMENTATION = '''
 ---
 module: 
 short_description: 
@@ -20,9 +20,10 @@ EXAMPLES = '''
 RETURN = '''
 '''
 
-from ansible.module_utils.basic import AnsibleModule, missing_required_lib
+from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.ooblick.truenas.plugins.module_utils.middleware \
     import MiddleWare as MW
+
 
 def main():
     module = AnsibleModule(
@@ -50,7 +51,7 @@ def main():
                                 [["name", "=", name]])
         if len(resource_info) == 0:
             # No such resource
-            resource_info = None
+            resource_info is None
         else:
             # Resource exists
             resource_info = resource_info[0]
