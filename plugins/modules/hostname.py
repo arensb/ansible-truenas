@@ -9,6 +9,7 @@ __metaclass__ = type
 
 # XXX
 DOCUMENTATION='''
+---
 module: hostname
 description:
   - Set the hostname.
@@ -16,6 +17,7 @@ description:
 options:
   name:
     description:
+      - Hostname to set (not FQDN).
     type: str
     required: yes
 '''

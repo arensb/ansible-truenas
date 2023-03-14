@@ -4,6 +4,7 @@ __metaclass__ = type
 # Create and manage users.
 
 DOCUMENTATION='''
+---
 module: user
 short_description: Manage user accounts
 description:
@@ -69,17 +70,17 @@ options:
     description:
       - User's password, as a crypted string.
       - Required unless C(password_disabled) is true.
-      - Note: Currently there is no way to check whether the password
-        needs to be changed, so this is used only when the user is created.
+      - "Note: Currently there is no way to check whether the password
+        needs to be changed, so this is used only when the user is created."
     type: str
   password_disabled:
     description:
       - If true, the user's password is disabled.
       - They can still log in through other methods (e.g., ssh key).
-      - This is not a flag: if you set C(password_disabled=true) on a user,
+      - "This is not a flag: if you set C(password_disabled=true) on a user,
         the password field in C(/etc/master.passwd) is set to C(*), so
         if you set C(password_disabled=false) again, they won't be able to
-        log in with their old password.
+        log in with their old password."
       - If you need that functionality, do something like prepend "*LOCK*"
         to the crypt string when locking a user, then remove it when
         unlocking.
@@ -106,9 +107,9 @@ options:
     description:
       - Whether the user is allowed to sudo (see also C(sudo_nopasswd) and
         C(sudo_commands)).
-      - Note: this defaults to false. So if you create a user with
+      - "Note: this defaults to false. So if you create a user with
         C(sudo: yes), then comment out that line, the user will be removed
-        from sudo.
+        from sudo."
     type: bool
     default: false
   sudo_nopasswd:

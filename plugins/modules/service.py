@@ -3,6 +3,7 @@ __metaclass__ = type
 
 # XXX - DOCUMENTATION docstring
 DOCUMENTATION = r'''
+---
 module: service
 short_descrption: Manage TrueNAS services
 description:
@@ -15,7 +16,7 @@ options:
     required: true
   state:
     description:
-      - C(started)/C(stopped): make sure the service is started/stopped.
+      - "C(started)/C(stopped): make sure the service is started/stopped."
       - C(restarted) will unconditionally restart the service.
       - C(reloaded) will unconditionally reload the service.
       - At least one of C(state) and C(enabled) is reauired.

@@ -5,6 +5,7 @@ __metaclass__ = type
 
 # XXX
 DOCUMENTATION='''
+---
 module: sharing_nfs
 short_description: Manage NFS sharing
 description:
@@ -101,8 +102,6 @@ options:
     type: str
     choices: [ absent, present ]
     default: present
-mutually_exclusive:
-  - [maproot_user, mapall_user]
 '''
 
 # XXX

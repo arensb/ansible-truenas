@@ -5,6 +5,7 @@ __metaclass__ = type
 
 # XXX
 DOCUMENTATION='''
+---
 module: 
 short_description: 
 description: 
