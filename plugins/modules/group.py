@@ -45,17 +45,17 @@ notes:
 
 EXAMPLES = '''
 - name: Make sure group "mygroup" exists
-  ooblick.truenas.group:
+  arensb.truenas.group:
     name: mygroup
 
 - name: Make sure group "badgroup" is gone
-  ooblick.truenas.group:
+  arensb.truenas.group:
     name: badgroup
     state: absent
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.ooblick.truenas.plugins.module_utils.middleware \
+from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
     import MiddleWare as MW
 
 

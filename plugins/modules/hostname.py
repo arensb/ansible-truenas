@@ -24,7 +24,7 @@ options:
 
 EXAMPLES = '''
 - name: Set hostname
-  ooblick.truenas.hostname:
+  arensb.truenas.hostname:
     name: my-little-host
 '''
 
@@ -33,7 +33,7 @@ EXAMPLES = '''
 # '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.ooblick.truenas.plugins.module_utils.middleware \
+from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
     import MiddleWare as MW
 
 # XXX - network.configuration.update includes three hostnames:

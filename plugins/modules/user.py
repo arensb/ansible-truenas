@@ -135,33 +135,33 @@ options:
 EXAMPLES = '''
 XXX
 - name: Create an ordinary user and their group
-  ooblick.truenas.user:
+  arensb.truenas.user:
     name: bob
     comment: "Bob the User"
     create_group: yes
     password: "<encrypted password string>"
 
 - name: Create an ordinary user and put them into an existing group
-  ooblick.truenas.user:
+  arensb.truenas.user:
     name: bob
     comment: "Bob the User"
     group: users
     password: "<encrypted string>"
 
 - name: Create a user without a working password
-  ooblick.truenas.user:
+  arensb.truenas.user:
     name: bob
     comment: "Bob the User"
     group: bobsgroup
     password_disabled: yes
 
 - name: Delete a user
-  ooblick.truenas.user:
+  arensb.truenas.user:
     name: bob
     state: absent
 
 - name: Delete a user, but keep their primary group, even if it's now empty.
-  ooblick.truenas.user:
+  arensb.truenas.user:
     name: bob
     state: absent
     delete_group: no
@@ -172,7 +172,7 @@ RETURN = '''
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.ooblick.truenas.plugins.module_utils.middleware \
+from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
     import MiddleWare as MW
 
 
@@ -308,8 +308,6 @@ def main():
         changed=False,
         msg=''
     )
-
-    module.debug("Inside ooblick.truenas.user")
 
     mw = MW()
 

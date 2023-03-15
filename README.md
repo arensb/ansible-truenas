@@ -1,4 +1,4 @@
-# Ansible Collection - ooblick.truenas
+# Ansible Collection - arensb.truenas
 
 Control a TrueNAS box using its API.
 
@@ -20,11 +20,11 @@ the future, it may support RESTful control.
 ### Modules
 Name                          | Description
 ----------------------------- | ------------------
-`ooblick.truenas.service`     | Manage services
-`ooblick.truenas.group`       | Manage Unix groups
-`ooblick.truenas.hostname`    | Set the hostname
-`ooblick.truenas.sharing_nfs` | Manage NFS exports
-`ooblick.truenas.user`        | Manage users
+`arensb.truenas.service`     | Manage services
+`arensb.truenas.group`       | Manage Unix groups
+`arensb.truenas.hostname`    | Set the hostname
+`arensb.truenas.sharing_nfs` | Manage NFS exports
+`arensb.truenas.user`        | Manage users
 
 ## Installing this collection
 
@@ -35,7 +35,7 @@ you can clone this repository someplace where Ansible will find it.
 
     - name: Example tasks
       collections:
-        - ooblick.truenas
+        - arensb.truenas
       hosts: truenas-box
       become: yes
       tasks:
@@ -52,13 +52,13 @@ ones, you may want to use the full name to avoid confusion:
     - hosts: truenas-box
       become: yes
       tasks:
-        - ooblick.truenas.hostname:
+        - arensb.truenas.hostname:
             name: new-hostname
 
 The individual modules also have documentation strings, and should work with
 `ansible-doc`, e.g.:
 
-    ansible-doc -t module ooblick.truenas.user
+    ansible-doc -t module arensb.truenas.user
 
 ## Contributing to this collection
 The best way to contribute a patch or feature is to create a pull request.

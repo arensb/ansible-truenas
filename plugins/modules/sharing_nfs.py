@@ -107,13 +107,13 @@ options:
 # XXX
 EXAMPLES = '''
 - name: Export a filesystem
-  ooblick.truenas.sharing_nfs:
+  arensb.truenas.sharing_nfs:
     - name: Home export
       paths:
         - /mnt/pool0/home
 
 - name: Export to only one network
-  ooblick.truenas.sharing_nfs:
+  arensb.truenas.sharing_nfs:
     - name: Home export
       paths:
         - /mnt/pool0/home
@@ -121,7 +121,7 @@ EXAMPLES = '''
         - 192.168.0.0/16
 
 - name: Explicitly export to all hosts and networks
-  ooblick.truenas.sharing_nfs:
+  arensb.truenas.sharing_nfs:
     - name: Home export
       paths:
         - /mnt/pool0/home
@@ -134,7 +134,7 @@ RETURN = '''
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.ooblick.truenas.plugins.module_utils.middleware \
+from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
     import MiddleWare as MW
 
 # XXX - Maybe correct bad CIDR? I think it might be as simple as:

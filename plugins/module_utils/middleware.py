@@ -8,7 +8,7 @@
 # sits between individual modules and the middleware, and uses
 # whichever access method is chosen.
 
-from ansible_collections.ooblick.truenas.plugins.module_utils.midclt \
+from ansible_collections.arensb.truenas.plugins.module_utils.midclt \
     import Midclt
 
 
