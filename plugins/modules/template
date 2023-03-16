@@ -63,7 +63,7 @@ def main():
                                 [["name", "=", name]])
         if len(resource_info) == 0:
             # No such resource
-            resource_info is None
+            resource_info = None
         else:
             # Resource exists
             resource_info = resource_info[0]
@@ -82,7 +82,7 @@ def main():
                 "resourcename": name,
             }
 
-            if feature is not None and:
+            if feature is not None:
                 arg['feature'] = feature
 
             if module.check_mode:
