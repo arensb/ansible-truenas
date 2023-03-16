@@ -12,6 +12,9 @@ from ansible_collections.arensb.truenas.plugins.module_utils.midclt \
     import Midclt
 
 
+# XXX - Ought to define an exception type for things that can go wrong
+# with middleware calls.
+
 class MiddleWare:
     # XXX - What do we want the API to be? How does the caller choose
     # an access method?
