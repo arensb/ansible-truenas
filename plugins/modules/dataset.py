@@ -8,10 +8,20 @@ DOCUMENTATION = '''
 ---
 module: dataset
 short_description: Manage ZFS datasets
-description: 
+description:
+  - Create, delete, and manage ZFS datasets.
 options:
   name:
-    - 
+    description:
+      - Name of the dataset.
+    type: str
+    required: true
+  state:
+    description:
+      - Whether the dataset should exist or not.
+    type: str
+    choices: [ absent, present ]
+    default: present
 '''
 
 # XXX
@@ -29,11 +39,14 @@ from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
 
 def main():
     # XXX - from pool.dataset.create:
-    # - name (str)
+    # x name (str)
     # - type: {FILESYSTEM, VOLUME}
     # - volsize (int)
+    #   required for type==VOLUME. Should be a multiple of block size.
     # - volblocksize: {512, 1K, 2K, 4K, 8K, 16K, 32K, 64K, 128K}
+    #   Only used for type=VOLUME
     # - sparse (bool)
+    #   Only used for type=VOLUME
     # - force_size (bool)
     # - comments (str)
     # - sync: {STANDARD, ALWAYS, DISABLED}
@@ -71,8 +84,10 @@ def main():
     # - inherit_encryption (bool)
     module = AnsibleModule(
         argument_spec=dict(
-            # XXX
             name=dict(type='str'),
+            state=dict(type='str', default='present',
+                       choices=['absent', 'present']),
+            # XXX
             ),
         supports_check_mode=True,
     )
@@ -86,105 +101,111 @@ def main():
 
     # Assign variables from properties, for convenience
     name = module.params['name']
-    # XXX
+    state = module.params['state']
 
-    # XXX - Look up the resource
+    # Look up the dataset.
     try:
-        resource_info = mw.call("resource.query",
-                                [["name", "=", name]])
-        if len(resource_info) == 0:
-            # No such resource
-            resource_info is None
+        # pool.dataset.query has both "id" and "name", which are
+        # always the same, it looks like. I think "id" is the
+        # middleware database identifier, while "name" is what you'd
+        # use while managing ZFS.
+        dataset_info = mw.call("pool.dataset.query",
+                               [["name", "=", name]])
+        if len(dataset_info) == 0:
+            # No such dataset
+            dataset_info = None
         else:
-            # Resource exists
-            resource_info = resource_info[0]
+            # Dataset exists
+            dataset_info = dataset_info[0]
     except Exception as e:
-        module.fail_json(msg=f"Error looking up resource {name}: {e}")
+        module.fail_json(msg=f"Error looking up dataset {name}: {e}")
 
-    # First, check whether the resource even exists.
-    if resource_info is None:
-        # Resource doesn't exist
+    result['info'] = dataset_info
+
+    # First, check whether the dataset even exists.
+    if dataset_info is None:
+        # Dataset doesn't exist
 
         if state == 'present':
-            # Resource is supposed to exist, so create it.
+            # Dataset is supposed to exist, so create it.
 
-            # Collect arguments to pass to resource.create()
+            # Collect arguments to pass to dataset.create()
             arg = {
-                "resourcename": name,
+                "name": name,
             }
 
-            if feature is not None and:
-                arg['feature'] = feature
+            # if feature is not None:
+            #     arg['feature'] = feature
 
             if module.check_mode:
-                result['msg'] = f"Would have created resource {name} with {arg}"
+                result['msg'] = f"Would have created dataset {name} with {arg}"
             else:
                 #
-                # Create new resource
+                # Create new dataset
                 #
                 try:
-                    err = mw.call("resource.create", arg)
+                    err = mw.call("pool.dataset.create", arg)
                     result['msg'] = err
                 except Exception as e:
                     result['failed_invocation'] = arg
-                    module.fail_json(msg=f"Error creating resource {name}: {e}")
+                    module.fail_json(msg=f"Error creating dataset {name}: {e}")
 
-                # Return whichever interesting bits resource.create()
+                # Return whichever interesting bits dataset.create()
                 # returned.
-                result['resource_id'] = err
+                result['dataset_id'] = err
 
             result['changed'] = True
         else:
-            # Resource is not supposed to exist.
+            # Dataset is not supposed to exist.
             # All is well
             result['changed'] = False
 
     else:
-        # Resource exists
+        # Dataset exists
         if state == 'present':
-            # Resource is supposed to exist
+            # Dataset is supposed to exist
 
             # Make list of differences between what is and what should
             # be.
             arg = {}
 
-            if feature is not None and resource_info['feature'] != feature:
-                arg['feature'] = feature
+            # if feature is not None and dataset_info['feature'] != feature:
+            #     arg['feature'] = feature
 
-            # If there are any changes, resource.update()
+            # If there are any changes, dataset.update()
             if len(arg) == 0:
                 # No changes
                 result['changed'] = False
             else:
                 #
-                # Update resource.
+                # Update dataset.
                 #
                 if module.check_mode:
-                    result['msg'] = f"Would have updated resource {name}: {arg}"
+                    result['msg'] = f"Would have updated dataset {name}: {arg}"
                 else:
                     try:
-                        err = mw.call("resource.update",
-                                      resource_info['id'],
+                        err = mw.call("pool.dataset.update",
+                                      dataset_info['id'],
                                       arg)
                     except Exception as e:
-                        module.fail_json(msg=f"Error updating resource {name} with {arg}: {e}")
+                        module.fail_json(msg=f"Error updating dataset {name} with {arg}: {e}")
                         # Return any interesting bits from err
                         result['status'] = err['status']
                 result['changed'] = True
         else:
-            # Resource is not supposed to exist
+            # Dataset is not supposed to exist
 
             if module.check_mode:
-                result['msg'] = f"Would have deleted resource {name}"
+                result['msg'] = f"Would have deleted dataset {name}"
             else:
                 try:
                     #
-                    # Delete resource.
+                    # Delete dataset.
                     #
-                    err = mw.call("resource.delete",
-                                  resource_info['id'])
+                    err = mw.call("pool.dataset.delete",
+                                  dataset_info['id'])
                 except Exception as e:
-                    module.fail_json(msg=f"Error deleting resource {name}: {e}")
+                    module.fail_json(msg=f"Error deleting dataset {name}: {e}")
             result['changed'] = True
 
     module.exit_json(**result)
