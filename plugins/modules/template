@@ -9,7 +9,17 @@ DOCUMENTATION = '''
 module: 
 short_description: 
 description: 
-options: 
+options:
+  name:
+    - Name of the resource
+    type: str
+    required: true
+  state:
+    description:
+      - Whether the resource should exist or not.
+    type: str
+    choices: [ absent, present ]
+    default: present
 '''
 
 # XXX
@@ -30,6 +40,8 @@ def main():
         argument_spec=dict(
             # XXX
             name=dict(type='str'),
+            state=dict(type='str', default='present',
+                       choices=['absent', 'present']),
             ),
         supports_check_mode=True,
     )
