@@ -11,6 +11,10 @@ short_description: Manage ZFS datasets
 description:
   - Create, delete, and manage ZFS datasets.
 options:
+  comment:
+    description:
+      - Comment attached to the dataset.
+    type: str
   name:
     description:
       - Name of the dataset.
@@ -87,6 +91,7 @@ def main():
             name=dict(type='str'),
             state=dict(type='str', default='present',
                        choices=['absent', 'present']),
+            comment=dict(type=str),
             # XXX
             ),
         supports_check_mode=True,
@@ -102,6 +107,7 @@ def main():
     # Assign variables from properties, for convenience
     name = module.params['name']
     state = module.params['state']
+    comment = module.params['comment']
 
     # Look up the dataset.
     try:
@@ -117,6 +123,7 @@ def main():
         else:
             # Dataset exists
             dataset_info = dataset_info[0]
+
     except Exception as e:
         module.fail_json(msg=f"Error looking up dataset {name}: {e}")
 
@@ -134,8 +141,8 @@ def main():
                 "name": name,
             }
 
-            # if feature is not None:
-            #     arg['feature'] = feature
+            if comment is not None:
+                arg['comment'] = comment
 
             if module.check_mode:
                 result['msg'] = f"Would have created dataset {name} with {arg}"
@@ -169,8 +176,29 @@ def main():
             # be.
             arg = {}
 
-            # if feature is not None and dataset_info['feature'] != feature:
-            #     arg['feature'] = feature
+            # XXX - Looks like 'comments' is actually an object:
+            #    "comments": {
+            #      "value": "<comment>",
+            #      "rawvalue": "<comment>",
+            #      "parsed": "<comment>",
+            #      "source": "LOCAL"
+            #    },
+            #
+            # I don't know what the difference is between "value",
+            # "rawvalue", and "parsed". Every time I've looked,
+            # they've been the same. It doesn't seem to be about
+            # escaping \n, or <b>HTML</b>.
+
+            # XXX - If you set the comments to "" (empty string), you
+            # wind up with the same data structure, with empty string
+            # for all three values.
+            # How to delete the comment entirely?
+
+            if comment is not None:
+                if "comments" not in dataset_info or \
+                   "rawvalue" not in dataset_info['comments'] or \
+                   dataset_info['comments']['rawvalue'] != comment:
+                    arg['comments'] = comment
 
             # If there are any changes, dataset.update()
             if len(arg) == 0:
