@@ -30,10 +30,23 @@ options:
 
 # XXX
 EXAMPLES = '''
+- name: Create a filesystem
+  arensb.truenas.dataset:
+    name: pool0/mydata
+
+- name: Delete a filesystem
+  arensb.truenas.dataset:
+    name: pool0/mydata
+    state: absent
 '''
 
 # XXX
 RETURN = '''
+dataset:
+  description:
+    - A data structure describing the characteristics of a newly-created
+      dataset.
+  type: dict
 '''
 
 from ansible.module_utils.basic import AnsibleModule
@@ -157,9 +170,12 @@ def main():
                     result['failed_invocation'] = arg
                     module.fail_json(msg=f"Error creating dataset {name}: {e}")
 
-                # Return whichever interesting bits dataset.create()
-                # returned.
-                result['dataset_id'] = err
+                # Returns a long data structure. Looks like the same
+                # one that pool.dataset.create() takes, or that
+                # pool.dataset.update() returns (I haven't compared
+                # them).
+                # Looks interesting. Return it.
+                result['dataset'] = err
 
             result['changed'] = True
         else:
