@@ -18,6 +18,15 @@ options:
         and removed from any other groups.
     type: bool
     default: false
+  append_pubkeys:
+    description:
+      - If true, the keys specified in C(ssh_authorized_keys) will be added
+        to the user's C(~/.ssh/authorized_keys), but any others that might
+        be there will not be removed.
+      - If false, any keys not explicitly listed in C(ssh_authorized_keys)
+        will be removed from the user's C(~/.ssh/authorized_keys).
+    type: bool
+    default: false
   comment:
     description:
       - The full name (I(GECOS) field) of the user.
@@ -227,6 +236,7 @@ def main():
             # additional groups.
             ssh_authorized_keys=dict(type='list', elements='str',
                                      aliases=['pubkeys']),
+            append_pubkeys=dict(type='bool', default=False),
 
             groups=dict(type='list'),
             home=dict(type='path'),
@@ -328,6 +338,7 @@ def main():
     sudo_nopasswd = module.params['sudo_nopasswd']
     sudo_commands = module.params['sudo_commands']
     ssh_authorized_keys = module.params['ssh_authorized_keys']
+    append_pubkeys = module.params['append_pubkeys']
     shell = module.params['shell']
 
     # Look up the user.
@@ -611,7 +622,20 @@ def main():
 
                 want_keys = set(ssh_authorized_keys)
 
-                if old_keys != want_keys:
+                if append_pubkeys:
+                    # See which keys need to be added to the user
+                    new_keys = want_keys.difference(old_keys)
+
+                    # This conditional here is so that, if there are
+                    # no new keys to be added, we don't add an entry
+                    # to 'arg', making this module report that there
+                    # was a change.
+                    if len(new_keys) != 0:
+                        # Append any new keys to the end of the file.
+                        arg['sshpubkey'] = \
+                            "\n".join(old_keys.union(want_keys)) + "\n"
+
+                elif old_keys != want_keys:
                     # user.update() expects a string, not a list.
                     # And don't forget the \n at the end of the file.
                     arg['sshpubkey'] = "\n".join(ssh_authorized_keys)+"\n"
