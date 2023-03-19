@@ -620,7 +620,9 @@ def main():
                 else:
                     old_keys = set(user_info['sshpubkey'].rstrip().split("\n"))
 
-                want_keys = set(ssh_authorized_keys)
+                # Keys might have trailing whitespace, but that
+                # doesn't make them unique.
+                want_keys = set([k.rstrip() for k in ssh_authorized_keys])
 
                 if append_pubkeys:
                     # See which keys need to be added to the user
