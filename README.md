@@ -30,8 +30,17 @@ Name                         | Description
 
 ## Installing this collection
 
-At some point, this will be available through Ansible Galaxy. Until then,
-you can clone this repository someplace where Ansible will find it.
+The easiest way to install this collection is
+[through Ansible Galaxy](https://galaxy.ansible.com/arensb/truenas):
+
+    ansible-galaxy collection install arensb.truenas
+
+<!--
+If you want a git repository, e.g., for development:
+
+1. Pick a directory `/my/collections/ansible_collections` to put the collection in.
+2. Make sure that in your `ansible.cfg`, you have
+ -->
 
 ## Examples
 
