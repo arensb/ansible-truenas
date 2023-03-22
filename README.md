@@ -18,15 +18,16 @@ will need root access there, just as for any other Ansible client. In
 the future, it may support RESTful control.
 
 ### Modules
-Name                         | Description
----------------------------- | ------------------
-`arensb.truenas.filesystem`  | Manage ZFS filesystems.
-`arensb.truenas.group`       | Manage Unix groups.
-`arensb.truenas.hostname`    | Set the hostname.
-`arensb.truenas.nfs`         | Manage NFS service configuration.
-`arensb.truenas.service`     | Manage services.
-`arensb.truenas.sharing_nfs` | Manage NFS exports.
-`arensb.truenas.user`        | Manage users.
+Name                           | Description
+------------------------------ | ------------------
+`arensb.truenas.filesystem`    | Manage ZFS filesystems.
+`arensb.truenas.group`         | Manage Unix groups.
+`arensb.truenas.hostname`      | Set the hostname.
+`arensb.truenas.nfs`           | Manage NFS service configuration.
+`arensb.truenas.service`       | Manage services.
+`arensb.truenas.sharing_nfs`   | Manage NFS exports.
+`arensb.truenas.systemdataset` | Manage the system dataset.
+`arensb.truenas.user`          | Manage users.
 
 ## Installing this collection
 
