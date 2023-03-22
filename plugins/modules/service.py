@@ -9,6 +9,14 @@ short_descrption: Manage TrueNAS services
 description:
   - Controls services on TrueNAS.
 options:
+  enabled:
+    description:
+      - Whether the service is enabled (True) or disabled (False)
+    type: bool
+  ha_propagate:
+    description:
+      - I don't know. I think this is for High Availability in
+        TrueNAS Enterprise.
   name:
     description:
     - Name of the service.
@@ -104,9 +112,6 @@ def main():
 
     # Get service name
     service = module.params['name']
-    # XXX - midclt call service.query [["service", "=", "ssh"]]
-
-    # XXX - Could look for a pattern with: [["service", "~", "foo"]]
 
     # Get information about the service
     try:
