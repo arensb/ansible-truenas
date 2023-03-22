@@ -30,6 +30,23 @@ from json.decoder import JSONDecodeError
 
 MIDCLT_CMD = "midclt"
 
+class MidcltError(Exception):
+    def __init__(self, value, progress=None, error=None, exception=None):
+        self.value = value
+        # progress: an object with job progress info:
+        # {
+        #     percent: int, percent completion
+        #     description: str, running log of stdout (?)
+        #     extra: ?, can be null.
+        # }
+        self.progress = progress
+        # error: str, job stderr error message
+        self.error = error
+        # exception: str, failed job stack trace
+        self.exception = exception
+
+    def __str__(self):
+        return f'{self.error}: {repr(self.value)}'
 
 class Midclt:
     # XXX - Maybe other commands beside "call"?:
