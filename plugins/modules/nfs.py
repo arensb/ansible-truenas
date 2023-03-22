@@ -20,7 +20,9 @@ DOCUMENTATION = '''
 ---
 module: nfs
 short_description: Configure NFS service
-description: 
+description:
+  - Configure the NFS service.
+  - For individual NFS exports, see C(sharing_nfs)
 options:
   nfsv4:
     description:
