@@ -27,3 +27,6 @@ class MiddleWare:
 
     def call(self, func, *args):
         return Midclt.call(func, *args)
+
+    def job(self, func, *args):
+        return Midclt.job(func, *args)

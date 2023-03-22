@@ -87,3 +87,25 @@ class Midclt:
             raise Exception(f"Can't parse {MIDCLT_CMD} output: {mid_out}: {e}")
 
         return retval
+
+    @staticmethod
+    def job(func, *args):
+        """Run the API function 'func', with arguments 'args'.
+
+        Jobs are different from calls in that jobs are asynchronous,
+        since they may run for a long time.
+
+        This method starts a job, then waits for it to complete. If it
+        finishes successfully, 'job' returns the job's status.
+        """
+
+        try:
+            err = Midclt.call(func,
+                              opts=["-job", "-jp", "description"],
+                              *args)
+            # Returns an object with the same information as
+            # systemdataset.config
+        except Exception:
+            raise
+
+        return err
