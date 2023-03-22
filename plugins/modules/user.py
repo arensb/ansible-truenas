@@ -228,7 +228,7 @@ def main():
             # We set no_log explicitly to False, because otherwise
             # module_utils.basic sees "password" in the name and gets
             # worried.
-            password_disabled=dict(type='bool', default=False, no_log=False),
+            password_disabled=dict(type='bool', no_log=False),
 
             # XXX - There should probably be an option saying whether
             # or not to allow other keys in .ssh/authorized_keys, the
@@ -380,10 +380,12 @@ def main():
                 # Either password_disabled == True, or password must be
                 # supplied.
                 "password": password,
-                "password_disabled": password_disabled,
             }
 
             # Easy cases first
+            if password_disabled is not None:
+                arg['password_disabled'] = password_disabled
+
             if comment is None:
                 arg['full_name'] = ""
             else:
@@ -556,7 +558,8 @@ def main():
             # if password is not None and user_info['password'] != password:
             #     arg['password'] = password
 
-            if user_info['password_disabled'] != password_disabled:
+            if password_disabled is not None and \
+               user_info['password_disabled'] != password_disabled:
                 arg['password_disabled'] = password_disabled
 
             if comment is not None and user_info['full_name'] != comment:
