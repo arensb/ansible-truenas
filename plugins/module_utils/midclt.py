@@ -30,6 +30,7 @@ from json.decoder import JSONDecodeError
 
 MIDCLT_CMD = "midclt"
 
+
 class MidcltError(Exception):
     def __init__(self, value, progress=None, error=None, exception=None):
         self.value = value
@@ -47,6 +48,7 @@ class MidcltError(Exception):
 
     def __str__(self):
         return f'{self.error}: {repr(self.value)}'
+
 
 class Midclt:
     # XXX - Maybe other commands beside "call"?:
