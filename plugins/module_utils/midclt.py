@@ -53,14 +53,17 @@ class Midclt:
     # ping, waitready, sql, subscribe.
 
     @staticmethod
-    def call(func, *args):
+    def call(func, *args, opts=[]):
         """Call the API function 'func', with arguments 'args'.
+
+        'opts' are additional options passed to 'midclt call', not to
+        'func'.
 
         Return the status and return value.
         """
 
         # Build the command line
-        mid_args = [MIDCLT_CMD, "call", func]
+        mid_args = [MIDCLT_CMD, "call", *opts, func]
 
         # If we were passed arguments, convert them to JSON strings,
         # and add to the command line.
