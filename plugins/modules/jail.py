@@ -174,12 +174,26 @@ def main():
                     result['failed_invocation'] = arg
                     module.fail_json(msg=f"Error creating jail {name}: {e}")
 
+                result['jail'] = err
+
+                # XXX - err['state'] can be "up", "down", and apparently
+                # that's it.
+
                 # XXX - If state == running, jail.start().
                 # if state == restarted, jail.restart().
 
-                # Return whichever interesting bits jail.create()
-                # returned.
-                result['jail_id'] = err
+                # At this point, normally the jail is down. Check
+                # whether that's what the caller wanted.
+                if state in ('present', 'stopped'):
+                    # This is fine.
+                    # I'm okay with the events that are unfolding currently.
+                    pass
+                else:
+                    try:
+                        err = mw.job("jail.start", name)
+                        result['state'] = err
+                    except Exception as e:
+                        module.fail_json(msg=f"Error starting jail {name}: {e}")
 
             result['changed'] = True
         else:
@@ -189,50 +203,113 @@ def main():
 
     else:
         # Jail exists
-        if state == 'present':
-            # Jail is supposed to exist
-
-            # Make list of differences between what is and what should
-            # be.
-            arg = {}
-
-            if feature is not None and jail_info['feature'] != feature:
-                arg['feature'] = feature
-
-            # If there are any changes, jail.update()
-            if len(arg) == 0:
-                # No changes
-                result['changed'] = False
-            else:
-                #
-                # Update jail.
-                #
-                if module.check_mode:
-                    result['msg'] = f"Would have updated jail {name}: {arg}"
-                else:
-                    try:
-                        err = mw.call("jail.update",
-                                      jail_info['id'],
-                                      arg)
-                    except Exception as e:
-                        module.fail_json(msg=f"Error updating jail {name} with {arg}: {e}")
-                        # Return any interesting bits from err
-                        result['status'] = err['status']
-                result['changed'] = True
-        else:
+        if state == 'absent':
             # Jail is not supposed to exist
 
+            if jail_info['state'] == "up":
+                #
+                # Stop the jail.
+                #
+                if module.check_mode:
+                    result['msg'] += f"Would have stopped jail {name}."
+                else:
+                    try:
+                        err = mw.job("jail.stop", name)
+                    except Exception as e:
+                        module.fail_json(msg=f"Error stopping jail {name}: {e}")
+                    result['status_stop'] = err
+
             if module.check_mode:
-                result['msg'] = f"Would have deleted jail {name}"
+                result['msg'] += f"Would have deleted jail {name}."
             else:
                 try:
                     #
                     # Delete jail.
                     #
-                    err = mw.call("jail.delete",
-                                  jail_info['id'])
+                    err = mw.call("jail.delete", name)
                 except Exception as e:
                     module.fail_json(msg=f"Error deleting jail {name}: {e}")
+            result['changed'] = True
+            module.exit_json(**result)
+
+        # The jail exists. Check whether its configuration needs to be
+        # updated.
+
+        # Start out by assuming that nothing is changing.
+        result['changed'] = False
+
+        # XXX
+        # Make list of differences between what is and what should
+        # be.
+        arg = {}
+
+        # if feature is not None and jail_info['feature'] != feature:
+        #     arg['feature'] = feature
+
+        # If there are any changes, jail.update()
+        if len(arg) == 0:
+            # No changes
+            pass
+        else:
+            #
+            # Update jail.
+            #
+            if module.check_mode:
+                result['msg'] = f"Would have updated jail {name}: {arg}"
+            else:
+                try:
+                    err = mw.call("jail.update", name,
+                                  arg)
+                except Exception as e:
+                    module.fail_json(msg=f"Error updating jail {name} with {arg}: {e}")
+                    # Return any interesting bits from err
+                    result['status'] = err['status']
+            result['changed'] = True
+
+        # XXX - Now see whether it needs to be brought up or down, or
+        # restarted.
+        if 'state' == 'running':
+            if jail_info['state'] == 'up':
+                # All is well
+                pass
+            else:
+                # We want it to be running, but it's not.
+                if module.check_mode:
+                    result['msg'] += f"Would have started jail {name}"
+                else:
+                    try:
+                        err = mw.job("jail.start", name)
+                    except Exception as e:
+                        module.fail_json(msg=f"Error starting jail {name}: {e}")
+                result['changed'] = True
+        elif state == 'stopped':
+            # XXX
+            if jail_info['state'] == 'up':
+                # We want it to be stopped, but it's up.
+                # XXX
+                if module.check_mode:
+                    result['msg'] += f"Would have stopped jail {name}"
+                else:
+                    try:
+                        err = mw.job("jail.stop", name)
+                    except Exception as e:
+                        module.fail_json(msg=f"Error stopping jail {name}: {e}")
+                    result['status'] = err
+                result['changed'] = True
+            else:
+                # We want it to be stopped, and it's down.
+                # all is well
+                pass
+        elif state == 'restarted':
+            # Either way, restart it.
+            if module.check_mode:
+                result['msg'] += f"Would have restarted jail {name}"
+            else:
+                try:
+                    err = mw.job("jail.restart", name)
+                except Exception as e:
+                    module.fail_json(msg=f"Error restarting jail {name}: {e}")
+                result['status'] = err
             result['changed'] = True
 
     module.exit_json(**result)
