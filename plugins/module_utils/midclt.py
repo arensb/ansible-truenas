@@ -55,11 +55,15 @@ class Midclt:
     # ping, waitready, sql, subscribe.
 
     @staticmethod
-    def call(func, *args, opts=[]):
+    def call(func, *args, opts=[], output='json'):
         """Call the API function 'func', with arguments 'args'.
 
         'opts' are additional options passed to 'midclt call', not to
         'func'.
+
+        'output' specifies the expected format of the output from 'midclt':
+        most commands output JSON, but some print strings. Allowed
+        values are: "json", "str".
 
         Return the status and return value.
         """
@@ -82,16 +86,22 @@ class Midclt:
             # Exited with a non-zero code
             raise Exception(f"{MIDCLT_CMD} exited with status {e.returncode}: \"{e.stdout}\"")
 
-        # Parse stdout as JSON
-        try:
-            retval = json.loads(mid_out)
-        except JSONDecodeError as e:
-            raise Exception(f"Can't parse {MIDCLT_CMD} output: {mid_out}: {e}")
+        if output == "str":
+            # I assume everyone's using UTF-8 by now.
+            retval = str(mid_out, 'utf-8').rstrip()
+        elif output == "json":
+            # Parse stdout as JSON
+            try:
+                retval = json.loads(mid_out)
+            except JSONDecodeError as e:
+                raise Exception(f"Can't parse {MIDCLT_CMD} output: {mid_out}: {e}")
+        else:
+            raise Exception(f"Invalid output format {output}")
 
         return retval
 
     @staticmethod
-    def job(func, *args):
+    def job(func, *args, **kwargs):
         """Run the API function 'func', with arguments 'args'.
 
         Jobs are different from calls in that jobs are asynchronous,
@@ -104,7 +114,7 @@ class Midclt:
         try:
             err = Midclt.call(func,
                               opts=["-job", "-jp", "description"],
-                              *args)
+                              *args, **kwargs)
             # Returns an object with the same information as
             # systemdataset.config
         except Exception:

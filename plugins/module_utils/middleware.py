@@ -25,8 +25,8 @@ class MiddleWare:
     def __init__(self, access='midclt', *args):
         pass
 
-    def call(self, func, *args):
-        return Midclt.call(func, *args)
+    def call(self, func, *args, **kwargs):
+        return Midclt.call(func, *args, **kwargs)
 
-    def job(self, func, *args):
-        return Midclt.job(func, *args)
+    def job(self, func, *args, **kwargs):
+        return Midclt.job(func, *args, **kwargs)
