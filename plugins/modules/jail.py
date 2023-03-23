@@ -47,6 +47,12 @@ EXAMPLES = '''
 
 # XXX
 RETURN = '''
+jail:
+  description:
+    - An object containing a description of a newly-created jail.
+      The format is the same as that returned by the C(jail.query)
+      middleware call.
+  type: dict
 '''
 
 from ansible.module_utils.basic import AnsibleModule
@@ -66,10 +72,6 @@ def main():
     # - short (bool)
     # - props (list)
     # - https (bool)
-
-    # XXX - When creating, required:
-    # - release
-    # - uuid
 
     # XXX - What's the difference between clone jail and basejail?
     # - Clone jail: "thin": read-only mount of a FreeBSD release, plus
@@ -129,7 +131,7 @@ def main():
     release = module.params['release']
     # packages = module.params['packages']
 
-    # XXX - Look up the jail
+    # Look up the jail
     try:
         jail_info = mw.call("jail.query",
                             [["id", "=", name]])
