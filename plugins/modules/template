@@ -11,7 +11,8 @@ short_description:
 description: 
 options:
   name:
-    - Name of the resource
+    description:
+      - Name of the resource
     type: str
     required: true
   state:
