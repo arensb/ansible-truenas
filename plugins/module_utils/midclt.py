@@ -55,6 +55,26 @@ class Midclt:
     # ping, waitready, sql, subscribe.
 
     @staticmethod
+    def _to_json(msg):
+        """Given a string printed by 'midclt', convert it to JSON."""
+
+        # Convert from bytes to string, if necessary.
+        if isinstance(msg, bytes):
+            msg = str(msg, 'utf-8')
+
+        # Trim whitespace if necessary.
+        msg = msg.strip()
+
+        # Special case: some jobs print "True" or "False", which
+        # is not valid JSON.
+        # jail.stop() can print "null", but that's valid JSON.
+        if msg in ("True", "False"):
+            # Convert to lower case, which is legal JSON.
+            msg = msg.lower()
+
+        return json.loads(msg)
+
+    @staticmethod
     def call(func, *args, opts=[], output='json'):
         """Call the API function 'func', with arguments 'args'.
 
@@ -92,7 +112,7 @@ class Midclt:
         elif output == "json":
             # Parse stdout as JSON
             try:
-                retval = json.loads(mid_out)
+                retval = Midclt._to_json(mid_out)
             except JSONDecodeError as e:
                 raise Exception(f"Can't parse {MIDCLT_CMD} output: {mid_out}: {e}")
         else:
@@ -124,7 +144,8 @@ class Midclt:
 
             # Get the last line, which is hopefully JSON.
             ret_str = lines.pop()
-            retval = json.loads(ret_str)
+            retval = Midclt._to_json(ret_str)
+
         except Exception:
             # Any number of things might have gone wrong:
             # - Wrong options to the middleware call
