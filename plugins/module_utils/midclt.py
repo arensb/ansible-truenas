@@ -114,10 +114,23 @@ class Midclt:
         try:
             err = Midclt.call(func,
                               opts=["-job", "-jp", "description"],
+                              output='str',
                               *args, **kwargs)
-            # Returns an object with the same information as
-            # systemdataset.config
+
+            # We've asked for 'str' output, so 'err' should be a bunch of
+            # lines: first a bunch of progress messages, and then a
+            # JSON string on the last line.
+            lines = err.rstrip().split("\n")
+
+            # Get the last line, which is hopefully JSON.
+            ret_str = lines.pop()
+            retval = json.loads(ret_str)
         except Exception:
+            # Any number of things might have gone wrong:
+            # - Wrong options to the middleware call
+            # - err isn't a string
+            # - err is the empty string (and pop() fails)
+            # - The last line isn't proper JSON.
             raise
 
-        return err
+        return retval
