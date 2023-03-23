@@ -132,7 +132,7 @@ def main():
     # XXX - Look up the jail
     try:
         jail_info = mw.call("jail.query",
-                            [["name", "=", name]])
+                            [["id", "=", name]])
         if len(jail_info) == 0:
             # No such jail
             jail_info = None
