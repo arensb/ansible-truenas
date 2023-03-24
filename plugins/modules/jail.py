@@ -90,7 +90,6 @@ def main():
     # anything except return a value, since it has to run on the
     # client, not on the Ansible master.
 
-    # XXX - jail.exec(): run a command inside a jail
     # XXX - jail.fetch(): fetch a release or plugin
     # XXX - jail.fstab(): manipulate a jail's fstab.
     # XXX - (jail.import_image() - import from image)
@@ -98,10 +97,6 @@ def main():
     # XXX - jail.rc_action(): Run the start/stop/restart script.
     #   Put this in the 'state' option, similar to 'service' module?
     #   aws.ec2 has: absent, present, restarted, running, stopped)[Default: present]
-
-    # XXX - jail.start(): (job) start the jail itself.
-    # XXX - jail.stop(): (job) stop the jail itself.
-    # XXX - jail.restart(): (job) restart the jail itself.
 
     # XXX - jail.update()
     # - plugin (bool)
@@ -171,7 +166,6 @@ def main():
                 #
                 try:
                     err = mw.job("jail.create", arg)
-                    result['msg'] = err
                 except Exception as e:
                     result['failed_invocation'] = arg
                     module.fail_json(msg=f"Error creating jail {name}: {e}")
@@ -193,9 +187,9 @@ def main():
                 else:
                     try:
                         err = mw.job("jail.start", name)
-                        result['state'] = err
                     except Exception as e:
                         module.fail_json(msg=f"Error starting jail {name}: {e}")
+                result['status'] = err
 
             result['changed'] = True
         else:
@@ -257,7 +251,7 @@ def main():
             # Update jail.
             #
             if module.check_mode:
-                result['msg'] = f"Would have updated jail {name}: {arg}"
+                result['msg'] += f"Would have updated jail {name}: {arg}"
             else:
                 try:
                     err = mw.call("jail.update", name,
@@ -265,17 +259,19 @@ def main():
                 except Exception as e:
                     module.fail_json(msg=f"Error updating jail {name} with {arg}: {e}")
                     # Return any interesting bits from err
-                    result['status'] = err['status']
+                    result['status'] = err
             result['changed'] = True
 
-        # XXX - Now see whether it needs to be brought up or down, or
+        # Now see whether it needs to be brought up or down, or
         # restarted.
         if 'state' == 'running':
             if jail_info['state'] == 'up':
-                # All is well
+                # We want it to be running, and it's up.
+                # All is well.
                 pass
             else:
                 # We want it to be running, but it's not.
+                # Start it.
                 if module.check_mode:
                     result['msg'] += f"Would have started jail {name}"
                 else:
@@ -284,11 +280,11 @@ def main():
                     except Exception as e:
                         module.fail_json(msg=f"Error starting jail {name}: {e}")
                 result['changed'] = True
+
         elif state == 'stopped':
-            # XXX
             if jail_info['state'] == 'up':
                 # We want it to be stopped, but it's up.
-                # XXX
+                # Stop it.
                 if module.check_mode:
                     result['msg'] += f"Would have stopped jail {name}"
                 else:
@@ -302,7 +298,9 @@ def main():
                 # We want it to be stopped, and it's down.
                 # all is well
                 pass
+
         elif state == 'restarted':
+            # The jail exists, but may be either up or down.
             # Either way, restart it.
             if module.check_mode:
                 result['msg'] += f"Would have restarted jail {name}"
