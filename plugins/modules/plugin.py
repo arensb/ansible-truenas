@@ -181,7 +181,7 @@ def main():
                         return (repo_url, pkg['plugin'])
                 else:
                     # Look by ID
-                    if pkg['plugin'] == name:
+                    if pkg['plugin'] == plugin_id:
                         # Found it
                         return (repo_url, pkg['plugin'])
         else:
@@ -390,94 +390,27 @@ def main():
 
             # Collect arguments to pass to plugin.create()
             arg = {
-                # XXX - Needs to be set by find_plugin()
-                # "plugin_name": name,
                 "jail_name": jail,
-                # XXX - plugin_repository
             }
 
-            # err = find_plugin()
             if repository_url is None and repository is None:
-                # XXX - We don't know which repo the plug in is in, so
-                # we'll need to search them all.
+                # We don't know which repo the plug in is in, so we'll
+                # need to search them all.
                 (repository_url, plugin_id) = search_plugin()
             else:
                 # We have either the name or URL of the repository.
                 # Find the plugin there.
                 (repository_url, plugin_id) = lookup_plugin()
 
-            # # XXX - Figure out which repository to use.
-            # repositories = None         # XXX - Debugging
-            # if repository_url is not None:
-            #     arg['plugin_repository'] = repository_url
-            # else:
-            #     # XXX - Get list of repositories
-            #     try:
-            #         repositories = mw.call("plugin.official_repositories")
-            #     except Exception as e:
-            #         module.fail_json(msg=f"Error looking up repositories: {e}")
+            arg['plugin_repository'] = repository_url
+            arg['plugin_name'] = plugin_id
 
-            #     # 'repositories' is a dict, mapping an identifier like
-            #     # "IXSYSTEMS" or "COMMUNITY" to a dict:
-            #     # {
-            #     #   git_repository: <url>
-            #     #   name: human-friendly name
-            #     # }
-
-            #     if  repository is not None:
-            #         # Look up this repository's URL
-            #         repo = {"it":r for r in repositories \
-            #                 if r['name'] == repository}
-            #         if len(repo) == 0:
-            #             module.fail_json(msg=f"No such repository: {repository}")
-
-            #         # There should only be 0 or 1 such repositories.
-            #         arg['plugin_repository'] = repo['it']
-            #     else:
-            #         # XXX - Look through all repositories for the named
-            #         # plugin.
-            #         for repo_id, repo in repositories.items():
-            #             result['msg'] += f"trying repo {repo_id} -> {repo}\n"
-            #             try:
-            #                 avail = mw.job("plugin.available",
-            #                                {
-            #                                    "plugin_repository": repo['git_repository']
-            #                                })
-            #             except Exception as e:
-            #                 module.fail_json(msg=f"Error looking up packages in repository {repo['name']}: {e}")
-
-            #             match = [pkg for pkg in avail if pkg['plugin'] == name]
-
-            #             if len(match) > 0:
-            #                 # Found a match
-            #                 result['msg'] += "Found match\n"
-            #                 repository = repo['git_repository']
-            #                 arg['plugin_repository'] = repo['git_repository']
-            #                 break
-
-            #         # # If we've gotten this far, we haven't found a
-            #         # # plugin with the given name as its ID. So
-            #         # # let's try searching by human-friendly name.
-
-            #         # match = [pkg for pkg in avail if pkg['name'] == name]
-
-            #         # if len(match) > 0:
-            #         #     arg['plugin_repository'] = repo['git_repository']
-
-
-            # XXX - Just for debugging.
-            # result['repositories'] = repositories
-            result['arg'] = {
-                "repository_url": repository_url,
-                "plugin_id": plugin_id,
-            }
-            module.exit_json(**result)
-
+            # Other features the caller might set:
             # If feature is not None:
             #     arg['feature'] = feature
 
             if module.check_mode:
-                result['msg'] = f"Would have created plugin {name} with {arg}"
+                result['msg'] = f"Would have created plugin {name if plugin_id is None else plugin_id} with {arg}"
             else:
                 #
                 # Create new plugin
