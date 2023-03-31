@@ -84,17 +84,30 @@ options:
 EXAMPLES = '''
 - name: Install a plugin by name from any collection
   arensb.truenas.plugin:
-    name: Plugin Media Server
+    name: Plex
+    plugin: Plex Media Server
 
 - name: Install a plugin by name from a specific collection
   arensb.truenas.plugin:
-    name: Plugin Media Server
+    name: Plex 2
+    plugin: Plugin Media Server
     repository: iXsystems
 
 - name: "Fully specified: use both plugin ID and repository URL"
   arensb.truenas.plugin:
+    name: Plex 3
     plugin_id: plexmediaserver
     repository_url: https://github.com/ix-plugin-hub/iocage-plugin-index.git
+
+# Install two instances of a plugin in different jails.
+- arensb.truenas.plugin:
+    name: Brad's Library
+    plugin: Calibre-Web
+    repository: Community
+- arensb.truenas.plugin:
+    name: Janet's Library
+    plugin: Calibre-Web
+    repository: Community
 '''
 
 # XXX
