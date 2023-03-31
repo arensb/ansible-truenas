@@ -373,8 +373,15 @@ def main():
             # Plugin is not supposed to exist
 
             if module.check_mode:
-                result['msg'] = f"Would have deleted plugin {name}"
+                result['msg'] = f"Would have stopped and deleted plugin {name}"
             else:
+                # Stop the jail
+                if plugin_info['jid'] is not None:
+                    try:
+                        err = mw.job("jail.stop", name)
+                    except Exception as e:
+                        module.fail_json(msg=f"Error stopping jail {name}): {e}")
+
                 try:
                     #
                     # Delete plugin.
