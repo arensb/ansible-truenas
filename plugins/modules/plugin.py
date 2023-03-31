@@ -25,24 +25,32 @@ short_description: Manage plugins.
 description:
   - Install, remove, and manage TrueNAS plugins.
 options:
-  jail:
     description:
-      - Name of the jail in which this instance of the plugin will be
-        installed.
-      - This is a jail identifier. See the I(jail) module for more
-        details.
-    type: str
-    required: yes
+  # jail:
+  #   description:
+  #     - Name of the jail in which this instance of the plugin will be
+  #       installed.
+  #     - This is a jail identifier. See the I(jail) module for more
+  #       details.
+  #   type: str
   name:
     description:
-      - Name of the plugin.
+      - Name of the plugin instance.
+      - This is different from the plugin package: you can run multiple
+        copies of the same software package in different jails, if you
+        give them all unique names.
     type: str
     required: true
-    aliases: [ plugin ]
+  plugin:
+    description:
+      - The human-friendly name of the plugin, as displayed in the TrueNAS
+        console.
+      - If I(plugin_id) is supplied, C(plugin) is ignored.
   plugin_id:
     description:
       - The ID or slug of the plugin. Unlike the name, this is not
         displayed in the TrueNAS web UI.
+      - Overrides I(plugin).
     type: str
   repository:
     description:
@@ -110,10 +118,10 @@ def main():
         # non-None.
 
         nonlocal module, repository_url, repository, \
-            plugin_id, name
+            plugin_id, plugin
 
         # First step: if we don't have a repo URL, look it up from the
-        # name.
+        # collection name.
         if repository_url is None:
             # Look up the list of repositories, and try to find one
             # with the name we need.
@@ -142,11 +150,11 @@ def main():
 
             # Look up plugin by name
             for pkg in pkgs:
-                if pkg['name'] == name:
+                if pkg['name'] == plugin:
                     plugin_id = pkg['plugin']
                     break
             else:
-                module.fail_json(msg=f"No package named {name} in repository {repository_url}")
+                module.fail_json(msg=f"No package named {plugin} in repository {repository_url}")
 
         return (repository_url, plugin_id)
 
@@ -155,7 +163,10 @@ def main():
 
         Search all known repositories for the plugin."""
 
-        nonlocal module, plugin_id, name, result
+        nonlocal module, plugin_id, plugin, result
+
+        # XXX - I think that if the plugin_id is given, that's all we
+        # need: we can save time and let the middleware do the lookup.
 
         # Get list of known repositories.
         try:
@@ -178,7 +189,7 @@ def main():
             for pkg in packages:
                 if plugin_id is None:
                     # Look by name
-                    if pkg['name'] == name:
+                    if pkg['name'] == plugin:
                         # Found it
                         return (repo_url, pkg['plugin'])
                 else:
@@ -187,7 +198,7 @@ def main():
                         # Found it
                         return (repo_url, pkg['plugin'])
         else:
-            module.fail_json(msg=f"Can't find package {name if plugin_id is None else plugin_id} in any repository.")
+            module.fail_json(msg=f"Can't find package {plugin if plugin_id is None else plugin_id} in any repository.")
 
         module.fail_json(msg="Should never get this far.")
 
@@ -200,26 +211,25 @@ def main():
             #   - nat (bool?)
             #   - nat_forwards?
             # - branch (str)
-            # - repository (str)
 
             # - enabled (bool) Whether it starts at boot time, similar
             #       to service 'enabled'
             #       Alias: 'boot'
             #       Defalt: True
-            jail=dict(type='str', required=True),
-            name=dict(type='str', aliases=['plugin']),
+            name=dict(type='str', required=True),
+            plugin=dict(type='str'),
             plugin_id=dict(type='str'),
             state=dict(type='str', default='present',
                        choices=['absent', 'present']),
-            repository_url=dict(type='str'),
             repository=dict(type='str'),
+            repository_url=dict(type='str'),
             ),
         supports_check_mode=True,
         # mutually_exclusive=[
-        #     ['name', 'plugin_id'],
+        #     ['plugin', 'plugin_id'],
         #     ['repository_url', 'repository']],
         required_one_of=[
-            ['name', 'plugin_id'],
+            ['plugin', 'plugin_id'],
         ],
     )
 
@@ -232,16 +242,16 @@ def main():
 
     # Assign variables from properties, for convenience
     name = module.params['name']
+    plugin = module.params['plugin']
     plugin_id = module.params['plugin_id']
-    jail = module.params['jail']
     state = module.params['state']
-    repository_url = module.params['repository_url']
     repository = module.params['repository']
+    repository_url = module.params['repository_url']
 
     # Look up the plugin
     try:
         plugin_info = mw.call("plugin.query",
-                              [["id", "=", jail]])
+                              [["name", "=", name]])
         if len(plugin_info) == 0:
             # No such plugin
             plugin_info = None
@@ -257,10 +267,25 @@ def main():
 
         if state == 'present':
             # Plugin is supposed to exist, so create it.
+            #
+            # At the very least, need: {
+            #    jail_name: <name>,
+            #    plugin_name: <plugin_id>,
+            # }
+
+            # XXX - Props:
+            # midclt call ... plugin.create
+            #   {
+            #     "jail_name": "my jail",
+            #     "plugin_name":"minio",
+            #     "props": [
+            #        "boot=off"
+            #     ]
+            #   }
 
             # Collect arguments to pass to plugin.create()
             arg = {
-                "jail_name": jail,
+                "jail_name": name,
             }
 
             if repository_url is None and repository is None:
@@ -272,7 +297,8 @@ def main():
                 # Find the plugin there.
                 (repository_url, plugin_id) = lookup_plugin()
 
-            arg['plugin_repository'] = repository_url
+            if repository_url is not None:
+                arg['plugin_repository'] = repository_url
             arg['plugin_name'] = plugin_id
 
             # Other features the caller might set:
@@ -280,7 +306,7 @@ def main():
             #     arg['feature'] = feature
 
             if module.check_mode:
-                result['msg'] = f"Would have created plugin {name if plugin_id is None else plugin_id} with {arg}"
+                result['msg'] = f"Would have created plugin {name} with {arg}"
             else:
                 #
                 # Create new plugin
