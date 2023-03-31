@@ -25,7 +25,10 @@ short_description: Manage plugins.
 description:
   - Install, remove, and manage TrueNAS plugins.
 options:
+  enabled:
     description:
+      - Whether the plugin is started at boot time.
+    type: bool
   # jail:
   #   description:
   #     - Name of the jail in which this instance of the plugin will be
@@ -223,6 +226,7 @@ def main():
                        choices=['absent', 'present']),
             repository=dict(type='str'),
             repository_url=dict(type='str'),
+            enabled=dict(type='bool'),
             ),
         supports_check_mode=True,
         # mutually_exclusive=[
@@ -247,6 +251,7 @@ def main():
     state = module.params['state']
     repository = module.params['repository']
     repository_url = module.params['repository_url']
+    enabled = module.params['enabled']
 
     # Look up the plugin
     try:
@@ -287,6 +292,7 @@ def main():
             arg = {
                 "jail_name": name,
             }
+            props = []
 
             if repository_url is None and repository is None:
                 # We don't know which repo the plug in is in, so we'll
@@ -302,8 +308,11 @@ def main():
             arg['plugin_name'] = plugin_id
 
             # Other features the caller might set:
-            # If feature is not None:
-            #     arg['feature'] = feature
+            if enabled is not None:
+                props.append(f"boot={'yes' if enabled else 'no'}")
+
+            if len(props) > 0:
+                arg['props'] = props
 
             if module.check_mode:
                 result['msg'] = f"Would have created plugin {name} with {arg}"
