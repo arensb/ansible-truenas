@@ -34,8 +34,9 @@ options:
       - If 'absent', the jail will be removed.
       - If 'present', the jail will be created if it doesn't exist, but
         will not be started.
-      - 'running' and 'stopped' allow you to make sure the jail is up or down.
-      - 'restarted' will restart the jail, similar to rebooting it.
+      - "'running' and 'stopped' allow you to make sure the jail is up
+        or down."
+      - "'restarted' will restart the jail, similar to rebooting it."
     type: str
     choices: [ absent, present, restarted, running, stopped ]
     default: present
