@@ -39,9 +39,9 @@ options:
   name:
     description:
       - Name of the plugin instance.
-      - This is different from the plugin package: you can run multiple
+      - "This is different from the plugin package: you can run multiple
         copies of the same software package in different jails, if you
-        give them all unique names.
+        give them all unique names."
     type: str
     required: true
   plugin:
@@ -72,9 +72,9 @@ options:
       - If 'absent', the plugin (and its jail) will be removed.
       - If 'present', the plugin will be installed if necessarily, but
         if it isn't running, won't be started.
-      - 'running' and 'stopped' allow you to make sure the plugin's
-        jail is up or down.
-      - 'restarted' will restart the plugin's jail, similar to rebooting it.
+      - "'running' and 'stopped' allow you to make sure the plugin's
+        jail is up or down."
+      - "'restarted' will restart the plugin's jail, similar to rebooting it."
     type: str
     choices: [ absent, present, restarted, running, stopped ]
     default: present
