@@ -25,6 +25,7 @@ Name                           | Description
 `arensb.truenas.hostname`      | Set the hostname.
 `arensb.truenas.jails`         | Manage the jail system.
 `arensb.truenas.nfs`           | Manage NFS service configuration.
+`arensb.truenas.plugin`        | Manage plugins and their jails.
 `arensb.truenas.service`       | Manage services.
 `arensb.truenas.sharing_nfs`   | Manage NFS exports.
 `arensb.truenas.systemdataset` | Manage the system dataset.
