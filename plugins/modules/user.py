@@ -47,6 +47,10 @@ options:
       - Only used when deleting a user.
     type: bool
     default: true
+  email:
+    description:
+      - User's email address, in the form I(user@dom.ain).
+    type: str
   group:
     description:
       - The name of the user's primary group.
@@ -269,6 +273,7 @@ def main():
             # x uid(int)
             # x comment(str) - GECOS
             comment=dict(type='str'),
+            email=dict(type='str'),
             # - hidden(bool)
             # - non_unique(bool)
             # - seuser(str) - SELinux user type
@@ -331,6 +336,7 @@ def main():
     append = module.params['append']
     home = module.params['home']
     comment = module.params['comment']
+    email = module.params['email']
     state = module.params['state']
     delete_group = module.params['delete_group']
     sudo = module.params['sudo']
@@ -389,6 +395,9 @@ def main():
                 arg['full_name'] = ""
             else:
                 arg['full_name'] = comment
+
+            if email is not None:
+                arg['email'] = email
 
             if uid is not None:
                 arg['uid'] = uid
@@ -563,6 +572,9 @@ def main():
 
             if comment is not None and user_info['full_name'] != comment:
                 arg['full_name'] = comment
+
+            if email is not None and user_info['email'] != email:
+                arg['email'] = email
 
             if shell is not None and user_info['shell'] != shell:
                 arg['shell'] = shell
