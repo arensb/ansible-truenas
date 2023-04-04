@@ -120,7 +120,6 @@ options:
         C(sudo: yes), then comment out that line, the user will be removed
         from sudo."
     type: bool
-    default: false
   sudo_nopasswd:
     description:
       - Allows user to sudo without a password.
@@ -243,7 +242,7 @@ def main():
             # XXX - remove: delete home directory. builtin.user allows
             # doing this.
 
-            sudo=dict(type='bool', default=False),
+            sudo=dict(type='bool'),
             sudo_nopasswd=dict(type='bool', default=False,),
             sudo_commands=dict(type='list',
                                elements='str'),
