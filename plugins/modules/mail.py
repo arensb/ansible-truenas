@@ -12,7 +12,14 @@ description:
 options:
   # XXX
   from_email:
+    description:
+      - Address from which system email will be sent. Must be in the form
+        of an email address: I(user@dom.ain).
+      - This is used as both the envelope and header \"From\" address.
+    type: str
   from_name:
+    description:
+      - Full name used in the email's \"From\" header.
   server:
   port:
   security:
