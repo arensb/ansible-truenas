@@ -4,6 +4,39 @@ __metaclass__ = type
 # Configure a jail.
 # To configure the jail system, see the jails module.
 
+# XXX - To mount a filesystem inside a jail, use jail.fstab().
+# midclt call jail.fstab calibre '{"action":"LIST"}'
+#
+#   "14": {
+#     "entry": [
+#       "/mnt/luggage1/text/Calibre Library",
+#       "/mnt/luggage0/iocage/jails/calibre/root/media",
+#       "nullfs",
+#       "ro",
+#       "0",
+#       "0"
+#     ],
+#     "type": "USER"
+#   }
+#
+# Looks like "USER" is for additional mounts beyond those set up by the
+# jail or the plugin.
+#
+# community.docker.docker_container has option 'mounts':
+# list of dicts.
+#       - source: directory on host
+#       - target: where to mount inside the container
+#       - type: mount type ("nullfs" for most jails, I think)
+#       - volume_options: dictionary of options
+# 'volumes' option:
+#       list of strings of the format
+#               /host:/container[:mode]
+#       mode can be "ro", "rw", and others.
+# Maybe want to allow similar shorthand for jails.
+
+# XXX - It looks as though 'jail.get_instance "foo"' is the same as
+# jail.query [["id","=","foo"]]
+
 # XXX
 DOCUMENTATION = '''
 ---

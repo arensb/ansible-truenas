@@ -144,6 +144,15 @@ from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
 
 
 def main():
+    # XXX - One important use case isn't addressed: ensure that
+    # /mnt/path is _not_ exported.
+    #
+    # Unfortunately, since we use 'name' as an identifier, this is
+    # hard to check. So maybe require 'name' only if 'state==present'.
+    #
+    # It's probably cleaner to have separate functions for
+    # state==present and state==absent.
+
     module = AnsibleModule(
         argument_spec=dict(
             name=dict(type='str', required=True, aliases=['comment']),
@@ -244,6 +253,11 @@ def main():
     # - Likewise, can't export a directory to different networks in
     #   different exports.
 
+    # XXX - If we're trying to remove an export, look by path, not by
+    # comment. And 'paths' is an array, so I don't think there's a
+    # good way to search by "string is member of $array", so we might
+    # need to query all of 'sharing.nfs.query()', and see if the path
+    # is in any export.
     try:
         export_info = mw.call("sharing.nfs.query",
                               [["comment", "=", name]])
@@ -321,6 +335,18 @@ def main():
         else:
             # NFS export is not supposed to exist.
             # All is well
+
+            # XXX - Is this correct? 'paths' is an array. So if the
+            # caller specifies
+            #   sharing_nfs:
+            #     paths: /path/one
+            #     state: absent
+            #     # No 'name'.
+            # and there's an export with
+            #     /path/one
+            #     /path/two
+            #     /path/three
+            # how should this be handled?
             result['changed'] = False
 
     else:

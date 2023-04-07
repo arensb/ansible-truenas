@@ -18,6 +18,13 @@ __metaclass__ = type
 # The 'plugin' value (here: "syncthing") comes from "plugin" in the
 # output of plugin.query()
 
+# XXX - A plugin is basically a jail, with software installed on top.
+# A lot of the configuration is the same, though, like networking, and
+# mounting filesystems.
+#
+# So to the extent possible, the options for 'plugin' should match the
+# ones for 'jail'.
+
 DOCUMENTATION = '''
 ---
 module: plugin
