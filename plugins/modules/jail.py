@@ -37,6 +37,10 @@ __metaclass__ = type
 # XXX - It looks as though 'jail.get_instance "foo"' is the same as
 # jail.query [["id","=","foo"]]
 
+# XXX - Since plugins and jails are so closely entwined, maybe it
+# would be good to have a Jail class that the plugin module could use.
+# - Mount directory
+
 # XXX
 DOCUMENTATION = '''
 ---
@@ -161,6 +165,10 @@ def main():
     # packages = module.params['packages']
 
     # Look up the jail
+
+    # XXX - jail.query() only looks up jails that use the current pool
+    # (which you can get with jail.get_activated_pool()).
+
     try:
         jail_info = mw.call("jail.query",
                             [["id", "=", name]])

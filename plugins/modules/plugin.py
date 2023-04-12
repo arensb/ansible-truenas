@@ -17,6 +17,10 @@ __metaclass__ = type
 #     }
 # The 'plugin' value (here: "syncthing") comes from "plugin" in the
 # output of plugin.query()
+#
+# midclt call plugin.defaults \
+#    '{"plugin":"calibre-web",
+#    "plugin_repository":"https://github.com/ix-plugin-hub/iocage-plugin-index.git"}'
 
 # XXX - A plugin is basically a jail, with software installed on top.
 # A lot of the configuration is the same, though, like networking, and
