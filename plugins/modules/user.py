@@ -68,7 +68,7 @@ options:
     description:
       - User's home directory.
       - Note that TrueNAS has restrictions on what this can be. As of this
-        writing, the home directory has to begin with "/tmp", or be
+        writing, the home directory has to begin with "/mnt", or be
         "/nonexistent".
       - Note that if you create a user with home directory C("/nonexistent"),
         then later change it to a real directory, that directory will not
