@@ -246,8 +246,14 @@ def main():
                     #
                     # Delete filesystem.
                     #
+
+                    # XXX - Is it a good idea to just assume
+                    # "recursive" by default? The caller has already
+                    # had to manually specify "state: absent", so
+                    # probably okay.
                     err = mw.call("pool.dataset.delete",
-                                  fs_info['id'])
+                                  fs_info['id'],
+                                  {"recursive": True})
                 except Exception as e:
                     module.fail_json(msg=f"Error deleting filesystem {name}: {e}")
             result['changed'] = True
