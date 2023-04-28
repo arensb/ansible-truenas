@@ -73,6 +73,12 @@ options:
       - Note that if you create a user with home directory C("/nonexistent"),
         then later change it to a real directory, that directory will not
         be populated with dot files.
+      - Note: If you create an account with a home directory that does not
+        end in the username (e.g., if C(name: bob) and
+        C(home: /mnt/pool0/homes)), TrueNAS will append the username to
+        form the real home directory (C(/mnt/pool0/homes/bob), in this
+        example). This is not recommended. It is better to use the full
+        home directory, ending with the username.
   name:
     description:
       - Name of the user to manage.
