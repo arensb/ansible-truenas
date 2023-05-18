@@ -55,11 +55,15 @@ options:
       - Name of the jail. This must be a unique ID.
     type: str
     required: true
-  # packages:
-  #   description:
-  #     - List of packages to install when the jail is created.
-  #   type: list
-  #   elements: str
+  packages:
+    description:
+      - List of packages to install when the jail is created.
+      - Each entry can be either a port (e.g., C(lang/python39)), a
+        package (e.g., C(python39)), or a specific version of a
+        package (e.g., C(python39-3.9.16_2)).
+    type: list
+    elements: str
+    aliases: [ pkglist ]
   release:
     description:
       - Name of FreeBSD release to base this jail on.
@@ -141,12 +145,11 @@ def main():
 
     module = AnsibleModule(
         argument_spec=dict(
-            # XXX
             name=dict(type='str'),
             state=dict(type='str', default='present',
                        choices=['absent', 'present', 'restarted', 'running', 'stopped']),
             release=dict(type='str'),
-            # packages=dict(type='list', elements='str'),
+            packages=dict(type='list', elements='str', aliases=['pkglist']),
             ),
         supports_check_mode=True,
     )
@@ -162,12 +165,13 @@ def main():
     name = module.params['name']
     state = module.params['state']
     release = module.params['release']
-    # packages = module.params['packages']
+    packages = module.params['packages']
 
     # Look up the jail
 
     # XXX - jail.query() only looks up jails that use the current pool
     # (which you can get with jail.get_activated_pool()).
+    # Maybe add a 'pool' argument to specify whcih pool to check?
 
     try:
         jail_info = mw.call("jail.query",
@@ -199,6 +203,9 @@ def main():
 
             # if release is None:
             #     arg['feature'] = feature
+
+            if packages is not None:
+                arg['pkglist'] = packages
 
             if module.check_mode:
                 result['msg'] = f"Would have created jail {name} with {arg}"
