@@ -147,7 +147,8 @@ def main():
         argument_spec=dict(
             name=dict(type='str'),
             state=dict(type='str', default='present',
-                       choices=['absent', 'present', 'restarted', 'running', 'stopped']),
+                       choices=['absent', 'present', 'restarted',
+                                'running', 'stopped']),
             release=dict(type='str'),
             packages=dict(type='list', elements='str', aliases=['pkglist']),
             ),
