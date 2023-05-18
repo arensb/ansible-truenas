@@ -23,6 +23,7 @@ Name                           | Description
 `arensb.truenas.filesystem`    | Manage ZFS filesystems.
 `arensb.truenas.group`         | Manage Unix groups.
 `arensb.truenas.hostname`      | Set the hostname.
+`arensb.truenas.jail`          | Set up a jail.
 `arensb.truenas.jails`         | Manage the jail system.
 `arensb.truenas.nfs`           | Manage NFS service configuration.
 `arensb.truenas.plugin`        | Manage plugins and their jails.
