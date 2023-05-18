@@ -4,6 +4,9 @@ __metaclass__ = type
 # Configure a jail.
 # To configure the jail system, see the jails module.
 
+# XXX - Check whether a package is installed on a non-running jail:
+# pkg -c /mnt/tank/iocage/jails/backup/root info -e python311
+
 # XXX - To mount a filesystem inside a jail, use jail.fstab().
 # midclt call jail.fstab calibre '{"action":"LIST"}'
 #
@@ -100,6 +103,8 @@ jail:
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
     import MiddleWare as MW
+# import re
+# import subprocess
 
 
 def main():
@@ -310,6 +315,107 @@ def main():
                     # Return any interesting bits from err
                     result['status'] = err
             result['changed'] = True
+
+        # XXX - It might be nice to be able to manage packages in
+        # extant jails, and not just at jail creation. However, this
+        # is rather tricky, because jails may or may not be running,
+        # and may or may not have an Internet connection. So for now
+        # at least, let's just have this module install packages at
+        # jail creation. After all, jails are a lot like containers,
+        # and containers ought to be cattle.
+        #
+        # People who want to install packages after the jail has been
+        # created can run 'iocage pkg' or 'pkg -j' after the fact.
+
+        # if packages is not None:
+        #     # Get the list of installed packages
+        #     # pkg -c /mnt/<pool>/iocage/jails/<jail_name>/root info -ao
+        #     #
+        #     # This lists two items per line: the packager, and its origin, e.g.
+        #     # py39-setuptools-63.1.0         devel/py-setuptools
+        #     #
+        #     # The package ends in -\d+\.\d+\.\d+(_\d+)? so strip that off.
+        #     # Here, note that the package is "py39-", while the origin is
+        #     # "py-".
+
+        #     # Note that 'pkg' has the '-j <jail-id>' argument that
+        #     # allows us to list and install packages in jails. But we
+        #     # don't use that because it only works with running jails.
+        #     # And secondly, we might want to have jails that don't have
+        #     # a network connection.
+
+        #     # XXX - How to get the jail's root directory, for 'pkg -c'?
+        #     # midclt call jail.get_iocroot() returns iocage jail directory:
+        #     # /mnt/tank/iocage
+        #     # AFAICT it's just assumed that the root directory is
+        #     # {iocroot}/jails/{jail_name}/root
+
+        #     # Get the root of all iocage jails.
+        #     try:
+        #         iocroot = mw.call("jail.get_iocroot", output="str")
+        #     except Exception as e:
+        #         module.fail_json(msg=f"Error getting iocage root: {e}")
+
+        #     # XXX - Get the list of installed packages
+        #     try:
+        #         # We use 'pkg -c <root-dir> info -ao' rather than
+        #         # 'iocage pkg <jail-name> info -ao' because the latter
+        #         # doesn't work when the jail is stopped.
+        #         pkg_out = subprocess.check_output(['pkg',
+        #                                            '-c', f"{iocroot}/jails/{name}/root",
+        #                                            "info",
+        #                                            "-ao"],
+        #                                           stderr=subprocess.STDOUT,
+        #                                           text=True)
+        #     except subprocess.CalledProcessError as e:
+        #         # Exited with a non-zero code.
+        #         module.fail_json(msg=f"iocage pkg exited with status {e.returncode}: \"{e.stdout}\"")
+
+        #     # XXX - Split iocage_out into lines.
+        #     # XXX - Each line has (\S+)\s+(\S+): package and port name.
+        #     # Collect both and add to installed_packages.
+
+        #     # XXX - Subtract installed_packages from packages. If
+        #     # there's anything left over, install it.
+
+        #     # XXX - Ought to have a way to specify that certain
+        #     # packages must be absent. Perhaps something like:
+        #     #   packages:
+        #     #     - foo
+        #     #     - bar
+        #     #     - package: baz
+        #     #       state: absent
+
+        #     # XXX - If the package list has changed, install/remove packages,
+        #     # and mark result['changed'] = True.
+
+        #     installed_pkgs = []
+        #     for line in pkg_out.splitlines():
+        #         # print(f"line: {line}")
+        #         try:
+        #             # packages end in a version number, but the
+        #             # general case is fiendishly hard to parse, so we
+        #             # don't even try. Just look for the last dash.
+        #             #
+        #             # ports (package origins) are in two parts:
+        #             # <section>/<port-name>, but we don't care about that.
+        #             matches = re.match(r"^(\S+)-\S+?\s+(\S+)", line)
+        #             installed_pkgs.append(matches[1])   # Package
+        #             installed_pkgs.append(matches[2])   # Origin port
+        #         except TypeError:
+        #             # Presumably we're here because re.match() didn't match and
+        #             # returned None.
+
+        #             # Probably no need to fail the entire module. But
+        #             # do spit out a warning.
+        #             module.warn(f"No regexp match in {line}")
+
+        #         # XXX - For debugging
+        #         result['installed_pkgs'] = installed_pkgs
+
+        #         new_pkgs = set(packages).difference(set(installed_pkgs))
+        #         # XXX - For debugging
+        #         result['new_pkgs'] = new_pkgs
 
         # Now see whether it needs to be brought up or down, or
         # restarted.
