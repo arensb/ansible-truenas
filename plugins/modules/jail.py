@@ -108,7 +108,7 @@ def main():
     # - basejail (bool)
     # - release (str)
     # - template (str)
-    # - pkglist (list(str)) -> packages
+    # x pkglist (list(str)) -> packages
     # - uuid (str): use name
     # - empty (bool)
     # - short (bool)
@@ -131,6 +131,8 @@ def main():
     # available. Might need to write this as a module that doesn't do
     # anything except return a value, since it has to run on the
     # client, not on the Ansible master.
+    #
+    # jail.releases_choices
 
     # XXX - jail.fetch(): fetch a release or plugin
     # XXX - jail.fstab(): manipulate a jail's fstab.
