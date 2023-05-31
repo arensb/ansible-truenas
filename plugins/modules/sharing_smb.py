@@ -13,13 +13,51 @@ short_description: Manage SMB sharing
 description:
   - Create, manage, and delete SMB shares.
 options:
+  abe:
+    description:
+      - Enable Access Based Share Enumeration.
+    type: bool
+  acl:
+    description:
+      - When set, enables ACL support for the share.
+    type: bool
+  apple_encoding:
+    description:
+      - Use Apple-style character encoding.
+      - By default, Samba uses a hashing algorithm for filename characters
+        that are illegal in NTFS. This option causes it to translate such
+        characters to the Unicode private range.
+    type: bool
   auxsmbconf:
     description:
       - Additional smb4.conf options.
     type: str
+  browsable:
+    description:
+      - If true, share is visible when browsing shares.
+    type: bool
   comment:
     description:
       - Description of the share, for the system maintainer.
+    type: str
+  durablehandle:
+    description:
+      - Enables using file handles that can withstand short disconnections.
+      - Enables support for POSIX byte-range locks.
+    type: bool
+  enabled:
+    description:
+      - If true, the share is enabled. Otherwise, it is present but
+        disabled.
+    type: bool
+  fsrvp:
+    description:
+      - Enable File Server Remote VSS Protocol (FSRVP).
+      - This allows RPC clients to manage snapshots for the share.
+    type: bool
+  guestok:
+    description:
+      - Enables guest access (no login).
     type: str
   hostsallow:
     description:
@@ -29,6 +67,10 @@ options:
         precedence.
     type: list
     elements: str
+  home:
+    description:
+      - If true, this share may be used for home directories.
+      - Only one such share is allowed.
   hostsdeny:
     description:
       - List of hostnames/IP addresses of hosts that are denied access
@@ -62,12 +104,32 @@ options:
       - Note that the C(purpose) parameter may override other parameters.
         In particular, C(DEFAULT_SHARE) specifies an empty C(hostsallow)
         and C(hostsdeny).
+  recyclebin:
+    description:
+      - If true, enables Windows Recycle Bin: deleted files are moved to the
+        Recycle Bin. If false, deleted files are immediately deleted.
+    type: bool
+  ro:
+    description:
+      - If true, share is read-only.
+    type: bool
+  shadowcopy:
+    description:
+      - When set, export ZFS snapshots as VSS shadow copies.
+    type: bool
   state:
     description:
       - Whether the share should exist or not.
     type: str
     choices: [ absent, present ]
     default: present
+  streams:
+    description:
+      - Allow multiple NTFS data streams.
+  timemachine:
+    description:
+      - Enables support for Apple Time Machine backups.
+    type: bool
 '''
 
 # XXX
@@ -97,32 +159,32 @@ def main():
     #   (require)
     # x path_suffix (str): Appended to the share connection path.
     #   May contain macros. See smb.conf(5).
-    # - home (bool): Allows the share to host home directories.
+    # x home (bool): Allows the share to host home directories.
     #   Only one such share is allowed.
     # x name (str): (human-readable?) name of the share. Required.
     #   How share will appear in client's network browser.
     # x comment (str): Description or notes for the system maintainer.
-    # - ro (bool): Read-only
-    # - browsable (bool): if true (default), is visible when browsing shares.
-    # - timemachine (bool): Enables Time Machine backups.
-    # - recyclebin (bool): Enable Recycle Bin: deleted files are moved
+    # x ro (bool): Read-only
+    # x browsable (bool): if true (default), is visible when browsing shares.
+    # x timemachine (bool): Enables Time Machine backups.
+    # x recyclebin (bool): Enable Recycle Bin: deleted files are moved
     #   to the Recycle Bin, not deleted permanently as with NFS.
-    # - guestok (bool): Allows passwordless access
-    # - abe (bool): Access Based Share Enumeration(?): restrict visibility
+    # x guestok (bool): Allows passwordless access
+    # x abe (bool): Access Based Share Enumeration(?): restrict visibility
     #   to only those who have read or write access.
     # x hostsallow (list): List of hostnames/IP addresses that have access.
     #   https://www.samba.org/samba/docs/current/man-html/smb.conf.5.html#HOSTSALLOW
     # x hostsdeny (list): List of hostnames/IP addresses that are explicitly
     #   denied access. Can be "ALL", to deny access to any that aren't allowed.
-    # - aapl_name_mangling (bool)
-    # - acl (bool): store SMB Security Descriptor as filesystem ACL.
-    # - durablehandle (bool)
-    # - shadowcopy (bool): enables volume shadow copy service.
-    # - streams (bool): "enables support for storing alternate datastreams
+    # x aapl_name_mangling (bool)
+    # x acl (bool): store SMB Security Descriptor as filesystem ACL.
+    # x durablehandle (bool)
+    # x shadowcopy (bool): enables volume shadow copy service.
+    # x streams (bool): "enables support for storing alternate datastreams
     #   as filesystem extended attributes."
-    # - fsrvp (bool): filesystem remote VSS protocol.
+    # x fsrvp (bool): filesystem remote VSS protocol.
     # x auxsmbconf (str): additional smb4.conf parameters.
-    # - enabled (bool)
+    # x enabled (bool)
     module = AnsibleModule(
         argument_spec=dict(
             path=dict(type='str', required=True),
@@ -136,9 +198,23 @@ def main():
                                   'WORM_DROPBOX']),
             hostsallow=dict(type='list', elements='str'),
             hostsdeny=dict(type='list', elements='str'),
+            enabled=dict(type='bool'),
             path_suffix=dict(type='str'),
             comment=dict(type='str'),
             auxsmbconf=dict(type='str'),
+            home=dict(type='bool'),
+            ro=dict(type='bool'),
+            browsable=dict(type='bool'),
+            timemachine=dict(type='bool'),
+            recyclebin=dict(type='bool'),
+            guestok=dict(type='bool'),
+            abe=dict(type='bool'),
+            apple_encoding=dict(type='bool'),
+            acl=dict(type='bool'),
+            durablehandle=dict(type='bool'),
+            shadowcopy=dict(type='bool'),
+            streams=dict(type='bool'),
+            fsrvp=dict(type='bool'),
             ),
         supports_check_mode=True,
     )
@@ -157,9 +233,23 @@ def main():
     purpose = module.params['purpose']
     hostsallow = module.params['hostsallow']
     hostsdeny = module.params['hostsdeny']
+    enabled = module.params['enabled']
     path_suffix = module.params['path_suffix']
     comment = module.params['comment']
     auxsmbconf = module.params['auxsmbconf']
+    is_home = module.params['home']
+    is_ro = module.params['ro']
+    browsable = module.params['browsable']
+    timemachine = module.params['timemachine']
+    recyclebin = module.params['recyclebin']
+    guestok = module.params['guestok']
+    is_abe = module.params['abe']
+    apple_encoding = module.params['apple_encoding']
+    has_acl = module.params['acl']
+    durablehandle = module.params['durablehandle']
+    shadowcopy = module.params['shadowcopy']
+    streams = module.params['streams']
+    fsrvp = module.params['fsrvp']
 
     # Look up the share
     try:
@@ -196,6 +286,9 @@ def main():
             if hostsdeny is not None:
                 arg['hostsdeny'] = hostsdeny
 
+            if enabled is not None:
+                arg['enabled'] = enabled
+
             if path_suffix is not None:
                 arg['path_suffix'] = path_suffix
 
@@ -204,6 +297,45 @@ def main():
 
             if auxsmbconf is not None:
                 arg['auxsmbconf'] = auxsmbconf
+
+            if is_home is not None:
+                arg['home'] = is_home
+
+            if is_ro is not None:
+                arg['ro'] = is_ro
+
+            if browsable is not None:
+                arg['browsable'] = browsable
+
+            if timemachine is not None:
+                arg['timemachine'] = timemachine
+
+            if recyclebin is not None:
+                arg['recyclebin'] = recyclebin
+
+            if guestok is not None:
+                arg['guestok'] = guestok
+
+            if is_abe is not None:
+                arg['abe'] = is_abe
+
+            if apple_encoding is not None:
+                arg['aapl_name_mangling'] = apple_encoding
+
+            if has_acl is not None:
+                arg['acl'] = has_acl
+
+            if durablehandle is not None:
+                arg['durablehandle'] = durablehandle
+
+            if shadowcopy is not None:
+                arg['shadowcopy'] = shadowcopy
+
+            if streams is not None:
+                arg['streams'] = streams
+
+            if fsrvp is not None:
+                arg['fsrvp'] = fsrvp
 
             if module.check_mode:
                 result['msg'] = f"Would have created share {name} with {arg}"
@@ -251,6 +383,10 @@ def main():
                 if set(hostsdeny) != set(share_info['hostsdeny']):
                     arg['hostsdeny'] = hostsdeny
 
+            if enabled is not None and \
+               share_info['enabled'] != enabled:
+                arg['enabled'] = enabled
+
             if path_suffix is not None and \
                share_info['path_suffix'] != path_suffix:
                 arg['path_suffix'] = path_suffix
@@ -262,6 +398,58 @@ def main():
             if auxsmbconf is not None and \
                share_info['auxsmbconf'] != auxsmbconf:
                 arg['auxsmbconf'] = auxsmbconf
+
+            if is_home is not None and \
+               share_info['home'] != is_home:
+                arg['home'] = is_home
+
+            if is_ro is not None and \
+               share_info['ro'] != is_ro:
+                arg['ro'] = is_ro
+
+            if browsable is not None and \
+               share_info['browsable'] != browsable:
+                arg['browsable'] = browsable
+
+            if timemachine is not None and \
+               share_info['timemachine'] != timemachine:
+                arg['timemachine'] = timemachine
+
+            if recyclebin is not None and \
+               share_info['recyclebin'] != recyclebin:
+                arg['recyclebin'] = recyclebin
+
+            if guestok is not None and \
+               share_info['guestok'] != guestok:
+                arg['guestok'] = guestok
+
+            if is_abe is not None and \
+               share_info['abe'] != is_abe:
+                arg['abe'] = is_abe
+
+            if apple_encoding is not None and \
+               share_info['aapl_name_mangling'] != apple_encoding:
+                arg['aapl_name_mangling'] = apple_encoding
+
+            if has_acl is not None and \
+               share_info['acl'] != has_acl:
+                arg['acl'] = has_acl
+
+            if durablehandle is not None and \
+               share_info['durablehandle'] != durablehandle:
+                arg['durablehandle'] = durablehandle
+
+            if shadowcopy is not None and \
+               share_info['shadowcopy'] != shadowcopy:
+                arg['shadowcopy'] = shadowcopy
+
+            if streams is not None and \
+               share_info['streams'] != streams:
+                arg['streams'] = streams
+
+            if fsrvp is not None and \
+               share_info['fsrvp'] != fsrvp:
+                arg['fsrvp'] = fsrvp
 
             # If there are any changes, sharing.smb.update()
             if len(arg) == 0:
