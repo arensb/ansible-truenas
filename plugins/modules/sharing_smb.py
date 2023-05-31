@@ -13,6 +13,14 @@ short_description: Manage SMB sharing
 description:
   - Create, manage, and delete SMB shares.
 options:
+  auxsmbconf:
+    description:
+      - Additional smb4.conf options.
+    type: str
+  comment:
+    description:
+      - Description of the share, for the system maintainer.
+    type: str
   hostsallow:
     description:
       - List of hostnames/IP addresses of hosts that are allowed access
@@ -39,6 +47,11 @@ options:
       - Directory to share, on the server.
     type: str
     required: true
+  path_suffix:
+    description:
+      - Suffix appended to the share connection path. This may contain
+        macros, as defined in smb.conf(5).
+    type: str
   purpose:
     description:
       - Specifies a family of configuration parameters for different use
@@ -82,13 +95,13 @@ def main():
     #   which means you can't specify hostsallow/hostsdeny yourself.
     # x path (str) - directory to share
     #   (require)
-    # - path_suffix (str): Appended to the share connection path.
+    # x path_suffix (str): Appended to the share connection path.
     #   May contain macros. See smb.conf(5).
     # - home (bool): Allows the share to host home directories.
     #   Only one such share is allowed.
     # x name (str): (human-readable?) name of the share. Required.
     #   How share will appear in client's network browser.
-    # - comment (str): Description or notes for the system maintainer.
+    # x comment (str): Description or notes for the system maintainer.
     # - ro (bool): Read-only
     # - browsable (bool): if true (default), is visible when browsing shares.
     # - timemachine (bool): Enables Time Machine backups.
@@ -108,7 +121,7 @@ def main():
     # - streams (bool): "enables support for storing alternate datastreams
     #   as filesystem extended attributes."
     # - fsrvp (bool): filesystem remote VSS protocol.
-    # - auxsmbconf (str): additional smb4.conf parameters.
+    # x auxsmbconf (str): additional smb4.conf parameters.
     # - enabled (bool)
     module = AnsibleModule(
         argument_spec=dict(
@@ -123,6 +136,9 @@ def main():
                                   'WORM_DROPBOX']),
             hostsallow=dict(type='list', elements='str'),
             hostsdeny=dict(type='list', elements='str'),
+            path_suffix=dict(type='str'),
+            comment=dict(type='str'),
+            auxsmbconf=dict(type='str'),
             ),
         supports_check_mode=True,
     )
@@ -141,6 +157,9 @@ def main():
     purpose = module.params['purpose']
     hostsallow = module.params['hostsallow']
     hostsdeny = module.params['hostsdeny']
+    path_suffix = module.params['path_suffix']
+    comment = module.params['comment']
+    auxsmbconf = module.params['auxsmbconf']
 
     # Look up the share
     try:
@@ -176,6 +195,15 @@ def main():
 
             if hostsdeny is not None:
                 arg['hostsdeny'] = hostsdeny
+
+            if path_suffix is not None:
+                arg['path_suffix'] = path_suffix
+
+            if comment is not None:
+                arg['comment'] = comment
+
+            if auxsmbconf is not None:
+                arg['auxsmbconf'] = auxsmbconf
 
             if module.check_mode:
                 result['msg'] = f"Would have created share {name} with {arg}"
@@ -222,6 +250,18 @@ def main():
             if hostsdeny is not None:
                 if set(hostsdeny) != set(share_info['hostsdeny']):
                     arg['hostsdeny'] = hostsdeny
+
+            if path_suffix is not None and \
+               share_info['path_suffix'] != path_suffix:
+                arg['path_suffix'] = path_suffix
+
+            if comment is not None and \
+               share_info['comment'] != comment:
+                arg['comment'] = comment
+
+            if auxsmbconf is not None and \
+               share_info['auxsmbconf'] != auxsmbconf:
+                arg['auxsmbconf'] = auxsmbconf
 
             # If there are any changes, sharing.smb.update()
             if len(arg) == 0:
