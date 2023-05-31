@@ -13,6 +13,22 @@ short_description: Manage SMB sharing
 description:
   - Create, manage, and delete SMB shares.
 options:
+  hostsallow:
+    description:
+      - List of hostnames/IP addresses of hosts that are allowed access
+        to the share.
+      - If C(hostsallow) and C(hostsdeny) conflict, C(hostsallow) takes
+        precedence.
+    type: list
+    elements: str
+  hostsdeny:
+    description:
+      - List of hostnames/IP addresses of hosts that are denied access
+        to the share.
+      - If C(hostsallow) and C(hostsdeny) conflict, C(hostsallow) takes
+        precedence.
+    type: list
+    elements: str
   name:
     description:
       - Name of the share, as seen by the SMB client.
@@ -23,6 +39,16 @@ options:
       - Directory to share, on the server.
     type: str
     required: true
+  purpose:
+    description:
+      - Specifies a family of configuration parameters for different use
+        cases. Legal values include:
+      - C(NO_PRESET), C(DEFAULT_SHARE), C(ENHANCED_TIMEMACHINE),
+        C(MULTI_PROTOCOL_APP), C(MULTI_PROTOCOL_NFS), C(PRIVATE_DATASETS),
+        C(WORM_DROPBOX).
+      - Note that the C(purpose) parameter may override other parameters.
+        In particular, C(DEFAULT_SHARE) specifies an empty C(hostsallow)
+        and C(hostsdeny).
   state:
     description:
       - Whether the share should exist or not.
@@ -46,9 +72,14 @@ from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
 
 def main():
     # XXX - Parameters:
-    # ! purpose: NO_PRESET, DEFAULT_SHARE, ENHANCED_TIMEMACHINE,
+    # x purpose: NO_PRESET, DEFAULT_SHARE, ENHANCED_TIMEMACHINE,
     #   MULTI_PROTOCOL_APP, MULTI_PROTOCOL_NFS, PRIVATE_DATASETS, WORM_DROPBOX
-    #   These are canned configurations. Ignore.
+    #
+    #   These are canned configurations, but they override other parameters.
+    #   For instance, DEFAULT_SHARE includes
+    #           'hostsallow': [],
+    #           'hostsdeny': [],
+    #   which means you can't specify hostsallow/hostsdeny yourself.
     # x path (str) - directory to share
     #   (require)
     # - path_suffix (str): Appended to the share connection path.
@@ -66,9 +97,9 @@ def main():
     # - guestok (bool): Allows passwordless access
     # - abe (bool): Access Based Share Enumeration(?): restrict visibility
     #   to only those who have read or write access.
-    # - hostsallow (list): List of hostnames/IP addresses that have access.
+    # x hostsallow (list): List of hostnames/IP addresses that have access.
     #   https://www.samba.org/samba/docs/current/man-html/smb.conf.5.html#HOSTSALLOW
-    # - hostsdeny (list): List of hostnames/IP addresses that are explicitly
+    # x hostsdeny (list): List of hostnames/IP addresses that are explicitly
     #   denied access. Can be "ALL", to deny access to any that aren't allowed.
     # - aapl_name_mangling (bool)
     # - acl (bool): store SMB Security Descriptor as filesystem ACL.
@@ -85,6 +116,13 @@ def main():
             name=dict(type='str', required=True),
             state=dict(type='str', default='present',
                        choices=['absent', 'present']),
+            purpose=dict(type='str',
+                         choices=['NO_PRESET', 'DEFAULT_SHARE',
+                                  'ENHANCED_TIMEMACHINE', 'MULTI_PROTOCOL_AFP',
+                                  'MULTI_PROTOCOL_NFS', 'PRIVATE_DATASETS',
+                                  'WORM_DROPBOX']),
+            hostsallow=dict(type='list', elements='str'),
+            hostsdeny=dict(type='list', elements='str'),
             ),
         supports_check_mode=True,
     )
@@ -100,6 +138,9 @@ def main():
     name = module.params['name']
     path = module.params['path']
     state = module.params['state']
+    purpose = module.params['purpose']
+    hostsallow = module.params['hostsallow']
+    hostsdeny = module.params['hostsdeny']
 
     # Look up the share
     try:
@@ -127,8 +168,14 @@ def main():
                 "name": name,
             }
 
-            # if feature is not None:
-            #     arg['feature'] = feature
+            if purpose is not None:
+                arg['purpose'] = purpose
+
+            if hostsallow is not None:
+                arg['hostsallow'] = hostsallow
+
+            if hostsdeny is not None:
+                arg['hostsdeny'] = hostsdeny
 
             if module.check_mode:
                 result['msg'] = f"Would have created share {name} with {arg}"
@@ -162,8 +209,19 @@ def main():
             # be.
             arg = {}
 
-            # if feature is not None and share_info['feature'] != feature:
-            #     arg['feature'] = feature
+            if purpose is not None:
+                if share_info['purpose'] != purpose:
+                    arg['purpose'] = purpose
+
+            # For hostsallow and hostsdeny, order doesn't matter, so
+            # compare them as sets.
+            if hostsallow is not None:
+                if set(hostsallow) != set(share_info['hostsallow']):
+                    arg['hostsallow'] = hostsallow
+
+            if hostsdeny is not None:
+                if set(hostsdeny) != set(share_info['hostsdeny']):
+                    arg['hostsdeny'] = hostsdeny
 
             # If there are any changes, sharing.smb.update()
             if len(arg) == 0:
