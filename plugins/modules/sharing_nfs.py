@@ -3,7 +3,6 @@ __metaclass__ = type
 
 # Create and manage NFS shares.
 
-# XXX
 DOCUMENTATION = '''
 ---
 module: sharing_nfs
@@ -104,7 +103,6 @@ options:
     default: present
 '''
 
-# XXX
 EXAMPLES = '''
 - name: Export a filesystem
   arensb.truenas.sharing_nfs:
@@ -152,6 +150,13 @@ def main():
     #
     # It's probably cleaner to have separate functions for
     # state==present and state==absent.
+    #
+    # XXX - What happens if there's an export group with /dir1 and
+    # /dir2, and we get a request to make sure that /dir1 isn't
+    # exported?
+    #
+    # I guess remove /dir1 from whichever group(s) it's in, and delete
+    # empty groups.
 
     module = AnsibleModule(
         argument_spec=dict(
