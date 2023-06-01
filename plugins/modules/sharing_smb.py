@@ -3,9 +3,6 @@ __metaclass__ = type
 
 # Create and manage SMB shares.
 
-# XXX - name is unique. path isn't.
-
-# XXX
 DOCUMENTATION = '''
 ---
 module: sharing_smb
@@ -132,12 +129,36 @@ options:
     type: bool
 '''
 
-# XXX
 EXAMPLES = '''
+- name: Simple default share
+  sharing_smb:
+    name: export1
+    path: /mnt/path1
+
+- name: Share with host lists
+  sharing_smb:
+    name: export2
+    path: /mnt/path2
+    comment: "Shared to just a few hosts."
+    purpose: NO_PRESET
+    hostsallow:
+      - host1.dom.ain
+      - host2.dom.ain
+      - 10.2.3.0/24
+    hostsdeny:
+      - ALL
 '''
 
-# XXX
+# XXX - Add 'sample:' for when a share is created.
 RETURN = '''
+share:
+  description:
+    - A data structure describing a newly-created share.
+  type: dict
+status:
+  description:
+    - When this module exits abnormally, C(status) contains an error message.
+  type: str
 '''
 
 from ansible.module_utils.basic import AnsibleModule
@@ -146,45 +167,6 @@ from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
 
 
 def main():
-    # XXX - Parameters:
-    # x purpose: NO_PRESET, DEFAULT_SHARE, ENHANCED_TIMEMACHINE,
-    #   MULTI_PROTOCOL_APP, MULTI_PROTOCOL_NFS, PRIVATE_DATASETS, WORM_DROPBOX
-    #
-    #   These are canned configurations, but they override other parameters.
-    #   For instance, DEFAULT_SHARE includes
-    #           'hostsallow': [],
-    #           'hostsdeny': [],
-    #   which means you can't specify hostsallow/hostsdeny yourself.
-    # x path (str) - directory to share
-    #   (require)
-    # x path_suffix (str): Appended to the share connection path.
-    #   May contain macros. See smb.conf(5).
-    # x home (bool): Allows the share to host home directories.
-    #   Only one such share is allowed.
-    # x name (str): (human-readable?) name of the share. Required.
-    #   How share will appear in client's network browser.
-    # x comment (str): Description or notes for the system maintainer.
-    # x ro (bool): Read-only
-    # x browsable (bool): if true (default), is visible when browsing shares.
-    # x timemachine (bool): Enables Time Machine backups.
-    # x recyclebin (bool): Enable Recycle Bin: deleted files are moved
-    #   to the Recycle Bin, not deleted permanently as with NFS.
-    # x guestok (bool): Allows passwordless access
-    # x abe (bool): Access Based Share Enumeration(?): restrict visibility
-    #   to only those who have read or write access.
-    # x hostsallow (list): List of hostnames/IP addresses that have access.
-    #   https://www.samba.org/samba/docs/current/man-html/smb.conf.5.html#HOSTSALLOW
-    # x hostsdeny (list): List of hostnames/IP addresses that are explicitly
-    #   denied access. Can be "ALL", to deny access to any that aren't allowed.
-    # x aapl_name_mangling (bool)
-    # x acl (bool): store SMB Security Descriptor as filesystem ACL.
-    # x durablehandle (bool)
-    # x shadowcopy (bool): enables volume shadow copy service.
-    # x streams (bool): "enables support for storing alternate datastreams
-    #   as filesystem extended attributes."
-    # x fsrvp (bool): filesystem remote VSS protocol.
-    # x auxsmbconf (str): additional smb4.conf parameters.
-    # x enabled (bool)
     module = AnsibleModule(
         argument_spec=dict(
             path=dict(type='str', required=True),
