@@ -29,6 +29,7 @@ Name                           | Description
 `arensb.truenas.plugin`        | Manage plugins and their jails.
 `arensb.truenas.service`       | Manage services.
 `arensb.truenas.sharing_nfs`   | Manage NFS exports.
+`arensb.truenas.sharing_smb`   | Manage SMB shares.
 `arensb.truenas.systemdataset` | Manage the system dataset.
 `arensb.truenas.user`          | Manage users.
 
