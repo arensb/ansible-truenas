@@ -122,21 +122,24 @@ def main():
         arg['user'] = smtp_user
     if smtp_password is not None and mail_info['pass'] != smtp_password:
         arg['pass'] = smtp_password
-    if oauth_id is not None and \
-       ('client_id' not in mail_info['oauth'] or
-        mail_info['oauth']['client_id'] != oauth_id):
+    if oauth_id is not None and (
+            'client_id' not in mail_info['oauth'] or
+            mail_info['oauth']['client_id'] != oauth_id
+    ):
         if 'oauth' not in arg:
             arg['oauth'] = {}
         arg['oauth']['client_id'] = oauth_id
-    if oauth_secret is not None and \
-       ('client_secret' not in mail_info['oauth'] or
-        mail_info['oauth']['client_secret'] != oauth_secret):
+    if oauth_secret is not None and (
+            'client_secret' not in mail_info['oauth'] or
+            mail_info['oauth']['client_secret'] != oauth_secret
+    ):
         if 'oauth' not in arg:
             arg['oauth'] = {}
         arg['oauth']['client_secret'] = oauth_secret
-    if oauth_token is not None and \
-       ('refresh_token' not in mail_info['oauth'] or
-        mail_info['oauth']['refresh_token'] != oauth_token):
+    if oauth_token is not None and (
+            'refresh_token' not in mail_info['oauth'] or
+            mail_info['oauth']['refresh_token'] != oauth_token
+    ):
         if 'oauth' not in arg:
             arg['oauth'] = {}
         arg['oauth']['refresh_token'] = oauth_token
