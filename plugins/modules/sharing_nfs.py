@@ -75,13 +75,10 @@ options:
         "10.1.2.3/16", TrueNAS will normalize this to "10.1.0.0/16", but
         afterward, this module will think that you want to make a change.
     type: list
-  paths:
+  path:
     description:
-      - List of directories to export.
-      - All paths must be in the same filesystem. And if multiple directories
-        from the same filesystem are being imported, they must be in the
-        same NFS export.
-    type: list
+      - A directory to export.
+    type: str
     required: true
   quiet:
     description:
@@ -109,22 +106,19 @@ EXAMPLES = '''
 - name: Export a filesystem
   arensb.truenas.sharing_nfs:
     - name: Home export
-      paths:
-        - /mnt/pool0/home
+      path: /mnt/pool0/home
 
 - name: Export to only one network
   arensb.truenas.sharing_nfs:
     - name: Home export
-      paths:
-        - /mnt/pool0/home
+      path: /mnt/pool0/home
       networks:
         - 192.168.0.0/16
 
 - name: Explicitly export to all hosts and networks
   arensb.truenas.sharing_nfs:
     - name: Home export
-      paths:
-        - /mnt/pool0/home
+      path: /mnt/pool0/home
       hosts: []
       networks: []
 '''
@@ -144,10 +138,19 @@ from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
 
 
 def main():
+    # XXX - One important use case isn't addressed: ensure that
+    # /mnt/path is _not_ exported.
+    #
+    # Unfortunately, since we use 'name' as an identifier, this is
+    # hard to check. So maybe require 'name' only if 'state==present'.
+    #
+    # It's probably cleaner to have separate functions for
+    # state==present and state==absent.
+
     module = AnsibleModule(
         argument_spec=dict(
             name=dict(type='str', required=True, aliases=['comment']),
-            paths=dict(type='list', elements='str', required=True),
+            path=dict(type='str', required=True),
             state=dict(type='str', default='present',
                        choices=['absent', 'present']),
             alldirs=dict(type='bool'),
@@ -182,7 +185,7 @@ def main():
 
     # Assign variables from properties, for convenience
     name = module.params['name']
-    paths = module.params['paths']
+    path = module.params['path']
     state = module.params['state']
     alldirs = module.params['alldirs']
     quiet = module.params['quiet']
@@ -196,54 +199,7 @@ def main():
     hosts = module.params['hosts']
 
     # Look up the share.
-    #
-    # Use the comment as an identifier. In the general case, we would
-    # have to take a set of directories and try to map them to an
-    # existing export set. But let's say we're given:
-    #
-    # - sharing_nfs:
-    #     paths:
-    #       - /path/to/a
-    #     <options>
-    #
-    # And when we look up the existing exports, we find only one, with
-    # paths==['/path/to/b']
-    #
-    # Does this mean we should export /path/to/a as a new export, and wind
-    # up with
-    #   - id: 1, paths: [/path/to/b]
-    #   - id: 2, paths: [/path/to/a]
-    #
-    # Or does it mean that the caller originally exported /path/to/b,
-    # and now wants to change it to /path/to/a, so we wind up with just:
-    #   - id: 1, paths: [/path/to/a]
-    #
-    # Some special cases can be solved (e.g., when a and b are on
-    # different filesystems), but not the general case.
-
-    # Notes:
-    #
-    # - Two directories in the same export must be in the same zfs
-    #   filesystem. You can't have
-    #   paths:
-    #     - /mnt/pool0/fs0/somedir
-    #     - /mnt/pool0/fs1/otherdir
-    #
-    # - If two directories in the same filesystem are exported, they
-    #   must be in the same export set. You can't have:
-    #   - sharing_nfs:
-    #       name: Export 1
-    #       paths: /mnt/pool0/fs0/somedir
-    #   - sharing_nfs:
-    #       name: Export 2
-    #       paths: /mnt/pool0/fs0/otherdir
-    #
-    #   Here, "somedir" and "otherdir" must be put in the same "sharing_nfs"
-    #   block.
-    #
-    # - Likewise, can't export a directory to different networks in
-    #   different exports.
-
+    # Use the comment as an identifier. 
     try:
         export_info = mw.call("sharing.nfs.query",
                               [["comment", "=", name]])
@@ -266,7 +222,7 @@ def main():
             # Collect arguments to pass to sharing.nfs.create()
             arg = {
                 "comment": name,
-                "paths": paths,
+                "path": path,
             }
 
             if alldirs is not None:
@@ -380,11 +336,10 @@ def main():
                 if export_info['maproot_group'] is not None:
                     arg['maproot_group'] = None
 
-            # Check whether the new set of paths is the same as the
-            # old set.
+            # Check whether the path is the same as the old.
             # We use set comparison because the order doesn't matter.
-            if set(paths) != set(export_info['paths']):
-                arg['paths'] = paths
+            if path != export_info['path']:
+                arg['path'] = path
 
             # Check whether the new set of networks is the same as the
             # old set.
