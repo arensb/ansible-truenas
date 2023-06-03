@@ -131,9 +131,54 @@ EXAMPLES = '''
 RETURN = '''
 '''
 
+import sys
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
     import MiddleWare as MW
+# For parsing version numbers
+from packaging import version
+
+# Version of TrueNAS we're running, so that we know how to invoke
+# middlewared.
+tn_version = None
+
+# XXX - It would be nice to extend the 'setup' module to gather this
+# information, set some facts, and then any module that needs them can
+# refer to those facts.
+def get_tn_version():
+    """Get the version of TrueNAS being run"""
+
+    # Return memoized data if we've already looked it up.
+    global tn_version
+    if tn_version is not None:
+        return tn_version
+
+    mw = MW()
+
+    try:
+        # product_name is a string like "TrueNAS".
+        # product_type is a string like "CORE".
+        # product_version is a string like "TrueNAS-13.0-U5"
+        product_name = mw.call("system.product_name", output='str')
+        product_type = mw.call("system.product_type", output='str')
+        sys_version = mw.call("system.version", output='str')
+    except Exception:
+        raise
+
+    # Strip "TrueNAS-" from the beginning of the version string,
+    # leaving just the version number.
+    if sys_version.startswith(f"{product_name}-"):
+        sys_version = sys_version[len(product_name)+1:]
+
+    sys_version = version.parse(sys_version)
+
+    tn_version = {
+        "name": product_name,
+        "type": product_type,
+        "version": sys_version,
+    }
+
+    return tn_version
 
 # XXX - Maybe correct bad CIDR? I think it might be as simple as:
 # import ipaddress
@@ -142,6 +187,25 @@ from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
 
 
 def main():
+    # Figure out which version of TrueNAS we're running, and thus how
+    # to call middlewared.
+    try:
+        tn_version = get_tn_version()
+    except Exception as e:
+        # Normally we'd module.exit_json(), but we don't have a module yet.
+        print(f'{{"failed":true, "msg": "Error getting TrueNAS version: {e}"}}')
+        sys.exit(1)
+
+    # TrueNAS SCALE 22.12.2 is when middlewared switched the NFS
+    # parameter from 'paths' to 'path'.
+    TC_22_12_2 = version.parse("22.12.2")
+    if tn_version['name'] == "TrueNAS" and \
+       tn_version['type'] == "SCALE" and \
+       tn_version['version'] >= TC_22_12_2:
+        use_nfs2 = True
+    else:
+        use_nfs2 = False
+
     # XXX - One important use case isn't addressed: ensure that
     # /mnt/path is _not_ exported.
     #
