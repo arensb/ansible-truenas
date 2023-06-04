@@ -525,7 +525,7 @@ def nfs2():
 
     module = AnsibleModule(
         argument_spec=dict(
-            name=dict(type='str', required=True, aliases=['comment']),
+            name=dict(type='str', aliases=['comment']),
             path=dict(type='str', required=True),
             state=dict(type='str', default='present',
                        choices=['absent', 'present']),
@@ -575,10 +575,10 @@ def nfs2():
     hosts = module.params['hosts']
 
     # Look up the share.
-    # Use the comment as an identifier. 
+    # Use the path as an identifier.
     try:
         export_info = mw.call("sharing.nfs.query",
-                              [["comment", "=", name]])
+                              [["path", "=", path]])
         if len(export_info) == 0:
             # No such export
             export_info = None
@@ -664,6 +664,9 @@ def nfs2():
             # be.
             arg = {}
 
+            if name is not None and export_info['name'] != name:
+                arg['name'] = name
+
             if alldirs is not None and export_info['alldirs'] != alldirs:
                 arg['alldirs'] = alldirs
 
@@ -711,11 +714,6 @@ def nfs2():
                 # If setting one, make sure to unset the other.
                 if export_info['maproot_group'] is not None:
                     arg['maproot_group'] = None
-
-            # Check whether the path is the same as the old.
-            # We use set comparison because the order doesn't matter.
-            if path != export_info['path']:
-                arg['path'] = path
 
             # Check whether the new set of networks is the same as the
             # old set.
