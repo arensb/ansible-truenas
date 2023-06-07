@@ -513,16 +513,16 @@ def nfs1():
 
     module.exit_json(**result)
 
-def nfs2():
-    # XXX - One important use case isn't addressed: ensure that
-    # /mnt/path is _not_ exported.
-    #
-    # Unfortunately, since we use 'name' as an identifier, this is
-    # hard to check. So maybe require 'name' only if 'state==present'.
-    #
-    # It's probably cleaner to have separate functions for
-    # state==present and state==absent.
 
+def nfs2():
+    # NFS sharing for TrueNAS SCALE >= 22.12.2, and presumably some future
+    # version of TrueNAS CORE.
+    #
+    # Unlike nfs1(), this version takes only one directory, in the
+    # 'path' argument, not multiple directories in the 'paths'
+    # directory. This makes it possible to use the path as an
+    # identifier, which is a much better approach anyway. 'name' now
+    # becomes an optional comment.
     module = AnsibleModule(
         argument_spec=dict(
             name=dict(type='str', aliases=['comment']),
