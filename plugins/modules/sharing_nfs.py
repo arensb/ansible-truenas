@@ -203,8 +203,9 @@ def nfs1():
 
     module = AnsibleModule(
         argument_spec=dict(
-            name=dict(type='str', required=True, aliases=['comment']),
-            paths=dict(type='list', elements='str', required=True),
+            name=dict(type='str', aliases=['comment']),
+            path=dict(type='str'),
+            paths=dict(type='list', elements='str'),
             state=dict(type='str', default='present',
                        choices=['absent', 'present']),
             alldirs=dict(type='bool'),
@@ -220,9 +221,14 @@ def nfs1():
         ),
         supports_check_mode=True,
         mutually_exclusive=[
+            ['path', 'paths'],
             ['maproot_user', 'mapall_user'],
             ['maproot_group', 'mapall_group'],
         ],
+        required_one_of=[['path', 'paths']],
+        # required_if=[
+        #     ['state', 'present', ['name']],
+        # ],
         required_by=dict(
             # Can't have map*_group without its corresponding map*_user.
             maproot_group=('maproot_user'),
@@ -239,6 +245,7 @@ def nfs1():
 
     # Assign variables from properties, for convenience
     name = module.params['name']
+    path = module.params['path']
     paths = module.params['paths']
     state = module.params['state']
     alldirs = module.params['alldirs']
@@ -251,6 +258,25 @@ def nfs1():
     mapall_group = module.params['mapall_group']
     networks = module.params['networks']
     hosts = module.params['hosts']
+
+    # The Hypocritical Section:
+    #
+    # In the documentation, we recommend using 'path' (singular)
+    # because that makes more sense, and is compatible with nfs2().
+    # But in this version, middlewared requires a 'paths' array, so we
+    # convert 'path' to 'paths' if necessary, after berating the
+    # caller for using 'paths'.
+    if paths is not None:
+        # If 'paths' is given, and is plural, issue warning urging
+        # user to switch to 'path' singular.
+        if len(paths) in (0, 1):
+            module.warn("The 'paths' option is deprecated. Please use 'path' instead.")
+        else:
+            # If 'paths' is given and is singular, issue warning
+            # urging user to switch to 'path' singular'.
+            module.warn("The 'paths' option is deprecated. Please break it up into several 'path' plays.")
+    else:
+        paths = [ path ]
 
     # Look up the share.
     #
@@ -454,8 +480,7 @@ def nfs1():
                 if export_info['maproot_group'] is not None:
                     arg['maproot_group'] = None
 
-            # Check whether the new set of paths is the same as the
-            # old set.
+            # Check whether the path is the same as the old.
             # We use set comparison because the order doesn't matter.
             if set(paths) != set(export_info['paths']):
                 arg['paths'] = paths
