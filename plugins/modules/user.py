@@ -192,9 +192,46 @@ RETURN = '''
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
     import MiddleWare as MW
+import ansible_collections.arensb.truenas.plugins.module_utils.setup as setup
+# For parsing version numbers
+from packaging import version
 
 
 def main():
+    # Figure out which version of TrueNAS we're running, and thus how
+    # to call middlewared.
+    try:
+        tn_version = setup.get_tn_version()
+    except Exception as e:
+        # Normally we'd module.exit_json(), but we don't have a module yet.
+        print(f'{{"failed":true, "msg": "Error getting TrueNAS version: {e}"}}')
+        sys.exit(1)
+
+    # The sudo api changed in several branches, so in the test below,
+    # we need an overly complex three-way test to figure out which API
+    # to use.
+    #
+    # Commit                                     Version
+    # 2934f3844cc844202dafa1cc0145eb65f456c4bc - 12.12.3
+    # 01cd04590008262799753b316e6a56e4b32c84ca - 22.12.1
+    # ef76438b9f58911966a63a9df802a6d347a48bba - 23.10
+    #
+    # And when CORE is updates, we'll need to add another branch.
+
+    # By default, use the old sudo API.
+    new_sudo = False
+    if tn_version['name'] == "TrueNAS" and \
+       tn_version['type'] == "SCALE" and \
+       \
+       (tn_version['version'] < version.parse("13") and
+        tn_version['version'] >= version.parse("12.12")) \
+       or \
+       (tn_version['version'] < version.parse("23") and
+        tn_version['version'] >= version.parse("22.12.1")) \
+       or \
+       tn_version['version'] >= version.parse("23.10"):
+        new_sudo = True
+
     # user.create() arguments:
     # x uid (int)
     # x username (str)
