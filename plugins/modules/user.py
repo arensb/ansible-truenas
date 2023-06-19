@@ -124,6 +124,8 @@ options:
     default: present
   sudo:
     description:
+      - Deprecated. Use C(sudo_commands) and/or C(sudo_commands_nopasswd)
+        instead.
       - Whether the user is allowed to sudo (see also C(sudo_nopasswd) and
         C(sudo_commands)).
       - "Note: this defaults to false. So if you create a user with
@@ -132,14 +134,29 @@ options:
     type: bool
   sudo_nopasswd:
     description:
+      - Deprecated. Use C(sudo_commands_nopasswd) instead.
       - Allows user to sudo without a password.
     type: bool
     default: false
   sudo_commands:
     description:
       - List of commands the user is allowed to execute using C(sudo).
-      - Each command must use an absolute path.
+      - Each command must use an absolute path, except for the special
+        value "ALL", which allows executing any command.
       - Commands may include options, e.g., C("/bin/ls -l").
+      - In TrueNAS CORE, and in older versions of SCALE, only one of
+        C(sudo_commands) and C(sudo_commands_nopasswd) may be specified.
+    type: list of strings
+    default: []
+  sudo_commands_nopasswd:
+    description:
+      - List of commands the user is allowed to execute using C(sudo),
+        without having to give a password.
+      - Each command must use an absolute path, except for the special
+        value "ALL", which allows executing any command.
+      - Commands may include options, e.g., C("/bin/ls -l").
+      - In TrueNAS CORE, and in older versions of SCALE, only one of
+        C(sudo_commands) and C(sudo_commands_nopasswd) may be specified.
     type: list of strings
     default: []
   uid:
