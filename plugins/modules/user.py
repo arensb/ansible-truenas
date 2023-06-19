@@ -250,6 +250,10 @@ def main():
        tn_version['version'] >= version.parse("23.10"):
         old_sudo = False
 
+    # In order to deal with the two 'user' APIs we'll define two
+    # Ansible APIs. Both prefer to use 'sudo_commands' and
+    # 'sudo_commands_nopasswd' to specify sudo access, but with
+    # compatibility tweaks.
 
     # user.create() arguments:
     # x uid (int)
@@ -272,8 +276,8 @@ def main():
     # x sshpubkey(str|null?)
     # x groups(list)
     # - attributes(obj) - Arbitrary user information
-    module = AnsibleModule(
-        argument_spec=dict(
+
+    mod_argument_spec = dict(
             # TrueNAS user.create arguments:
             uid=dict(type='int'),
             name=dict(type='str', required=True, aliases=['user']),
@@ -308,10 +312,10 @@ def main():
             # XXX - remove: delete home directory. builtin.user allows
             # doing this.
 
-            sudo=dict(type='bool'),
-            sudo_nopasswd=dict(type='bool', default=False,),
             sudo_commands=dict(type='list',
                                elements='str'),
+            sudo_commands_nopasswd=dict(type='list',
+                                        elements='str'),
 
             # I think the way builtin.user works is, if you delete a
             # user without 'force: yes', the old home directory sticks
@@ -373,11 +377,24 @@ def main():
             # - profile(str) - Solaris
             # - authorization(str) - Solaris
             # - role(str) - Solaris
-        ),
-        supports_check_mode=True,
-        required_if=[
+        )
+    mod_mutually_exclusive = []
+    mod_required_if = [
             ['password_disabled', False, ['password']]
         ]
+
+    # Make adjustments for systems using the old API.
+    if old_sudo:
+        mod_argument_spec['sudo'] = dict(type='bool')
+        mod_argument_spec['sudo_nopasswd'] = dict(type='bool')
+        mod_mutually_exclusive.append(['sudo_commands',
+                                       'sudo_commands_nopasswd'])
+
+    module = AnsibleModule(
+        argument_spec=mod_argument_spec,
+        supports_check_mode=True,
+        mutually_exclusive=mod_mutually_exclusive,
+        required_if=mod_required_if
     )
 
     result = dict(
