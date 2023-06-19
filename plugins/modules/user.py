@@ -235,19 +235,21 @@ def main():
     #
     # And when CORE is updates, we'll need to add another branch.
 
-    # By default, use the old sudo API.
-    new_sudo = False
+    # Having an 'old_sudo' variable will make it easier to get rid of
+    # this code when the world has upgraded.
+    old_sudo = True
     if tn_version['name'] == "TrueNAS" and \
        tn_version['type'] == "SCALE" and \
        \
-       (tn_version['version'] < version.parse("13") and
-        tn_version['version'] >= version.parse("12.12")) \
+       (tn_version['version'] >= version.parse("12.12") and
+        tn_version['version'] < version.parse("13")) \
        or \
-       (tn_version['version'] < version.parse("23") and
-        tn_version['version'] >= version.parse("22.12.1")) \
+       (tn_version['version'] >= version.parse("22.12.1") and
+        tn_version['version'] < version.parse("23")) \
        or \
        tn_version['version'] >= version.parse("23.10"):
-        new_sudo = True
+        old_sudo = False
+
 
     # user.create() arguments:
     # x uid (int)
