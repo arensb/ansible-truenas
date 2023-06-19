@@ -206,6 +206,7 @@ XXX
 RETURN = '''
 '''
 
+import sys
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
     import MiddleWare as MW
@@ -418,12 +419,43 @@ def main():
     email = module.params['email']
     state = module.params['state']
     delete_group = module.params['delete_group']
-    sudo = module.params['sudo']
-    sudo_nopasswd = module.params['sudo_nopasswd']
+    sudo = module.params['sudo'] \
+        if 'sudo' in module.params else None
+    sudo_nopasswd = module.params['sudo_nopasswd'] \
+        if 'sudo_nopasswd' in module.params else None
     sudo_commands = module.params['sudo_commands']
+    sudo_commands_nopasswd = module.params['sudo_commands_nopasswd']
     ssh_authorized_keys = module.params['ssh_authorized_keys']
     append_pubkeys = module.params['append_pubkeys']
     shell = module.params['shell']
+
+    # Warn user against using deprecated options.
+    if sudo is not None:
+        # Only with old sudo
+        module.warn("The 'sudo' option is deprecated. Please use "
+                    "'sudo_commands' and 'sudo_commands_nopasswd' instead.")
+
+    if sudo_nopasswd is not None:
+        # Only with old sudo
+        module.warn("The 'sudo_nopasswd' option is deprecated. Please use "
+                    "'sudo_commands' and 'sudo_commands_nopasswd' instead.")
+
+    # If using the old sudo API, convert to new-style options.
+    if old_sudo:
+        # See src/middlewared/middlewared/alembic/versions/22.12/2023-01-18_17-09_sudo_refactoring.py
+        # in the TrueNAS middleware source.
+
+        if sudo is not None and \
+           sudo and \
+           sudo_commands == []:
+            sudo_commands = ["ALL"]
+
+        if sudo is not None and \
+           sudo and \
+           sudo_nopasswd is not None and \
+           sudo_nopasswd and \
+           sudo_commands_nopasswd is None:
+            sudo_commands_nopasswd = sudo_commands
 
     # Look up the user.
     # Note that
@@ -449,6 +481,17 @@ def main():
 
     # # XXX - Mostly for debugging:
     # result['user_info'] = user_info
+
+    # If we're using the old sudo API, normalize to the new API.
+    if old_sudo:
+        # Make sure there are both 'sudo_commands' and
+        # 'sudo_commands_nopasswd' in 'user_info'.
+        if user_info['sudo_nopasswd']:
+            user_info['sudo_commands_nopasswd'] = \
+                user_info['sudo_commands']
+            user_info['sudo_commands'] = []
+        else:
+            user_info['sudo_commands_nopasswd'] = []
 
     # First, check whether the user even exists.
     if user_info is None:
@@ -481,14 +524,52 @@ def main():
             if uid is not None:
                 arg['uid'] = uid
 
-            if sudo is not None:
-                arg['sudo'] = sudo
+            if old_sudo:
+                if sudo_commands is not None:
+                    # sudo_commands doesn't understand the "ALL"
+                    # keyword, and complains that it begins with a slash.
+                    # Rather, 'sudo == True' with an empty sudo_commands
+                    # means that the user can run anything.
+                    if 'ALL' in sudo_commands:
+                        arg['sudo_commands'] = []
+                        arg['sudo'] = True
+                    else:
+                        arg['sudo_commands'] = sudo_commands
 
-            if sudo_nopasswd is not None:
-                arg['sudo_nopasswd'] = sudo_nopasswd
+                if sudo_commands_nopasswd is not None:
+                    if 'ALL' in sudo_commands_nopasswd:
+                        arg['sudo_commands'] = []
+                        arg['sudo'] = True
+                        arg['sudo_nopasswd'] = True
 
-            if sudo_commands is not None:
-                arg['sudo_commands'] = sudo_commands
+                if sudo is not None:
+                    # If the caller specified 'sudo_commands', but also
+                    # explicitly set 'sudo = {yes|no}', we might be
+                    # overriding the earlier value.
+                    arg['sudo'] = sudo
+
+                if sudo_nopasswd is not None:
+                    arg['sudo_nopasswd'] = sudo_nopasswd
+
+                # # In old mode, only one of sudo_commands and
+                # # sudo_commands_nopasswd will be set.
+                # if sudo_commands is not None:
+                #     arg['sudo'] = len(sudo_commands) > 0
+                #     arg['sudo_commands'] = sudo_commands
+                # if sudo_commands_nopasswd is not None:
+                #     arg['sudo'] = len(sudo_commands_nopasswd) > 0
+                #     arg['sudo_nopasswd'] = True
+                #     arg['sudo_commands'] = sudo_commands_nopasswd
+
+                # if sudo_nopasswd is not None:
+                #     # Only with old sudo
+                #     arg['sudo_nopasswd'] = sudo_nopasswd
+            else:
+                if sudo_commands is not None:
+                    arg['sudo_commands'] = sudo_commands
+
+                if sudo_commands_nopasswd is not None:
+                    arg['sudo_commands'] = sudo_commands
 
             if shell is not None:
                 arg['shell'] = shell
@@ -508,7 +589,9 @@ def main():
                     try:
                         next_uid = mw.call("user.get_next_uid")
                     except Exception as e:
-                        module.fail_json(msg=f"Error getting next available UID: {e}")
+                        module.fail_json(
+                            msg=f"Error getting next available UID: {e}"
+                        )
                     arg['uid'] = next_uid
 
                     result['uid'] = next_uid    # XXX - For debugging
@@ -683,12 +766,32 @@ def main():
                     # Something has changed
                     arg['home'] = home
 
-            if sudo is not None and user_info['sudo'] != sudo:
-                arg['sudo'] = sudo
+            if old_sudo:
+                # If sudo is set, that's what we want.
+                #
+                # If either sudo_commands or sudo_commands_nopasswd is
+                # set, that determines the desired value of 'sudo'
 
-            if sudo_nopasswd is not None and \
-               user_info['sudo_nopasswd'] != sudo_nopasswd:
-                arg['sudo_nopasswd'] = sudo_nopasswd
+                # We don't know what we want yet.
+                want_sudo = None
+                want_sudo_nopasswd = None
+
+                if sudo is not None:
+                    # 'sudo' was passed in by the Ansible caller.
+                    want_sudo = sudo
+
+                if sudo_nopasswd is not None:
+                    # 'sudo_nopasswd' was passed in by the Ansible caller.
+                    want_sudo_nopasswd = sudo_nopasswd
+
+                if user_info['sudo'] != want_sudo:
+                    arg['sudo'] = want_sudo
+
+                if sudo_nopasswd is not None and \
+                   'sudo_nopasswd' in user_info and \
+                   user_info['sudo_nopasswd'] != sudo_nopasswd:
+                    # This should only happen with old_sudo
+                    arg['sudo_nopasswd'] = sudo_nopasswd
 
             # Let's perform set comparison, because it doesn't matter
             # in which order the sudo commands are listed.
@@ -699,6 +802,15 @@ def main():
             else:
                 if set(user_info['sudo_commands']) != set(sudo_commands):
                     arg['sudo_commands'] = sudo_commands
+
+            if sudo_commands_nopasswd is None:
+                # sudo_commands should be empty
+                if user_info['sudo_commands_nopasswd'] != []:
+                    arg['sudo_commands_nopasswd'] = []
+            else:
+                if set(user_info['sudo_commands_nopasswd']) != \
+                   set(sudo_commands_nopasswd):
+                    arg['sudo_commands_nopasswd'] = sudo_commands_nopasswd
 
             # XXX - Figure out whether home directory permissions need to be
             # set. This turns out to be more difficult than expected.
