@@ -446,8 +446,7 @@ def main():
     # determine the other middleware options.
     old_sudo_call = False
     if old_sudo_api and \
-       sudo is not None and \
-       sudo_nopasswd is not None:
+       (sudo is not None or sudo_nopasswd is not None):
         old_sudo_call = True
 
     # Look up the user.
