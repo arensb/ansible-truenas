@@ -1,0 +1,16 @@
+# See https://github.com/ansible-community/antsibull-changelog/blob/main/docs/changelog.yaml-format.md
+---
+ancestor: null
+releases:
+  1.4.5:
+    changes:
+      release_summary: Fix the way sudo is handled for users.
+      bugfixes:
+        - "user module sudo variables didn't work with recent versions of TrueNAS SCALE."
+      breaking_changes:
+        - The C(sudo) and C(sudo_nopasswd) options are deprecated.
+      deprecated_features:
+        - In the user module, C(sudo) and C(sudo_nopasswd) options are
+          deprecated. The C(sudo_commands) and C(sudo_commands_nopasswd)
+          options are the preferred way to specify sudo permissions.
+
