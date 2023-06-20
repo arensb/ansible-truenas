@@ -139,6 +139,7 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
     import MiddleWare as MW
 import ansible_collections.arensb.truenas.plugins.module_utils.setup as setup
+from packaging import version
 
 
 class NFS1:
