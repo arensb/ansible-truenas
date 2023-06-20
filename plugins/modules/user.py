@@ -204,6 +204,15 @@ XXX
 
 # XXX - Return the UID of new user.
 RETURN = '''
+- name: invocation
+  description:
+    - Dictionary giving the fields, and their values, that were specified
+      when the user is created or updated.
+- name: user_id
+  description:
+    - The ID of a newly-created user.
+    - This is not the C(uid) as found in C(/etc/passwd), but the database
+      ID.
 '''
 
 import sys
@@ -638,6 +647,7 @@ def main():
                 result['user_id'] = err
 
             result['changed'] = True
+            result['invocation'] = arg
 
         else:
             # User is not supposed to exist.
@@ -1020,6 +1030,7 @@ def main():
                     # Otherwise, we'd want to include that in
                     # 'result'.
                 result['changed'] = True
+                result['invocation'] = arg
 
         else:
             # User is not supposed to exist
