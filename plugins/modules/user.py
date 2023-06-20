@@ -792,7 +792,7 @@ def main():
                     arg['sudo_nopasswd'] = sudo_nopasswd
 
                 if sudo_commands is not None and \
-                   arg['sudo_commands'] != sudo_commands:
+                   user_info['sudo_commands'] != sudo_commands:
                     arg['sudo_commands'] = sudo_commands
 
             elif old_sudo_api:
