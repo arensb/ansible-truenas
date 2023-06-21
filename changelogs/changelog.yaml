@@ -1,8 +1,34 @@
 # See https://github.com/ansible-community/antsibull-changelog/blob/main/docs/changelog.yaml-format.md
+#
+# ancestor: <ancestor versin>
+# releases:
+#  1.0.0-alpha:
+#    ...
+#  1.0.0-beta:
+#    ...
+#  1.0.0:
+#    release_date: 'YYYY-MM-DD'
+#    codename: <name>
+#    changes:
+#      release_summary: <one-liner>
+#      major_changes: [...]
+#      minor_changes: [...]
+#      breaking_changes: [...]
+#      deprecated_features: [...]
+#      security_fixes: [...]
+#      bugfixes: [...]
+#      known_issues: [...]
+#      trivial: [...]
+#    modules:
+#    plugins:
+#    objects:
+#  1.0.1:
+#    ...
 ---
 ancestor: null
 releases:
   1.4.5:
+    release_date: '2023-06-20'
     changes:
       release_summary: Fix the way sudo is handled for users.
       bugfixes:
