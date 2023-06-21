@@ -81,6 +81,9 @@ The best way to contribute a patch or feature is to create a pull request.
 
 The `plugins/modules/template` file provides a starting point for new modules.
 
+## Changelog
+See [changelog.yaml](changelogs/changelog.yaml)
+
 ## Authors and Contributors
 
 - Andrew Arensburger ([@arensb](https://mastodon.social/@arensb))
