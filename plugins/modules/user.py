@@ -168,7 +168,6 @@ options:
 '''
 
 EXAMPLES = '''
-XXX
 - name: Create an ordinary user and their group
   arensb.truenas.user:
     name: bob
@@ -202,7 +201,6 @@ XXX
     delete_group: no
 '''
 
-# XXX - Return the UID of new user.
 RETURN = '''
 - name: invocation
   description:
@@ -480,9 +478,6 @@ def main():
     except Exception as e:
         module.fail_json(msg=f"Error looking up user {username}: {e}")
 
-    # # XXX - Mostly for debugging:
-    # result['user_info'] = user_info
-
     # First, check whether the user even exists.
     if user_info is None:
         # User doesn't exist
@@ -585,8 +580,6 @@ def main():
                             msg=f"Error getting next available UID: {e}"
                         )
                     arg['uid'] = next_uid
-
-                    result['uid'] = next_uid    # XXX - For debugging
 
                 arg['home'] = home
 
@@ -758,36 +751,6 @@ def main():
                 else:
                     # Something has changed
                     arg['home'] = home
-
-            # if old_sudo_api:
-            #     # If sudo is set, that's what we want.
-            #     #
-            #     # If either sudo_commands or sudo_commands_nopasswd is
-            #     # set, that determines the desired value of 'sudo'
-
-            #     # We don't know what we want yet.
-            #     want_sudo = None
-            #     want_sudo_nopasswd = None
-
-            #     if sudo is not None:
-            #         # 'sudo' was passed in by the Ansible caller.
-            #         want_sudo = sudo
-            #     else:
-            #         if sudo_commands is not None and len(sudo_commands) > 0:
-            #             want_sudo = True
-
-            #     if sudo_nopasswd is not None:
-            #         # 'sudo_nopasswd' was passed in by the Ansible caller.
-            #         want_sudo_nopasswd = sudo_nopasswd
-
-            #     if user_info['sudo'] != want_sudo:
-            #         arg['sudo'] = want_sudo
-
-            #     if sudo_nopasswd is not None and \
-            #        'sudo_nopasswd' in user_info and \
-            #        user_info['sudo_nopasswd'] != sudo_nopasswd:
-            #         # This should only happen with old_sudo
-            #         arg['sudo_nopasswd'] = sudo_nopasswd
 
             if old_sudo_call:
                 # By the time we get to this section, we know that the
@@ -1008,7 +971,7 @@ def main():
                 if final_groupset != nas_groupset:
                     arg['groups'] = list(final_groupset)
 
-            # XXX - If there are any, user.update()
+            # If there are changes, user.update()
             if len(arg) == 0:
                 # No changes
                 result['changed'] = False
