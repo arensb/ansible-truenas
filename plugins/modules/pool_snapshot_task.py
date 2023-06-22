@@ -10,6 +10,14 @@ short_description: Maintain periodic disk pool snapshot tasks.
 description:
   - Creates, deletes, and configures disk pool snapshot tasks.
 options:
+  allow_empty:
+    description:
+      - When true, empty snapshots may be created. This can be useful when
+        there are two overlapping sets of snapshots, e.g., a daily set
+        and a weekly set: the weekly snapshot may be empty because the daily
+        one already contains the changes to the filesystem, but you still
+        want to keep the weekly snapshot when the daily one has expired.
+    type: bool
   begin_time:
     description:
       - Time at which to begin taking snapshots. This is a string in
@@ -22,6 +30,10 @@ options:
         dataset, or zvol.
     type: str
     required: true
+  enabled:
+    description:
+      - Whether this snapshot task is enabled.
+    type: str
   end_time:
     description:
       - Time at which to stop taking snapshots. This is a string in
@@ -95,6 +107,26 @@ options:
     type: str
     choices: [ absent, present ]
     default: present
+  minute:
+    description:
+      - Minute when the task should run, in cron format.
+    type: str
+  hour:
+    description:
+      - Hour when the task should run, in cron format.
+    type: str
+  day:
+    description:
+      - Day of month when the task should run, in cron format.
+    type: str
+  month:
+    description:
+      - Month when the task should run, in cron format.
+    type: str
+  weekday:
+    description:
+      - Day of week when the task should run, in cron format.
+    type: str
 '''
 
 # XXX
@@ -108,6 +140,7 @@ RETURN = '''
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
     import MiddleWare as MW
+import re
 
 
 def main():
@@ -150,18 +183,18 @@ def main():
                                         'month', 'months', 'MONTH', 'MONTHS',
                                         'year', 'years', 'YEAR', 'YEARS']),
             name_format=dict(type='str', required=True),
-            # XXX - allow_empty (bool)
-            # XXX - enabled (bool)
             begin_time=dict(type='str'),
             end_time=dict(type='str'),
             exclude=dict(type='list', elements='str'),
+            allow_empty=dict(type='bool'),
+            enabled=dict(type='bool'),
 
             # Time specification copied from the builtin.cron module.
-            minute=dict(type='str', default='*'),
-            hour=dict(type='str', default='*'),
-            day=dict(type='str', default='*', aliases=['dom']),
-            month=dict(type='str', default='*'),
-            weekday=dict(type='str', default='*', aliases=['dow']),
+            minute=dict(type='str'),
+            hour=dict(type='str'),
+            day=dict(type='str', aliases=['dom']),
+            month=dict(type='str'),
+            weekday=dict(type='str', aliases=['dow']),
             ),
         supports_check_mode=True,
     )
@@ -189,6 +222,9 @@ def main():
     begin_time = module.params['begin_time']
     end_time = module.params['end_time']
     exclude = module.params['exclude']
+    allow_empty = module.params['allow_empty']
+    enabled = module.params['enabled']
+    allow_empty = module.params['allow_empty']
 
     # Convert the 'lifetime_unit' value to what middlewared expects.
     lifetime_unit = {
@@ -287,6 +323,30 @@ def main():
                     arg['exclude'] = exclude
                 # Otherwise, quietly pretend that 'exclude' wasn't specified.
 
+            if allow_empty is not None:
+                arg['allow_empty'] = allow_empty
+
+            if enabled is not None:
+                arg['enabled'] = enabled
+
+            if minute is not None:
+                arg['minute'] = minute
+
+            if hour is not None:
+                arg['hour'] = hour
+
+            if hour is not None:
+                arg['hour'] = hour
+
+            if day is not None:
+                arg['dom'] = day
+
+            if month is not None:
+                arg['month'] = month
+
+            if weekday is not None:
+                arg['dow'] = weekday
+
             if module.check_mode:
                 result['msg'] = ("Would have created snapshot task "
                                  f"with {arg}")
@@ -320,15 +380,49 @@ def main():
             # be.
             arg = {}
 
-            # XXX
-            # if feature is not None and task_info['feature'] != feature:
-            #     arg['feature'] = feature
+            if dataset is not None and task_info['dataset'] != dataset:
+                arg['dataset'] = dataset
+
+            if recursive is not None and task_info['recursive'] != recursive:
+                arg['recursive'] = recursive
+
+            if lifetime_value is not None and \
+               task_info['lifetime_value'] != lifetime_value:
+                arg['lifetime_value'] = lifetime_value
+
+            if lifetime_unit is not None and \
+               task_info['lifetime_unit'] != lifetime_unit:
+                arg['lifetime_unit'] = lifetime_unit
+
+            if name_format is not None and \
+               task_info['naming_schema'] != name_format:
+                arg['naming_schema'] = name_format
+
+            if minute is not None and task_info['minute'] != minute:
+                arg['minute'] = minute
+
+            if hour is not None and task_info['hour'] != hour:
+                arg['hour'] = hour
+
+            if day is not None and task_info['day'] != day:
+                arg['day'] = day
+
+            if month is not None and task_info['month'] != month:
+                arg['month'] = month
+
+            if weekday is not None and task_info['weekday'] != weekday:
+                arg['weekday'] = weekday
+
             if begin_time is not None and \
                task_info['begin_time'] != begin_time:
                 arg['begin_time'] = begin_time
 
             if end_time is not None and task_info['end_time'] != end_time:
                 arg['end_time'] = end_time
+
+            if allow_empty is not None and \
+               task_info['allow_empty'] != allow_empty:
+                arg['allow_empty'] = allow_empty
 
             # For exclude, perform a set comparison because order
             # doesn't matter.
@@ -349,6 +443,12 @@ def main():
                 # an unnecessary midclt call, so I don't care a lot.
                 arg['exclude'] = []
 
+            if allow_empty is not None and \
+               task_info['allow_empty'] != allow_empty:
+                arg['allow_empty'] = allow_empty
+
+            if enabled is not None and task_info['enabled'] != enabled:
+                arg['enabled'] = enabled
 
             # If there are any changes, pool.snapshottask.update()
             if len(arg) == 0:
