@@ -49,13 +49,21 @@ options:
           - Name of the dataset being snapshotted. This can be a pool,
             dataset, or zvol.
         type: str
+      name_format:
+        description:
+          - This is a regular expression that the C(name_format) option must
+            match. The idea being that you can name your snapshots something
+            like C(daily-%Y%m%d), and identify them by the prefix, using
+            C(name_format: ^daily-).
+        type: str
   name_format:
     description:
-      - This is a regular expression that the C(name_format) option must
-        match. The idea being that you can name your snapshots something
-        like C(daily-%Y%m%d), and identify them by the prefix, using
-        C(name_format: ^daily-).
+      - A template specifying the name of the snapshot. This must include
+        the strings "%Y", "%m", "%d", "%H", and "%M". Their meanings are
+        as in C(strftime): year, month, date, hour, and minute.
+        Other C(strftime) sequences may also be included.
     type: str
+    required: true
   recursive:
     description:
       - Whether to take snapshots of the child datasets, as well as of
@@ -122,6 +130,11 @@ def main():
                                         'month', 'months', 'MONTH', 'MONTHS',
                                         'year', 'years', 'YEAR', 'YEARS']),
             name_format=dict(type='str'),
+            # XXX - begin (time: HH:MM)
+            # XXX - end (time: HH:MM)
+            # XXX - exclude (list(str))
+            # XXX - allow_empty (bool)
+            # XXX - enabled (bool)
 
             # Time specification copied from the builtin.cron module.
             minute=dict(type='str', default='*'),
@@ -199,13 +212,18 @@ def main():
 
             # Collect arguments to pass to pool.snapshottask.create()
             arg = {
-                # XXX
-                # "taskname": name,
+                "dataset": dataset,
+                "recursive": recursive,
+                "lifetime_value": lifetime_value,
+                "lifetime_unit": lifetime_unit,
+                "naming_schema": name_format,
             }
 
             # XXX
             # if feature is not None:
             #     arg['feature'] = feature
+
+            # "exclude": exclude,
 
             if module.check_mode:
                 result['msg'] = ("Would have created snapshot task "
@@ -268,6 +286,7 @@ def main():
         else:
             # Task is not supposed to exist
 
+            # XXX - Delete all matching tasks.
             if module.check_mode:
                 result['msg'] = "Would have deleted snapshot task"
             else:
