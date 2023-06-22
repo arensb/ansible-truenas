@@ -123,13 +123,13 @@ def main():
             dataset=dict(type='str', required=True),
             recursive=dict(type='bool', required=True),
             lifetime_value=dict(type='int', required=True),
-            lifetime_unit=dict(type='str',
+            lifetime_unit=dict(type='str', required=True,
                                choices=['hour', 'hours', 'HOUR', 'HOURS',
                                         'day', 'days', 'DAY', 'DAYS',
                                         'week', 'weeks', 'WEEK', 'WEEKS',
                                         'month', 'months', 'MONTH', 'MONTHS',
                                         'year', 'years', 'YEAR', 'YEARS']),
-            name_format=dict(type='str'),
+            name_format=dict(type='str', required=True),
             # XXX - begin (time: HH:MM)
             # XXX - end (time: HH:MM)
             # XXX - exclude (list(str))
