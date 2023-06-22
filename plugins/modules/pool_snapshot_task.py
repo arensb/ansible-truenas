@@ -167,6 +167,25 @@ def main():
     month = module.params['month']
     weekday = module.params['weekday']
 
+    # Convert the 'lifetime_unit' value to what middlewared expects.
+    lifetime_unit = {
+        'hour': 'HOUR',
+        'hours': 'HOUR',
+        'HOURS': 'HOUR',
+        'day': 'DAY',
+        'days': 'DAY',
+        'DAYS': 'DAY',
+        'week': 'WEEK',
+        'weeks': 'WEEK',
+        'WEEKS': 'WEEK',
+        'month': 'MONTH',
+        'months': 'MONTH',
+        'MONTHS': 'MONTH',
+        'year': 'YEAR',
+        'years': 'YEAR',
+        'YEARS': 'YEAR',
+        }[lifetime_unit]
+
     # Look up the task.
     # Construct a set of criteria based on 'match'
     # "~" matches a regular expression, e.g., ["shell", "~", ".*zsh.*"]
