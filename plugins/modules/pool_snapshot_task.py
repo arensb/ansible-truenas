@@ -28,6 +28,14 @@ options:
         the form "HH:MM"
       - See also C(begin_time).
     type: str
+  exclude:
+    description:
+      - A list of child datasets to exclude from snapshotting.
+      - If a snapshot task is non-recursive, it may not have an exclude
+        list, so if you specify a non-empty exclude list to a non-recursive
+        task, this module will silently clear it.
+    type: list
+    elements: str
   lifetime_unit:
     description:
       - A unit of time for the snapshot lifetime before it is deleted.
@@ -142,11 +150,11 @@ def main():
                                         'month', 'months', 'MONTH', 'MONTHS',
                                         'year', 'years', 'YEAR', 'YEARS']),
             name_format=dict(type='str', required=True),
-            # XXX - exclude (list(str))
             # XXX - allow_empty (bool)
             # XXX - enabled (bool)
             begin_time=dict(type='str'),
             end_time=dict(type='str'),
+            exclude=dict(type='list', elements='str'),
 
             # Time specification copied from the builtin.cron module.
             minute=dict(type='str', default='*'),
@@ -180,6 +188,7 @@ def main():
     weekday = module.params['weekday']
     begin_time = module.params['begin_time']
     end_time = module.params['end_time']
+    exclude = module.params['exclude']
 
     # Convert the 'lifetime_unit' value to what middlewared expects.
     lifetime_unit = {
@@ -270,7 +279,13 @@ def main():
             if end_time is not None:
                 arg['end'] = end_time
 
-            # "exclude": exclude,
+            if exclude is not None:
+                # middlewared throws an error if exclude is nonempty,
+                # but recursive isn't true.
+                # recursive defaults to false.
+                if recursive is not None and recursive:
+                    arg['exclude'] = exclude
+                # Otherwise, quietly pretend that 'exclude' wasn't specified.
 
             if module.check_mode:
                 result['msg'] = ("Would have created snapshot task "
@@ -314,6 +329,25 @@ def main():
 
             if end_time is not None and task_info['end_time'] != end_time:
                 arg['end_time'] = end_time
+
+            # For exclude, perform a set comparison because order
+            # doesn't matter.
+            if exclude is not None and \
+               set(task_info['exclude']) != set(exclude):
+                arg['exclude'] = exclude
+
+            # If the task is non-recursive, the exclusion list must
+            # be empty.
+            # Why would the task wind up non-recursive? Either:
+            # a) it was already non-recursive, and we're not changing it.
+            # b) we're explicitly setting it to non-recursive.
+            if ((recursive is False) or \
+                (task_info['recursive'] is False)):
+                # If the exclusion list was already empty, and
+                # module.params doesn't change that, this assignment
+                # is unnecessary. But I don't think this can lead to
+                # an unnecessary midclt call, so I don't care a lot.
+                arg['exclude'] = []
 
 
             # If there are any changes, pool.snapshottask.update()
