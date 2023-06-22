@@ -270,7 +270,7 @@ def main():
         queries.append(["dataset", "=", match['dataset']])
     if 'name_format' in match and match['name_format'] is not None:
         queries.append(["naming_schema", "~", match['name_format']])
-    result['queries'] = queries
+    # result['queries'] = queries
     if len(queries) == 0:
         # This can happen if the module spec includes some new match
         # options, but the code above doesn't parse them correctly or
@@ -347,23 +347,22 @@ def main():
             if weekday is not None:
                 arg['dow'] = weekday
 
+            result['changes'] = arg
             if module.check_mode:
-                result['msg'] = ("Would have created snapshot task "
-                                 f"with {arg}")
+                result['msg'] = "Would have created snapshot task. " \
+                    "See 'changes'."
             else:
                 #
                 # Create new task
                 #
                 try:
                     err = mw.call("pool.snapshottask.create", arg)
-                    result['msg'] = err
                 except Exception as e:
-                    result['failed_invocation'] = arg
                     module.fail_json(msg=f"Error creating snapshot task: {e}")
 
                 # Return whichever interesting bits
                 # pool.snapshottask.create() returned.
-                result['task_id'] = err
+                result['task_id'] = err.id
 
             result['changed'] = True
         else:
@@ -458,25 +457,29 @@ def main():
                 #
                 # Update task.
                 #
+                result['changes'] = arg
                 if module.check_mode:
-                    result['msg'] = f"Would have updated snapshot task: {arg}"
+                    result['msg'] = "Would have updated snapshot task. " \
+                        "See 'changes'."
                 else:
                     try:
                         err = mw.call("pool.snapshottask.update",
                                       task_info['id'],
                                       arg)
                     except Exception as e:
-                        module.fail_json(msg=(f"Error updating snapshot task "
-                                              "with {arg}: {e}"))
+                        module.fail_json(msg=("Error updating snapshot task "
+                                              f"with {arg}: {e}"))
                         # Return any interesting bits from err
                         result['status'] = err['status']
+                        result['update_status'] = err
                 result['changed'] = True
         else:
             # Task is not supposed to exist
 
-            # XXX - Delete all matching tasks.
+            # Delete all matching tasks.
             if module.check_mode:
-                result['msg'] = "Would have deleted snapshot task"
+                result['msg'] = "Would have deleted snapshot tasks."
+                result['deleted_tasks'] = matching_tasks
             else:
                 try:
                     #
