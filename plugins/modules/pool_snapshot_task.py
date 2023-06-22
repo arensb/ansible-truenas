@@ -3,7 +3,6 @@ __metaclass__ = type
 
 # Create and maintain periodic disk pool snapshot tasks.
 
-# XXX
 DOCUMENTATION = '''
 ---
 module: pool_snapshot_task
@@ -84,12 +83,6 @@ from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
 
 
 def main():
-    # XXX - What should be used as the identifier?
-    #
-    # Maybe do something similar to lineinfile's 'regexp': have a 'match'
-    # option that defines which jobs match the one defined in Ansible.
-    # Perhaps use a dict of criteria to match.
-
     # Required arguments:
     # - dataset (path)
     # - recursive (bool)
@@ -127,7 +120,7 @@ def main():
                                         'day', 'days', 'DAY', 'DAYS',
                                         'week', 'weeks', 'WEEK', 'WEEKS',
                                         'month', 'months', 'MONTH', 'MONTHS',
-                                        'year', 'years', 'YEAR', 'YEARS'])
+                                        'year', 'years', 'YEAR', 'YEARS']),
             name_format=dict(type='str'),
 
             # Time specification copied from the builtin.cron module.
@@ -152,7 +145,8 @@ def main():
     state = module.params['state']
     dataset = module.params['dataset']
     recursive = module.params['recursive']
-    lifetime = module.params['lifetime']
+    lifetime_unit = module.params['lifetime_unit']
+    lifetime_value = module.params['lifetime_value']
     name_format = module.params['name_format']
     minute = module.params['minute']
     hour = module.params['hour']
@@ -180,9 +174,6 @@ def main():
         # something.
         # Also note the slightly different error message.
         module.fail_json(msg="No match conditions found.")
-
-    result['match'] = match
-    module.exit_json(**result)
 
     # Note that 'matching_tasks' is the list of all tasks that match
     # the 'match' option, so we can delete them all if 'state==absent'.
@@ -212,12 +203,13 @@ def main():
                 # "taskname": name,
             }
 
-            if feature is not None:
-                arg['feature'] = feature
+            # XXX
+            # if feature is not None:
+            #     arg['feature'] = feature
 
             if module.check_mode:
-                result['msg'] = (f"Would have created snapshot task "
-                                 "{name} with {arg}")
+                result['msg'] = ("Would have created snapshot task "
+                                 f"with {arg}")
             else:
                 #
                 # Create new task
@@ -227,8 +219,7 @@ def main():
                     result['msg'] = err
                 except Exception as e:
                     result['failed_invocation'] = arg
-                    module.fail_json(msg=(f"Error creating snapshot task "
-                                          "{name}: {e}"))
+                    module.fail_json(msg=f"Error creating snapshot task: {e}")
 
                 # Return whichever interesting bits
                 # pool.snapshottask.create() returned.
@@ -249,8 +240,9 @@ def main():
             # be.
             arg = {}
 
-            if feature is not None and task_info['feature'] != feature:
-                arg['feature'] = feature
+            # XXX
+            # if feature is not None and task_info['feature'] != feature:
+            #     arg['feature'] = feature
 
             # If there are any changes, pool.snapshottask.update()
             if len(arg) == 0:
@@ -261,8 +253,7 @@ def main():
                 # Update task.
                 #
                 if module.check_mode:
-                    result['msg'] = (f"Would have updated snapshot task "
-                                     "{name}: {arg}")
+                    result['msg'] = f"Would have updated snapshot task: {arg}"
                 else:
                     try:
                         err = mw.call("pool.snapshottask.update",
@@ -270,7 +261,7 @@ def main():
                                       arg)
                     except Exception as e:
                         module.fail_json(msg=(f"Error updating snapshot task "
-                                              "{name} with {arg}: {e}"))
+                                              "with {arg}: {e}"))
                         # Return any interesting bits from err
                         result['status'] = err['status']
                 result['changed'] = True
@@ -278,7 +269,7 @@ def main():
             # Task is not supposed to exist
 
             if module.check_mode:
-                result['msg'] = f"Would have deleted snapshot task {name}"
+                result['msg'] = "Would have deleted snapshot task"
             else:
                 try:
                     #
@@ -287,8 +278,7 @@ def main():
                     err = mw.call("pool.snapshottask.delete",
                                   task_info['id'])
                 except Exception as e:
-                    module.fail_json(msg=(f"Error deleting snapshot task "
-                                          "{name}: {e}"))
+                    module.fail_json(msg=f"Error deleting snapshot task: {e}")
             result['changed'] = True
 
     module.exit_json(**result)
