@@ -10,12 +10,24 @@ short_description: Maintain periodic disk pool snapshot tasks.
 description:
   - Creates, deletes, and configures disk pool snapshot tasks.
 options:
+  begin_time:
+    description:
+      - Time at which to begin taking snapshots. This is a string in
+        the form "HH:MM"
+      - See also C(end_time).
+    type: str
   dataset:
     description:
       - The name of the dataset to snapshot. This can be a pool, ZFS
         dataset, or zvol.
     type: str
     required: true
+  end_time:
+    description:
+      - Time at which to stop taking snapshots. This is a string in
+        the form "HH:MM"
+      - See also C(begin_time).
+    type: str
   lifetime_unit:
     description:
       - A unit of time for the snapshot lifetime before it is deleted.
@@ -130,11 +142,11 @@ def main():
                                         'month', 'months', 'MONTH', 'MONTHS',
                                         'year', 'years', 'YEAR', 'YEARS']),
             name_format=dict(type='str', required=True),
-            # XXX - begin (time: HH:MM)
-            # XXX - end (time: HH:MM)
             # XXX - exclude (list(str))
             # XXX - allow_empty (bool)
             # XXX - enabled (bool)
+            begin_time=dict(type='str'),
+            end_time=dict(type='str'),
 
             # Time specification copied from the builtin.cron module.
             minute=dict(type='str', default='*'),
@@ -166,6 +178,8 @@ def main():
     day = module.params['day']
     month = module.params['month']
     weekday = module.params['weekday']
+    begin_time = module.params['begin_time']
+    end_time = module.params['end_time']
 
     # Convert the 'lifetime_unit' value to what middlewared expects.
     lifetime_unit = {
@@ -185,6 +199,18 @@ def main():
         'years': 'YEAR',
         'YEARS': 'YEAR',
         }[lifetime_unit]
+
+    # Make sure that 'begin_time' and 'end_time' match ^\d?\d:\d\d$.
+    if begin_time is not None:
+        begin_time = begin_time.trim()
+        if re.match("^\\d\\d?:\\d\\d$", begin_time) is None:
+            module.fail_json(msg=f"Illegal value for begin_time: {begin_time}."
+                             " Should be of the form HH:MM.")
+    if end_time is not None:
+        end_time = end_time.trim()
+        if re.match("^\\d\\d?:\\d\\d$", end_time) is None:
+            module.fail_json(msg=f"Illegal value for end_time: {end_time}."
+                             " Should be of the form HH:MM.")
 
     # Look up the task.
     # Construct a set of criteria based on 'match'
@@ -238,9 +264,11 @@ def main():
                 "naming_schema": name_format,
             }
 
-            # XXX
-            # if feature is not None:
-            #     arg['feature'] = feature
+            if begin_time is not None:
+                arg['begin'] = begin_time
+
+            if end_time is not None:
+                arg['end'] = end_time
 
             # "exclude": exclude,
 
@@ -280,6 +308,13 @@ def main():
             # XXX
             # if feature is not None and task_info['feature'] != feature:
             #     arg['feature'] = feature
+            if begin_time is not None and \
+               task_info['begin_time'] != begin_time:
+                arg['begin_time'] = begin_time
+
+            if end_time is not None and task_info['end_time'] != end_time:
+                arg['end_time'] = end_time
+
 
             # If there are any changes, pool.snapshottask.update()
             if len(arg) == 0:
