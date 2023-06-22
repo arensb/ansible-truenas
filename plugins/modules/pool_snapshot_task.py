@@ -131,10 +131,36 @@ options:
 
 # XXX
 EXAMPLES = '''
+- name: Hourly snapshots of data/vol1
+  hosts: myhost
+  collections: arensb.truenas
+  become: yes
+  tasks:
+    - pool_snapshot_task:
+        match:
+          dataset: data/vol1
+          name_format: "hourly-"
+        dataset: data/vol1
+        # Keep them for 7 days
+        lifetime_value: 7
+        lifetime_unit: days
+        name_format: "hourly-%Y-%m-%d_%H:%M"
+        # Snapshot everything under data/vol1, with a couple of exceptions.
+        recursive: yes
+        exclude:
+          - data/vol1/ex1
+          - data/vol1/ex2
 '''
 
 # XXX
 RETURN = '''
+deleted_tasks:
+  description: List of tasks that were deleted when C(state) is 'absent'.
+  type: list
+task:
+  description: Description of newly-created task.
+  returned: Success, when created.
+  type: dict
 '''
 
 from ansible.module_utils.basic import AnsibleModule
