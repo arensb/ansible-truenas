@@ -480,10 +480,16 @@ def main():
             else:
                 try:
                     #
-                    # Delete task.
+                    # Delete tasks.
                     #
-                    err = mw.call("pool.snapshottask.delete",
-                                  task_info['id'])
+
+                    # Return a list of all deleted tasks.
+                    result['deleted_tasks'] = []
+
+                    for task in matching_tasks:
+                        err = mw.call("pool.snapshottask.delete",
+                                      task['id'])
+                        result['deleted_tasks'].append(task)
                 except Exception as e:
                     module.fail_json(msg=f"Error deleting snapshot task: {e}")
             result['changed'] = True
