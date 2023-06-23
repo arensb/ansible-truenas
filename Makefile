@@ -30,5 +30,6 @@ docs:
 	/usr/bin/env ANSIBLE_COLLECTIONS_PATHS=. \
 	ansible-doc \
 		-M .\
+		--json \
 		--type module \
 		${MODULES}

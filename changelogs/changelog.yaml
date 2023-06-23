@@ -27,6 +27,12 @@
 ---
 ancestor: null
 releases:
+  1.5.1:
+    release_date: '2023-06-23'
+    changes:
+      release_summary: fix docstrings
+      minor_changes:
+        - Fix formatting in docstrings, so docs should generate better now.
   1.5.0:
     release_date: '2023-06-23'
     changes:
