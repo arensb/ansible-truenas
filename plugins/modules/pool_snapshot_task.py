@@ -152,6 +152,12 @@ EXAMPLES = '''
         exclude:
           - data/vol1/ex1
           - data/vol1/ex2
+        # Take snapshots every 2 hours on weekdays
+        minute: "*"
+        hour: "*/2"
+        day: "*"
+        month: "*"
+        weekday: Mon-Fri
 '''
 
 # XXX
