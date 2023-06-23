@@ -478,7 +478,7 @@ def main():
             # Why would the task wind up non-recursive? Either:
             # a) it was already non-recursive, and we're not changing it.
             # b) we're explicitly setting it to non-recursive.
-            if ((recursive is False) or \
+            if ((recursive is False) or
                 (task_info['recursive'] is False)):
                 # If the exclusion list was already empty, and
                 # module.params doesn't change that, this assignment
