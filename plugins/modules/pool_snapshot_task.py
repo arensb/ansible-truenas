@@ -119,6 +119,7 @@ options:
     description:
       - Day of month when the task should run, in cron format.
     type: str
+    aliases: ['date', 'dom']
   month:
     description:
       - Month when the task should run, in cron format.
@@ -127,6 +128,7 @@ options:
     description:
       - Day of week when the task should run, in cron format.
     type: str
+    aliases: ['dow']
 '''
 
 # XXX
@@ -218,7 +220,7 @@ def main():
             # Time specification copied from the builtin.cron module.
             minute=dict(type='str'),
             hour=dict(type='str'),
-            day=dict(type='str', aliases=['dom']),
+            day=dict(type='str', aliases=['date', 'dom']),
             month=dict(type='str'),
             weekday=dict(type='str', aliases=['dow']),
             ),
