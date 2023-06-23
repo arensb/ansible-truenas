@@ -202,15 +202,17 @@ EXAMPLES = '''
 '''
 
 RETURN = '''
-- name: invocation
+invocation:
   description:
     - Dictionary giving the fields, and their values, that were specified
       when the user is created or updated.
-- name: user_id
+  type: dict
+user_id:
   description:
     - The ID of a newly-created user.
     - This is not the C(uid) as found in C(/etc/passwd), but the database
       ID.
+  type: int
 '''
 
 import sys

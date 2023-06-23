@@ -12,7 +12,8 @@ description:
 options:
   allow_empty:
     description:
-      - When true, empty snapshots may be created. This can be useful when
+      - |
+        When true, empty snapshots may be created. This can be useful when
         there are two overlapping sets of snapshots, e.g., a daily set
         and a weekly set: the weekly snapshot may be empty because the daily
         one already contains the changes to the filesystem, but you still
@@ -50,7 +51,8 @@ options:
     elements: str
   lifetime_unit:
     description:
-      - A unit of time for the snapshot lifetime before it is deleted.
+      - |
+        A unit of time for the snapshot lifetime before it is deleted.
         One of the following units of time:
         C(hour), C(day), C(week), C(month), C(year),
         optionally pluralized.
@@ -83,14 +85,16 @@ options:
         type: str
       name_format:
         description:
-          - This is a regular expression that the C(name_format) option must
+          - |
+            This is a regular expression that the C(name_format) option must
             match. The idea being that you can name your snapshots something
             like C(daily-%Y%m%d), and identify them by the prefix, using
             C(name_format: ^daily-).
         type: str
   name_format:
     description:
-      - A template specifying the name of the snapshot. This must include
+      - |
+        A template specifying the name of the snapshot. This must include
         the strings "%Y", "%m", "%d", "%H", and "%M". Their meanings are
         as in C(strftime): year, month, date, hour, and minute.
         Other C(strftime) sequences may also be included.
@@ -161,10 +165,12 @@ EXAMPLES = '''
 '''
 
 RETURN = '''
+---
 task:
   description:
     - A data structure describing a newly-created snapshot task.
   type: dict
+  returned: Success, when created.
   sample:
     allow_empty: true
     dataset: "tank"
@@ -183,16 +189,12 @@ task:
         hour: "0"
         minute: "0"
         month: "*"
-     state:
-        state: "PENDING"
-     vmware_sync: false
+    state:
+       state: "PENDING"
+    vmware_sync: false
 deleted_tasks:
   description: List of tasks that were deleted when C(state) is 'absent'.
   type: list
-task:
-  description: Description of newly-created task.
-  returned: Success, when created.
-  type: dict
 '''
 
 from ansible.module_utils.basic import AnsibleModule

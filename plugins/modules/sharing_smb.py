@@ -93,7 +93,8 @@ options:
     type: str
   purpose:
     description:
-      - Specifies a family of configuration parameters for different use
+      - |
+        Specifies a family of configuration parameters for different use
         cases. Legal values include:
       - C(NO_PRESET), C(DEFAULT_SHARE), C(ENHANCED_TIMEMACHINE),
         C(MULTI_PROTOCOL_APP), C(MULTI_PROTOCOL_NFS), C(PRIVATE_DATASETS),
@@ -103,7 +104,8 @@ options:
         and C(hostsdeny).
   recyclebin:
     description:
-      - If true, enables Windows Recycle Bin: deleted files are moved to the
+      - |
+        If true, enables Windows Recycle Bin: deleted files are moved to the
         Recycle Bin. If false, deleted files are immediately deleted.
     type: bool
   ro:

@@ -7,40 +7,29 @@ __metaclass__ = type
 DOCUMENTATION = '''
 ---
 module: mail
-short_description: Manage TrueNAS email settings
-description:
+description: Manage TrueNAS email settings
 options:
   # XXX
   from_email:
     description:
-      - Address from which system email will be sent. Must be in the form
+      - |
+        Address from which system email will be sent. Must be in the form
         of an email address: I(user@dom.ain).
       - This is used as both the envelope and header \"From\" address.
     type: str
   from_name:
     description:
       - Full name used in the email's \"From\" header.
-  server:
-  port:
-  security:
-  smtp:
-  smtp_user:
-  password:
-  oauth:
-    client_id:
-    client_secret:
-    refresh_token:
-  # name:
-  #   description:
-  #     - Name of the resource
-  #   type: str
-  #   required: true
-  # state:
-  #   description:
-  #     - Whether the resource should exist or not.
-  #   type: str
-  #   choices: [ absent, present ]
-  #   default: present
+  # server:
+  # port:
+  # security:
+  # smtp:
+  # smtp_user:
+  # password:
+  # oauth:
+  #   client_id:
+  #   client_secret:
+  #   refresh_token:
 '''
 
 # XXX
