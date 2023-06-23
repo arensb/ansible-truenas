@@ -160,8 +160,32 @@ EXAMPLES = '''
         weekday: Mon-Fri
 '''
 
-# XXX
 RETURN = '''
+task:
+  description:
+    - A data structure describing a newly-created snapshot task.
+  type: dict
+  sample:
+    allow_empty: true
+    dataset: "tank"
+    enabled: true
+    exclude: []
+    id: 123
+    lifetime_unit: YEAR
+    lifetime_value: 1
+    naming_schema: "monthly-%Y-%m-%d_%H:%M"
+    recursive: true
+    schedule:
+        begin: "00:00"
+        dom: "1"
+        dow: "*"
+        end: "23:59"
+        hour: "0"
+        minute: "0"
+        month: "*"
+     state:
+        state: "PENDING"
+     vmware_sync: false
 deleted_tasks:
   description: List of tasks that were deleted when C(state) is 'absent'.
   type: list
@@ -312,7 +336,6 @@ def main():
         queries.append(["dataset", "=", match['dataset']])
     if 'name_format' in match and match['name_format'] is not None:
         queries.append(["naming_schema", "~", match['name_format']])
-    # result['queries'] = queries
     if len(queries) == 0:
         # This can happen if the module spec includes some new match
         # options, but the code above doesn't parse them correctly or
@@ -393,8 +416,8 @@ def main():
             if len(schedule) > 0:
                 arg['schedule'] = schedule
 
-            result['changes'] = arg
             if module.check_mode:
+                result['changes'] = arg
                 result['msg'] = "Would have created snapshot task. " \
                     "See 'changes'."
             else:
@@ -406,9 +429,8 @@ def main():
                 except Exception as e:
                     module.fail_json(msg=f"Error creating snapshot task: {e}")
 
-                # Return whichever interesting bits
-                # pool.snapshottask.create() returned.
-                result['task_id'] = err.id
+                # Return the task that was created.
+                result['task'] = err
 
             result['changed'] = True
         else:
@@ -510,8 +532,8 @@ def main():
                 #
                 # Update task.
                 #
-                result['changes'] = arg
                 if module.check_mode:
+                    result['changes'] = arg
                     result['msg'] = "Would have updated snapshot task. " \
                         "See 'changes'."
                 else:
@@ -522,9 +544,8 @@ def main():
                     except Exception as e:
                         module.fail_json(msg=("Error updating snapshot task "
                                               f"with {arg}: {e}"))
-                        # Return any interesting bits from err
-                        result['status'] = err['status']
-                        result['update_status'] = err
+                # 'err' is the current state of the task. Return that.
+                result['task'] = err
                 result['changed'] = True
         else:
             # Task is not supposed to exist
