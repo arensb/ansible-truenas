@@ -336,12 +336,13 @@ def main():
                 "lifetime_unit": lifetime_unit,
                 "naming_schema": name_format,
             }
+            schedule = {}
 
             if begin_time is not None:
-                arg['begin'] = begin_time
+                schedule['begin'] = begin_time
 
             if end_time is not None:
-                arg['end'] = end_time
+                schedule['end'] = end_time
 
             if exclude is not None:
                 # middlewared throws an error if exclude is nonempty,
@@ -358,22 +359,25 @@ def main():
                 arg['enabled'] = enabled
 
             if minute is not None:
-                arg['minute'] = minute
+                schedule['minute'] = minute
 
             if hour is not None:
-                arg['hour'] = hour
+                schedule['hour'] = hour
 
             if hour is not None:
-                arg['hour'] = hour
+                schedule['hour'] = hour
 
             if day is not None:
-                arg['dom'] = day
+                schedule['dom'] = day
 
             if month is not None:
-                arg['month'] = month
+                schedule['month'] = month
 
             if weekday is not None:
-                arg['dow'] = weekday
+                schedule['dow'] = weekday
+
+            if len(schedule) > 0:
+                arg['schedule'] = schedule
 
             result['changes'] = arg
             if module.check_mode:
@@ -406,6 +410,7 @@ def main():
             # Make list of differences between what is and what should
             # be.
             arg = {}
+            schedule = {}
 
             if dataset is not None and task_info['dataset'] != dataset:
                 arg['dataset'] = dataset
@@ -425,27 +430,30 @@ def main():
                task_info['naming_schema'] != name_format:
                 arg['naming_schema'] = name_format
 
-            if minute is not None and task_info['minute'] != minute:
-                arg['minute'] = minute
+            if minute is not None and \
+               task_info['schedule']['minute'] != minute:
+                schedule['minute'] = minute
 
-            if hour is not None and task_info['hour'] != hour:
-                arg['hour'] = hour
+            if hour is not None and task_info['schedule']['hour'] != hour:
+                schedule['hour'] = hour
 
-            if day is not None and task_info['day'] != day:
-                arg['day'] = day
+            if day is not None and task_info['schedule']['day'] != day:
+                schedule['day'] = day
 
-            if month is not None and task_info['month'] != month:
-                arg['month'] = month
+            if month is not None and task_info['schedule']['month'] != month:
+                schedule['month'] = month
 
-            if weekday is not None and task_info['weekday'] != weekday:
-                arg['weekday'] = weekday
+            if weekday is not None and \
+               task_info['schedule']['weekday'] != weekday:
+                schedule['weekday'] = weekday
 
             if begin_time is not None and \
-               task_info['begin_time'] != begin_time:
-                arg['begin_time'] = begin_time
+               task_info['schedule']['begin'] != begin_time:
+                schedule['begin'] = begin_time
 
-            if end_time is not None and task_info['end_time'] != end_time:
-                arg['end_time'] = end_time
+            if end_time is not None and \
+               task_info['schedule']['end'] != end_time:
+                schedule['end'] = end_time
 
             if allow_empty is not None and \
                task_info['allow_empty'] != allow_empty:
@@ -476,6 +484,9 @@ def main():
 
             if enabled is not None and task_info['enabled'] != enabled:
                 arg['enabled'] = enabled
+
+            if len(schedule) > 0:
+                arg['schedule'] = schedule
 
             # If there are any changes, pool.snapshottask.update()
             if len(arg) == 0:
