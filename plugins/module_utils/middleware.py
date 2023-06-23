@@ -10,6 +10,8 @@
 
 from ansible_collections.arensb.truenas.plugins.module_utils.midclt \
     import Midclt
+from ansible_collections.arensb.truenas.plugins.module_utils.client \
+    import MiddlewareClient
 
 
 # XXX - Ought to define an exception type for things that can go wrong
@@ -26,7 +28,7 @@ class MiddleWare:
         pass
 
     def call(self, func, *args, **kwargs):
-        return Midclt.call(func, *args, **kwargs)
+        return MiddlewareClient.call(func, *args, **kwargs)
 
     def job(self, func, *args, **kwargs):
         return Midclt.job(func, *args, **kwargs)
