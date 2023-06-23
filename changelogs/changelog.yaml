@@ -27,6 +27,14 @@
 ---
 ancestor: null
 releases:
+  1.5.0:
+    release_date: '2023-06-23'
+    changes:
+      release_summary: add ZFS snapshot tasks
+      major_changes:
+        - Added the C(pool_snapshot_task) module, which manages periodic
+          snapshot tasks for ZFS volumes.
+      modules: pool_snapshot_task
   1.4.5:
     release_date: '2023-06-20'
     changes:
