@@ -319,7 +319,7 @@ def main():
             # Task exists
             task_info = matching_tasks[0]
     except Exception as e:
-        module.fail_json(msg=f"Error looking up snapshot task {name}: {e}")
+        module.fail_json(msg=f"Error looking up snapshot task: {e}")
 
     # First, check whether the task even exists.
     if task_info is None:
