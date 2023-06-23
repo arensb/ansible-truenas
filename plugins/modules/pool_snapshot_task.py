@@ -252,7 +252,6 @@ def main():
     exclude = module.params['exclude']
     allow_empty = module.params['allow_empty']
     enabled = module.params['enabled']
-    allow_empty = module.params['allow_empty']
 
     # Convert the 'lifetime_unit' value to what middlewared expects.
     lifetime_unit = {
