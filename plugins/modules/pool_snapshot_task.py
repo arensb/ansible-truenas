@@ -436,15 +436,15 @@ def main():
             if hour is not None and task_info['schedule']['hour'] != hour:
                 schedule['hour'] = hour
 
-            if day is not None and task_info['schedule']['day'] != day:
-                schedule['day'] = day
+            if day is not None and task_info['schedule']['dom'] != day:
+                schedule['dom'] = day
 
             if month is not None and task_info['schedule']['month'] != month:
                 schedule['month'] = month
 
             if weekday is not None and \
-               task_info['schedule']['weekday'] != weekday:
-                schedule['weekday'] = weekday
+               task_info['schedule']['dow'] != weekday:
+                schedule['dow'] = weekday
 
             if begin_time is not None and \
                task_info['schedule']['begin'] != begin_time:
