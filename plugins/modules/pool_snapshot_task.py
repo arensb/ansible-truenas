@@ -275,14 +275,23 @@ def main():
     # Make sure that 'begin_time' and 'end_time' match ^\d?\d:\d\d$.
     if begin_time is not None:
         begin_time = begin_time.strip()
-        if re.match("^\\d\\d?:\\d\\d$", begin_time) is None:
+        m = re.match("^(\\d?)\\d:\\d\\d$", begin_time)
+        if m is None:
             module.fail_json(msg=f"Illegal value for begin_time: {begin_time}."
                              " Should be of the form HH:MM.")
+        elif m[1] == '':
+            # Make sure there's a two-digit hour.
+            begin_time = "0"+begin_time
+
     if end_time is not None:
         end_time = end_time.strip()
-        if re.match("^\\d\\d?:\\d\\d$", end_time) is None:
+        m = re.match("^(\\d?)\\d:\\d\\d$", end_time)
+        if m is None:
             module.fail_json(msg=f"Illegal value for end_time: {end_time}."
                              " Should be of the form HH:MM.")
+        elif m[1] == '':
+            # Make sure there's a two-digit hour.
+            end_time = "0"+end_time
 
     # Look up the task.
     # Construct a set of criteria based on 'match'
