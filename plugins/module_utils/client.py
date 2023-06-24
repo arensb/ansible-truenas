@@ -28,5 +28,5 @@ class MiddlewareClient:
         Returns the returned value.
         """
         client = MiddlewareClient._client()
-        retval = client.call(func, args)
+        retval = client.call(func, *args)
         return retval
