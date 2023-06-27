@@ -546,8 +546,8 @@ def main():
                     except Exception as e:
                         module.fail_json(msg=("Error updating snapshot task "
                                               f"with {arg}: {e}"))
-                # 'err' is the current state of the task. Return that.
-                result['task'] = err
+                    # 'err' is the current state of the task. Return that.
+                    result['task'] = err
                 result['changed'] = True
         else:
             # Task is not supposed to exist
