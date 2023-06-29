@@ -20,13 +20,30 @@ class MiddlewareClient:
         return MiddlewareClient.client
 
     @staticmethod
-    def call(func, *args, opts=None, output=None):
+    def call(func, *args, output=None):
         """Call the API function 'func' with arguments 'args'.
 
-        'opts' and 'output' are just for compatibility, and are ignored.
+        'output' is just for compatibility, and is ignored.
 
         Returns the returned value.
         """
         client = MiddlewareClient._client()
         retval = client.call(func, *args)
         return retval
+
+    @staticmethod
+    def job(func, *args):
+        """Run the API function 'func', with arguments 'args'.
+
+        Jobs are different from calls in that jobs are asynchronous,
+        since they may run for a long time.
+
+        This method starts a job, then waits for it to complete. If it
+        finishes successfully, 'job' returns the job's status.
+        """
+
+        client = MiddlewareClient._client()
+        err = client.call(func,
+                          *args,
+                          job=True)
+        return err
