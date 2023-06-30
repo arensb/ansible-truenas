@@ -640,8 +640,12 @@ def nfs2():
             # Make list of differences between what is and what should
             # be.
             arg = {}
-            if name is not None and export_info['comment'] != name:
-                arg['comment'] = name
+            try:
+                if name is not None and export_info['name'] != name:
+                    arg['name'] = name
+            except KeyError as error:
+                if name is not None and export_info['comment'] != name:
+                    arg['comment'] = name
 
             if alldirs is not None and export_info['alldirs'] != alldirs:
                 arg['alldirs'] = alldirs
