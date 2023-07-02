@@ -8,27 +8,48 @@
 # sits between individual modules and the middleware, and uses
 # whichever access method is chosen.
 
-from ansible_collections.arensb.truenas.plugins.module_utils.midclt \
-    import Midclt
-from ansible_collections.arensb.truenas.plugins.module_utils.client \
-    import MiddlewareClient
-
+import os
 
 # XXX - Ought to define an exception type for things that can go wrong
 # with middleware calls.
 
 class MiddleWare:
-    # XXX - What do we want the API to be? How does the caller choose
-    # an access method?
-    #
-    # Create a MiddleWare object with a given access method, and then
-    # use that?
+    def __init__(self):
+        # Decide which API to use.
+        #
+        # There's no good way to have a config variable from
+        # ansible.cfg show up here, in a module executed on the
+        # client. The next-best thing is to use an environment
+        # variable, which can be passed in the play, e.g.:
+        #
+        # - hosts: my-nas
+        #   collections: arensb.truenas
+        #   environment:
+        #     middleware_method: client
+        #   tasks:
+        #     ...
 
-    def __init__(self, access='midclt', *args):
-        pass
+        method = os.getenv('middleware_method', 'client')
+
+        # We import here, rather than at the top of the code, because
+        # at least in theory, the desired module might not exist on
+        # the remote host.
+        if method == 'midclt':
+            from ansible_collections.arensb.truenas.plugins.module_utils.midclt \
+                import Midclt
+            self.client = Midclt
+        elif method == 'client':
+            from ansible_collections.arensb.truenas.plugins.module_utils.client \
+                import MiddlewareClient
+            self.client = MiddlewareClient
+        else:
+            # Shouldn't use illegal methods. Bad caller!
+            raise Exception(f"Unknown middleware method {method}")
+
+        self.method = f"Selected method {self.client}"
 
     def call(self, func, *args, **kwargs):
-        return MiddlewareClient.call(func, *args, **kwargs)
+        return self.client.call(func, *args, **kwargs)
 
     def job(self, func, *args, **kwargs):
-        return Midclt.job(func, *args, **kwargs)
+        return self.client.job(func, *args, **kwargs)
