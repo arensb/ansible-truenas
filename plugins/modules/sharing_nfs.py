@@ -641,8 +641,8 @@ def nfs2():
             # be.
             arg = {}
 
-            if name is not None and export_info['name'] != name:
-                arg['name'] = name
+            if name is not None and export_info['comment'] != name:
+                arg['comment'] = name
 
             if alldirs is not None and export_info['alldirs'] != alldirs:
                 arg['alldirs'] = alldirs
