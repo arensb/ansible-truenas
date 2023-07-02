@@ -27,6 +27,14 @@
 ---
 ancestor: null
 releases:
+  1.5.2:
+    release_date: '2023-07-01'
+    change:
+      release_summary: Better handling of NFS exports.
+      changes:
+        bugfixes:
+          - Fix an exception when updating an NFS export (Ed Hull).
+          - Correctly find the system version in TrueNAS SCALE (Ed Hull).
   1.5.0:
     release_date: '2023-06-23'
     changes:
