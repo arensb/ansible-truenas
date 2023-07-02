@@ -15,6 +15,17 @@ import os
 
 class MiddleWare:
     def __init__(self):
+        """Initialize the MiddleWare client.
+
+        This method is deprecated.
+        """
+
+        self.client = MiddleWare._pick_method()
+
+    @classmethod
+    def _pick_method(cls):
+        """Pick the right class to interact with middlewared, and return it."""
+
         # Decide which API to use.
         #
         # There's no good way to have a config variable from
@@ -28,7 +39,6 @@ class MiddleWare:
         #     middleware_method: client
         #   tasks:
         #     ...
-
         method = os.getenv('middleware_method', 'client')
 
         # We import here, rather than at the top of the code, because
@@ -37,19 +47,26 @@ class MiddleWare:
         if method == 'midclt':
             from ansible_collections.arensb.truenas.plugins.module_utils.midclt \
                 import Midclt
-            self.client = Midclt
+            return Midclt
         elif method == 'client':
             from ansible_collections.arensb.truenas.plugins.module_utils.client \
                 import MiddlewareClient
-            self.client = MiddlewareClient
+            return MiddlewareClient
         else:
             # Shouldn't use illegal methods. Bad caller!
             raise Exception(f"Unknown middleware method {method}")
 
-        self.method = f"Selected method {self.client}"
+        # Should never get this far.
 
     def call(self, func, *args, **kwargs):
         return self.client.call(func, *args, **kwargs)
 
     def job(self, func, *args, **kwargs):
         return self.client.job(func, *args, **kwargs)
+
+    @classmethod
+    def client(cls):
+        """Return a client for interfacing with middlewared."""
+        client_class = MiddleWare._pick_method()
+
+        return client_class()
