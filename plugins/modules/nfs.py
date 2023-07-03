@@ -65,7 +65,7 @@ def main():
         msg=''
     )
 
-    mw = MW()
+    mw = MW.client()
 
     # Assign variables from properties, for convenience
     nfsv4 = module.params['nfsv4']

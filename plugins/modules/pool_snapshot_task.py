@@ -264,7 +264,7 @@ def main():
         msg=''
     )
 
-    mw = MW()
+    mw = MW.client()
 
     # Assign variables from properties, for convenience
     match = module.params['match']

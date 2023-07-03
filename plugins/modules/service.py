@@ -108,7 +108,7 @@ def main():
         msg=''
     )
 
-    mw = MW()
+    mw = MW.client()
 
     # Get service name
     service = module.params['name']
