@@ -72,7 +72,7 @@ def main():
         msg=''
     )
 
-    mw = MW()
+    mw = MW.client()
 
     # Assign variables from properties, for convenience
     pool = module.params['pool']

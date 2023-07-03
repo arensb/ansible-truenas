@@ -3,6 +3,9 @@ __metaclass__ = type
 
 # Manage plugins.
 
+# XXX - 'state' only accepts {present, absent}. But docstring says
+# it accepts running, stopped, and restarted.
+
 # XXX - How do you know which values `props` takes?
 # Maybe from plugin.defaults:
 #     midclt call plugin.defaults '{"plugin":"syncthing"}'|jq .|l
@@ -266,7 +269,7 @@ def main():
         msg=''
     )
 
-    mw = MW()
+    mw = MW.client()
 
     # Assign variables from properties, for convenience
     name = module.params['name']

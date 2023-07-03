@@ -47,7 +47,7 @@ def main():
         msg=''
     )
 
-    mw = MW()
+    mw = MW.client()
 
     # Assign variables from properties, for convenience
     pool = module.params['pool']
@@ -81,8 +81,9 @@ def main():
                 module.fail_json(msg=f"Error activating pool {pool}: {e}")
             result['status'] = err
 
-        if err != 'True':
-            module.fail_json(msg=f"Error activating pool {pool}: err == {err}")
+            if err != 'True':
+                module.fail_json(msg=f"Error activating pool {pool}: "
+                                 f"err == {err}")
 
         result['changed'] = True
 

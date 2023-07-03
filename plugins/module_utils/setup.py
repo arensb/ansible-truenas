@@ -22,7 +22,7 @@ def get_tn_version():
     if tn_version is not None:
         return tn_version
 
-    mw = MW()
+    mw = MW.client()
 
     try:
         # product_name is a string like "TrueNAS".
