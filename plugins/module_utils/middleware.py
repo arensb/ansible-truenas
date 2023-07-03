@@ -39,7 +39,10 @@ class MiddleWare:
         #     middleware_method: client
         #   tasks:
         #     ...
-        method = os.getenv('middleware_method', 'client')
+
+        # XXX - Be backward-compatible for a while. -- arensb, 2023-07-03
+        method = os.getenv('middleware_method', 'midclt')
+        # method = os.getenv('middleware_method', 'client')
 
         # We import here, rather than at the top of the code, because
         # at least in theory, the desired module might not exist on
