@@ -3,33 +3,63 @@ __metaclass__ = type
 
 # Manage email settings
 
-# XXX
 DOCUMENTATION = '''
 ---
 module: mail
-description: Manage TrueNAS email settings
+short_description: Manage TrueNAS email settings
+description:
+  - Configure how TrueNAS sends mail.
 options:
-  # XXX
   from_email:
     description:
       - |
         Address from which system email will be sent. Must be in the form
-        of an email address: I(user@dom.ain).
+        of an email address: C(user@dom.ain).
       - This is used as both the envelope and header \"From\" address.
     type: str
   from_name:
     description:
       - Full name used in the email's \"From\" header.
-  # server:
-  # port:
-  # security:
-  # smtp:
-  # smtp_user:
-  # password:
-  # oauth:
-  #   client_id:
-  #   client_secret:
-  #   refresh_token:
+  server:
+    description:
+      - Outgoing mail server. This may be either the hostname or IP address
+        of an SMTP server.
+    type: str
+  oauth_id:
+    description: OAuth client ID.
+    type: str
+  oauth_secret:
+    description: OAuth client secret.
+    type: str
+  oauth_token:
+    description: OAuth access token.
+    type: str
+  port:
+    description:
+      - The TCP port on which to connect to the outgoing mail server.
+    type: int
+    default: 25
+  security:
+    description:
+      - The encryption to use for outgoing mail.
+    type: str
+    choices: [ PLAIN, SSL, TLS ]
+  smtp:
+    description:
+      - If true, means that SMTP authentication is enabled on the server,
+        and I(smtp_user) and I(smtp_pass) are required to log in.
+      - See also I(smtp_user) and I(smtp_password).
+    type: bool
+  smtp_user:
+    description:
+      - User to log in as on the SMTP server. Required if C(smtp=true).
+      - See also I(smtp) and I(smtp_password).
+    type: str
+  smtp_password:
+    description:
+      - Password for I(smtp_user) on the SMTP server. Required if C(smtp=true).
+      - See also I(smtp) and I(smtp_user).
+    type: str
 '''
 
 # XXX
@@ -48,7 +78,6 @@ from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
 def main():
     module = AnsibleModule(
         argument_spec=dict(
-            # XXX
             from_name=dict(type='str'),
             from_email=dict(type='str'),
             server=dict(type='str'),
@@ -63,6 +92,7 @@ def main():
             oauth_token=dict(type='str'),
             ),
         supports_check_mode=True,
+        # XXX - 'smtp_user' and 'smtp_pass' are required when 'smtp' is true.
     )
 
     result = dict(
