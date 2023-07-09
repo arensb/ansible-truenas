@@ -1,0 +1,6 @@
+# Packages required to build docs. See
+# https://docs.ansible.com/ansible/latest/dev_guide/developing_collections_documenting.html#build-collection-docsite
+
+# antsibull >= 0.39.2
+antsibull-docs <= 2.1.0
+# sphinx

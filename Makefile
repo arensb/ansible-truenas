@@ -1,3 +1,7 @@
+COLLECTION = arensb.truenas
+# Directory where generated HTML docs will go
+DOCS_DIR = docs
+
 RM = rm -rf
 
 all::
@@ -33,3 +37,29 @@ check-docs:
 		--json \
 		--type module \
 		${MODULES}
+
+docs:	venv-docs
+	if [ ! -d "${DOCS_DIR}" ]; then \
+	    install -m 0755 -d ${DOCS_DIR}; \
+	fi
+	venv-docs/bin/antsibull-docs sphinx-init \
+	    --use-current \
+	    --dest-dir ${DOCS_DIR} \
+	    ${COLLECTION}
+	(cd ${DOCS_DIR}; \
+	    python3 -m venv venv; \
+	    . venv/bin/activate; \
+	    pip install -r ../extra-requirements.txt; \
+	    pip install -r requirements.txt; \
+	    ANSIBLE_COLLECTIONS_PATHS=.. ./build.sh; \
+	)
+
+clean::
+	${RM} -r ${DOCS_DIR}
+
+venv-docs:	requirements.txt
+	python3 -m venv venv-docs
+	venv-docs/bin/pip install -r requirements.txt
+
+distclean::	clean
+	${RM} docs-venv
