@@ -11,8 +11,9 @@ __metaclass__ = type
 DOCUMENTATION = '''
 ---
 module: hostname
+short_description: Set the hostname.
 description:
-  - Set the hostname.
+  - Set the hostname, as part of the host's network configuration.
   - Does not set the FQDN.
 options:
   name:
@@ -28,9 +29,14 @@ EXAMPLES = '''
     name: my-little-host
 '''
 
-# XXX
-# RETURN = '''
-# '''
+RETURN = '''
+msg:
+  description: Status message, if warranted.
+  returned: In some cases
+  type: str
+'''
+# status: new network configuration. But this shouldn't be an official
+# result.
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
