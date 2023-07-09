@@ -28,15 +28,21 @@ MODULES=\
 	arensb.truenas.sharing_smb \
 	arensb.truenas.systemdataset \
 	arensb.truenas.user
-# XXX - Need to create a directory 'ansible_collections/arensb' with
-# symlink 'truenas' that points to the current directory.
-check-docs:
-	/usr/bin/env ANSIBLE_COLLECTIONS_PATHS=. \
+
+check-docs:	ansible_collections/arensb/truenas
+	/usr/bin/env ANSIBLE_COLLECTIONS_PATH=. \
 	ansible-doc \
 		-M .\
 		--json \
 		--type module \
 		${MODULES}
+
+# This is a crude hack: make a symlink to fool 'ansible-doc': it looks
+# for module foo.bar.baz in
+# $ANSIBLE_COLLECTIONS_PATH/ansible_collections/foo/bar/baz.py
+ansible_collections/arensb/truenas:
+	install -d -m 775 ansible_collections/arensb
+	ln -s ../.. $@
 
 docs:	venv-docs plugins/modules/*.py
 	if [ ! -d "${DOCS_DIR}" ]; then \
