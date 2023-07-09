@@ -4,6 +4,11 @@ DOCS_DIR = docs
 
 RM = rm -rf
 
+# See whether this is a dry run
+ifneq (,$(findstring n,$(MAKEFLAGS)))
+RSYNC_DRYRUN=-n
+endif
+
 all::
 
 # Build a tarball that can be uploaded as an Ansible collection.
@@ -67,3 +72,11 @@ venv-docs:	requirements.txt
 
 distclean::	clean
 	${RM} venv-docs
+
+# Copy the generated docs to the docs website repository.
+update-doc-site:	docs
+	+rsync ${RSYNC_DRYRUN} \
+		 -avi \
+		--delete \
+		docs/build/html/ docs-site/truenas/
+	echo "Don't forget to git push the docs site."
