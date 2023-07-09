@@ -62,13 +62,19 @@ options:
     type: str
 '''
 
-# XXX
+# XXX - Ought to have more examples with nontrivial SMTP, and OAuth.
 EXAMPLES = '''
+- name: Forward mail to a central server
+  hosts: my-truenas-host
+  tasks:
+    - name: Forward to SMTP hub
+      arensb.truenas.mail:
+        from_email: root@my-truenas-host.dom.ain
+        from_name: "Charlie Root"
+        server: smtp.dom.ain
 '''
 
-# XXX
-RETURN = '''
-'''
+RETURN = '''#'''
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
