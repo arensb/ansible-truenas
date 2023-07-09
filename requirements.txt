@@ -1,6 +1,7 @@
 # Packages required to build docs. See
 # https://docs.ansible.com/ansible/latest/dev_guide/developing_collections_documenting.html#build-collection-docsite
 
-# antsibull >= 0.39.2
-antsibull-docs <= 2.1.0
-# sphinx
+# Yes, it's wasteful to install all of Ansible in a venv, but
+# antsibull-docs requires a later version than I have installed.
+ansible-core >= 2.13.0
+antsibull-docs

@@ -52,10 +52,8 @@ docs:	venv-docs plugins/modules/*.py
 	    --use-current \
 	    --dest-dir ${DOCS_DIR} \
 	    ${COLLECTION}
-	(cd ${DOCS_DIR}; \
-	    python3 -m venv venv; \
-	    . venv/bin/activate; \
-	    pip install -r ../extra-requirements.txt; \
+	(. venv-docs/bin/activate; \
+	    cd ${DOCS_DIR}; \
 	    pip install -r requirements.txt; \
 	    ANSIBLE_COLLECTIONS_PATHS=.. ./build.sh; \
 	)
@@ -68,4 +66,4 @@ venv-docs:	requirements.txt
 	venv-docs/bin/pip install -r requirements.txt
 
 distclean::	clean
-	${RM} docs-venv
+	${RM} venv-docs
