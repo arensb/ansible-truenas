@@ -38,7 +38,7 @@ check-docs:
 		--type module \
 		${MODULES}
 
-docs:	venv-docs
+docs:	venv-docs plugins/modules/*.py
 	if [ ! -d "${DOCS_DIR}" ]; then \
 	    install -m 0755 -d ${DOCS_DIR}; \
 	fi
