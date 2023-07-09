@@ -12,7 +12,7 @@ description:
 options:
   from_email:
     description:
-      - |
+      - >
         Address from which system email will be sent. Must be in the form
         of an email address: C(user@dom.ain).
       - This is used as both the envelope and header \"From\" address.
