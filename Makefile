@@ -26,7 +26,7 @@ MODULES=\
 	arensb.truenas.user
 # XXX - Need to create a directory 'ansible_collections/arensb' with
 # symlink 'truenas' that points to the current directory.
-docs:
+check-docs:
 	/usr/bin/env ANSIBLE_COLLECTIONS_PATHS=. \
 	ansible-doc \
 		-M .\
