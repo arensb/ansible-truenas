@@ -1,13 +1,12 @@
 #!/usr/bin/python
 __metaclass__ = type
 
-# XXX - DOCUMENTATION docstring
 DOCUMENTATION = r'''
 ---
 module: service
-short_descrption: Manage TrueNAS services
+short_description: Manage TrueNAS services
 description:
-  - Controls services on TrueNAS.
+  - Controls services on TrueNAS, such as NFS, SMB, SSH, and others.
 options:
   enabled:
     description:
@@ -27,15 +26,28 @@ options:
       - "C(started)/C(stopped): make sure the service is started/stopped."
       - C(restarted) will unconditionally restart the service.
       - C(reloaded) will unconditionally reload the service.
-      - At least one of C(state) and C(enabled) is reauired.
+      - At least one of C(state) and C(enabled) is required.
     type: str
     choices: [ started, stopped, restarted, reloaded ]
 '''
 
-# XXX - EXAMPLES string
 EXAMPLES = '''
-- name: Enable a service
+- name: Enable ssh
+  hosts: my-truenas-server
+  tasks:
+    - arensb.truenas.service:
+        name: ssh
+        enabled: yes
+
+- name: Make sure unwanted services are turned off
+  hosts: my-truenas-server
+  tasks:
+    - arensb.truenas.service:
+        name: nfs
+        enabled: no
 '''
+
+RETURN = '''#'''
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
@@ -108,7 +120,7 @@ def main():
         msg=''
     )
 
-    mw = MW()
+    mw = MW.client()
 
     # Get service name
     service = module.params['name']

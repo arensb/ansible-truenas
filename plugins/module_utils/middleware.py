@@ -8,25 +8,68 @@
 # sits between individual modules and the middleware, and uses
 # whichever access method is chosen.
 
-from ansible_collections.arensb.truenas.plugins.module_utils.midclt \
-    import Midclt
-
+import os
 
 # XXX - Ought to define an exception type for things that can go wrong
 # with middleware calls.
 
 class MiddleWare:
-    # XXX - What do we want the API to be? How does the caller choose
-    # an access method?
-    #
-    # Create a MiddleWare object with a given access method, and then
-    # use that?
+    def __init__(self):
+        """Initialize the MiddleWare client.
 
-    def __init__(self, access='midclt', *args):
-        pass
+        This method is deprecated.
+        """
+
+        self.client = MiddleWare._pick_method()
+
+    @classmethod
+    def _pick_method(cls):
+        """Pick the right class to interact with middlewared, and return it."""
+
+        # Decide which API to use.
+        #
+        # There's no good way to have a config variable from
+        # ansible.cfg show up here, in a module executed on the
+        # client. The next-best thing is to use an environment
+        # variable, which can be passed in the play, e.g.:
+        #
+        # - hosts: my-nas
+        #   collections: arensb.truenas
+        #   environment:
+        #     middleware_method: client
+        #   tasks:
+        #     ...
+
+        # XXX - Be backward-compatible for a while. -- arensb, 2023-07-03
+        method = os.getenv('middleware_method', 'midclt')
+        # method = os.getenv('middleware_method', 'client')
+
+        # We import here, rather than at the top of the code, because
+        # at least in theory, the desired module might not exist on
+        # the remote host.
+        if method == 'midclt':
+            from ansible_collections.arensb.truenas.plugins.module_utils.midclt \
+                import Midclt
+            return Midclt
+        elif method == 'client':
+            from ansible_collections.arensb.truenas.plugins.module_utils.client \
+                import MiddlewareClient
+            return MiddlewareClient
+        else:
+            # Shouldn't use illegal methods. Bad caller!
+            raise Exception(f"Unknown middleware method {method}")
+
+        # Should never get this far.
 
     def call(self, func, *args, **kwargs):
-        return Midclt.call(func, *args, **kwargs)
+        return self.client.call(func, *args, **kwargs)
 
     def job(self, func, *args, **kwargs):
-        return Midclt.job(func, *args, **kwargs)
+        return self.client.job(func, *args, **kwargs)
+
+    @classmethod
+    def client(cls):
+        """Return a client for interfacing with middlewared."""
+        client_class = MiddleWare._pick_method()
+
+        return client_class()

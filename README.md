@@ -77,6 +77,33 @@ The individual modules also have documentation strings, and should work with
 
     ansible-doc -t module arensb.truenas.user
 
+## Environment Variables
+
+### `middleware_method`
+
+There are two ways of communicating with the middleware daemon on
+TrueNAS, referred to here as `midclt` and `client`. `midclt` is older
+and better-tested, while `client` is faster but less-well-tested. The
+default is `client`.
+
+Set the `middleware_method` environment variable to either `client` or
+`midclt` at either the play or task level in your playbook to manually
+select how this module communicates with the middleware daemon.
+
+Example:
+
+    - collections: arensb.truenas
+      hosts: my-nas
+      become: yes
+      environment:
+        middleware_method: client
+      tasks:
+        - name: Create a jail
+          jail:
+            name: my-jail
+            release: 13.1-RELEASE
+            state: running
+
 ## Contributing to this collection
 The best way to contribute a patch or feature is to create a pull request.
 

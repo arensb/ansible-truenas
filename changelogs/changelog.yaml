@@ -1,6 +1,6 @@
 # See https://github.com/ansible-community/antsibull-changelog/blob/main/docs/changelog.yaml-format.md
 #
-# ancestor: <ancestor versin>
+# ancestor: <ancestor version>
 # releases:
 #  1.0.0-alpha:
 #    ...
@@ -27,6 +27,31 @@
 ---
 ancestor: null
 releases:
+  1.6.0:
+    release_date: '2023-07-03'
+    changes:
+      release_summary: Use native client code on the TrueNAS machine.
+      major_changes:
+        - Up until now, these modules have been invoking the 'midclt'
+          utility on the TrueNAS client to communicate with the middleware
+          daemon. But that is implemented using a Python module. This
+          release makes it possible to use that Python module directly,
+          resulting in a significant speed improvement (as well as
+          simpler code).
+        - For now, the old behavior is still the default. To use the
+          new behavior, set the "middleware_method" environment variable
+          to "client", at either the play, block, or task level, using
+          the "environment:" Ansible directive.
+        - The default behavior will be switched from "midclt" to "client"
+          in a later version.
+  1.5.2:
+    release_date: '2023-07-01'
+    change:
+      release_summary: Better handling of NFS exports.
+      changes:
+        bugfixes:
+          - Fix an exception when updating an NFS export (Ed Hull).
+          - Correctly find the system version in TrueNAS SCALE (Ed Hull).
   1.5.1:
     release_date: '2023-06-23'
     changes:

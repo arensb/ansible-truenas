@@ -8,7 +8,7 @@ namespace: arensb
 name: truenas
 
 # The version of the collection. Must be compatible with semantic versioning
-version: 1.5.1
+version: 1.6.0
 
 # The path to the Markdown (.md) readme file. This path is relative to the root of the collection
 readme: README.md
@@ -47,7 +47,7 @@ dependencies: {}
 repository: https://github.com/arensb/ansible-truenas
 
 # The URL to any online docs
-# documentation: http://docs.example.com
+documentation: https://arensb.github.io/truenas/collections/arensb/truenas/index.html
 
 # The URL to the homepage of the collection/project
 # homepage: http://example.com

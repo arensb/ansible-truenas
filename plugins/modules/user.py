@@ -114,7 +114,8 @@ options:
     description:
       - List of ssh public keys to put in the user's C(.ssh/authorized_keys)
         file.
-    type: list of str
+    type: list
+    elements: str
     aliases: [ pubkeys ]
   state:
     description:
@@ -146,7 +147,8 @@ options:
       - Commands may include options, e.g., C("/bin/ls -l").
       - In TrueNAS CORE, and in older versions of SCALE, only one of
         C(sudo_commands) and C(sudo_commands_nopasswd) may be specified.
-    type: list of strings
+    type: list
+    elements: str
     default: []
   sudo_commands_nopasswd:
     description:
@@ -157,7 +159,8 @@ options:
       - Commands may include options, e.g., C("/bin/ls -l").
       - In TrueNAS CORE, and in older versions of SCALE, only one of
         C(sudo_commands) and C(sudo_commands_nopasswd) may be specified.
-    type: list of strings
+    type: list
+    elements: str
     default: []
   uid:
     description:
@@ -202,11 +205,6 @@ EXAMPLES = '''
 '''
 
 RETURN = '''
-invocation:
-  description:
-    - Dictionary giving the fields, and their values, that were specified
-      when the user is created or updated.
-  type: dict
 user_id:
   description:
     - The ID of a newly-created user.
@@ -412,7 +410,7 @@ def main():
         msg=''
     )
 
-    mw = MW()
+    mw = MW.client()
 
     # Assign variables from properties, for convenience
     uid = module.params['uid']
