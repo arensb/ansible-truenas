@@ -3,13 +3,13 @@ __metaclass__ = type
 
 # Manage ZFS filesystems.
 
-# XXX
 DOCUMENTATION = '''
 ---
 module: filesystem
 short_description: Manage ZFS filesystems
 description:
-  - Create, delete, and manage ZFS filesystems.
+  - Create, delete, and manage ZFS filesystems. Currently this is limited
+    to just creation and deletion.
 options:
   comment:
     description:

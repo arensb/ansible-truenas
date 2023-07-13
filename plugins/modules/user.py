@@ -125,17 +125,17 @@ options:
     default: present
   sudo:
     description:
-      - Deprecated. Use C(sudo_commands) and/or C(sudo_commands_nopasswd)
+      - Deprecated. Use I(sudo_commands) and/or I(sudo_commands_nopasswd)
         instead.
-      - Whether the user is allowed to sudo (see also C(sudo_nopasswd) and
-        C(sudo_commands)).
+      - Whether the user is allowed to sudo (see also I(sudo_nopasswd) and
+        I(sudo_commands)).
       - "Note: this defaults to false. So if you create a user with
-        C(sudo: yes), then comment out that line, the user will be removed
+        I(sudo: yes), then comment out that line, the user will be removed
         from sudo."
     type: bool
   sudo_nopasswd:
     description:
-      - Deprecated. Use C(sudo_commands_nopasswd) instead.
+      - Deprecated. Use I(sudo_commands_nopasswd) instead.
       - Allows user to sudo without a password.
     type: bool
     default: false
@@ -146,7 +146,7 @@ options:
         value "ALL", which allows executing any command.
       - Commands may include options, e.g., C("/bin/ls -l").
       - In TrueNAS CORE, and in older versions of SCALE, only one of
-        C(sudo_commands) and C(sudo_commands_nopasswd) may be specified.
+        I(sudo_commands) and I(sudo_commands_nopasswd) may be specified.
     type: list
     elements: str
     default: []
@@ -158,7 +158,7 @@ options:
         value "ALL", which allows executing any command.
       - Commands may include options, e.g., C("/bin/ls -l").
       - In TrueNAS CORE, and in older versions of SCALE, only one of
-        C(sudo_commands) and C(sudo_commands_nopasswd) may be specified.
+        I(sudo_commands) and I(sudo_commands_nopasswd) may be specified.
     type: list
     elements: str
     default: []
@@ -208,7 +208,7 @@ RETURN = '''
 user_id:
   description:
     - The ID of a newly-created user.
-    - This is not the C(uid) as found in C(/etc/passwd), but the database
+    - This is not the I(uid) as found in C(/etc/passwd), but the database
       ID.
   type: int
 '''
