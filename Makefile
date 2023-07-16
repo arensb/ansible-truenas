@@ -62,10 +62,13 @@ venv-docs:	requirements.txt
 	python3 -m venv venv-docs
 	venv-docs/bin/pip install -r requirements.txt
 
+clean::
+	${RM} -r ${DOCS_DIR}/build/
+	${RM} -r ${DOCS_DIR}/temp-rst/
+	${RM} -r ${DOCS_DIR}/rst/
+
 distclean::	clean
 	${RM} venv-docs
-	${RM} -r ${DOCS_DIR}/build
-	${RM} -r ${DOCS_DIR}/rst/collections/
 
 # Copy the generated docs to the docs website repository.
 update-doc-site:	documentation
