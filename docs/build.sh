@@ -16,11 +16,12 @@ antsibull-docs \
     --config-file antsibull-docs.cfg \
     collection \
     --use-current \
+    --squash-hierarchy \
     --dest-dir temp-rst \
     arensb.truenas
 
 # Copy collection documentation into source directory
-rsync -cprv --delete-after temp-rst/collections/ rst/collections/
+rsync -cprv --delete-after temp-rst/ rst/
 
 # Build Sphinx site
 sphinx-build -M html rst build -c . -W --keep-going
