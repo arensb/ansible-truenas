@@ -54,7 +54,7 @@ directory can safely be deleted. In fact, if you make major changes
 
 The generated HTML files can then be copied to `docs-site/`, which is
 just a git repository of the
-[documentation website](https://arensb.github.io/truenas/collections/arensb/truenas/index.html).
+[documentation website](https://arensb.github.io/truenas/index.html).
 So to update the online documentation:
 
 1. `make update-doc-site`

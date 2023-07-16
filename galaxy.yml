@@ -47,7 +47,7 @@ dependencies: {}
 repository: https://github.com/arensb/ansible-truenas
 
 # The URL to any online docs
-documentation: https://arensb.github.io/truenas/collections/arensb/truenas/index.html
+documentation: https://arensb.github.io/truenas/index.html
 
 # The URL to the homepage of the collection/project
 # homepage: http://example.com
