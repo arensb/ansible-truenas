@@ -65,6 +65,7 @@ venv-docs:	requirements.txt
 distclean::	clean
 	${RM} venv-docs
 	${RM} -r ${DOCS_DIR}/build
+	${RM} -r ${DOCS_DIR}/rst/collections/
 
 # Copy the generated docs to the docs website repository.
 update-doc-site:	documentation
