@@ -40,7 +40,7 @@ check-docs:	ansible_collections/arensb/truenas
 		-M .\
 		--json \
 		--type module \
-		${MODULES}
+		${MODULES} >/dev/null
 
 # This is a crude hack: make a symlink to fool 'ansible-doc': it looks
 # for module foo.bar.baz in
