@@ -5,3 +5,4 @@
 # antsibull-docs requires a later version than I have installed.
 ansible-core >= 2.13.0
 antsibull-docs
+antsibull-changelog
