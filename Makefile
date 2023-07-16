@@ -20,19 +20,19 @@ clean::
 
 # XXX - Ought to autogenerate this from `ls modules/plugins/*.py'
 MODULES=\
-	arensb.truenas.filesystem \
-	arensb.truenas.group \
-	arensb.truenas.jail \
-	arensb.truenas.jails \
-	arensb.truenas.mail \
-	arensb.truenas.nfs \
-	arensb.truenas.plugin \
-	arensb.truenas.pool_snapshot_task \
-	arensb.truenas.service \
-	arensb.truenas.sharing_nfs \
-	arensb.truenas.sharing_smb \
-	arensb.truenas.systemdataset \
-	arensb.truenas.user
+	${COLLECTION}.filesystem \
+	${COLLECTION}.group \
+	${COLLECTION}.jail \
+	${COLLECTION}.jails \
+	${COLLECTION}.mail \
+	${COLLECTION}.nfs \
+	${COLLECTION}.plugin \
+	${COLLECTION}.pool_snapshot_task \
+	${COLLECTION}.service \
+	${COLLECTION}.sharing_nfs \
+	${COLLECTION}.sharing_smb \
+	${COLLECTION}.systemdataset \
+	${COLLECTION}.user
 
 check-docs:	ansible_collections/arensb/truenas
 	/usr/bin/env ANSIBLE_COLLECTIONS_PATH=. \
@@ -45,8 +45,10 @@ check-docs:	ansible_collections/arensb/truenas
 # This is a crude hack: make a symlink to fool 'ansible-doc': it looks
 # for module foo.bar.baz in
 # $ANSIBLE_COLLECTIONS_PATH/ansible_collections/foo/bar/baz.py
-ansible_collections/arensb/truenas:
-	install -d -m 775 ansible_collections/arensb
+compatibility-link:	ansible_collections/$(subst .,/,${COLLECTION})
+
+ansible_collections/$(subst .,/,${COLLECTION}):
+	install -d -m 775 `dirname "$@"`
 	ln -s ../.. $@
 
 docs:	venv-docs plugins/modules/*.py
