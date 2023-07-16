@@ -16,6 +16,26 @@ Be sure to fill in the `DOCUMENTATION`, `EXAMPLES`, and `RETURN`
 strings. Documentation will be automatically generated from that,
 using `make documentation`.
 
+## Putting out a new release
+
+1. Update `galaxy.yml` and update `version`.
+
+1. Update `changelogs/changelog.yaml` and list changes the users care
+about.
+
+1. Run `antsibull-changelog lint` and `antsibull-changelog release`.
+
+1. Commit changes.
+
+1. Tag the git commit with the new release version, in the format
+`v1.2.3`.
+
+1. `git push`
+
+1. `make tarball`. Upload the new tarball to Ansible Galaxy.
+
+1. Toast!
+
 ## Documentation
 
 `antsibull-docs` is used to create and populate the `docs` directory:
