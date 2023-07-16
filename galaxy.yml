@@ -62,4 +62,10 @@ issues: https://github.com/arensb/ansible-truenas/issues
 build_ignore:
 - tests
 - TODO.org
+- errs*
 - '**.bak'
+- docs-site
+- venv-docs
+- docs
+- ansible_collections
+- changelogs/.plugin-cache.yaml
