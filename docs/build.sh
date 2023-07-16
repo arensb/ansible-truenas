@@ -8,6 +8,9 @@ set -e
 pushd "$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 trap "{ popd; }" EXIT
 
+ANSIBLE_COLLECTIONS_PATH=..
+export ANSIBLE_COLLECTIONS_PATH
+
 # Create collection documentation into temporary directory
 rm -rf temp-rst
 mkdir -p temp-rst
