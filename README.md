@@ -109,6 +109,10 @@ The best way to contribute a patch or feature is to create a pull request.
 
 The `plugins/modules/template` file provides a starting point for new modules.
 
+## Documentation
+
+See [the online documentation](https://arensb.github.io/truenas/index.html).
+
 ## Changelog
 See [the user-friendly docs](https://arensb.github.io/truenas/CHANGELOG.html),
 or the latest [changelog.yaml](changelogs/changelog.yaml).
