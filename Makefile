@@ -51,22 +51,12 @@ ansible_collections/$(subst .,/,${COLLECTION}):
 	install -d -m 775 `dirname "$@"`
 	ln -s ../.. $@
 
-docs:	venv-docs plugins/modules/*.py
-	if [ ! -d "${DOCS_DIR}" ]; then \
-	    install -m 0755 -d ${DOCS_DIR}; \
-	fi
-	venv-docs/bin/antsibull-docs sphinx-init \
-	    --use-current \
-	    --dest-dir ${DOCS_DIR} \
-	    ${COLLECTION}
+documentation:	venv-docs compatibility-link plugins/modules/*.py
 	(. venv-docs/bin/activate; \
 	    cd ${DOCS_DIR}; \
 	    pip install -r requirements.txt; \
 	    ANSIBLE_COLLECTIONS_PATHS=.. ./build.sh; \
 	)
-
-clean::
-	${RM} -r ${DOCS_DIR}
 
 venv-docs:	requirements.txt
 	python3 -m venv venv-docs
@@ -74,9 +64,10 @@ venv-docs:	requirements.txt
 
 distclean::	clean
 	${RM} venv-docs
+	${RM} -r ${DOCS_DIR}/build
 
 # Copy the generated docs to the docs website repository.
-update-doc-site:	docs
+update-doc-site:	documentation
 	+rsync ${RSYNC_DRYRUN} \
 		 -avi \
 		--delete \
