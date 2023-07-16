@@ -1,5 +1,21 @@
 # Notes on hacking this collection
 
+## Creating a new module
+
+If you want to create a new module `foo`, start by copying the file
+`extras/module-template` to `plugins/modules/foo.py`, then editing it.
+
+Adapt `foo.py` to suit your purposes.
+
+That template uses the generic term "resource" for the thing you're
+managing. Change that to comething more descriptive: instead of
+`resource_info`, use `user_info` in the user module, or `foo_info` in
+the foo module, that sort of thing.
+
+Be sure to fill in the `DOCUMENTATION`, `EXAMPLES`, and `RETURN`
+strings. Documentation will be automatically generated from that,
+using `make documentation`.
+
 ## Documentation
 
 `antsibull-docs` is used to create and populate the `docs` directory:
