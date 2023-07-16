@@ -15,6 +15,10 @@ export ANSIBLE_COLLECTIONS_PATH
 rm -rf temp-rst
 mkdir -p temp-rst
 chmod og-w temp-rst  # antsibull-docs wants that directory only readable by itself
+
+antsibull-changelog generate
+mv ../CHANGELOG.rst temp-rst
+
 antsibull-docs \
     --config-file antsibull-docs.cfg \
     collection \
