@@ -92,6 +92,7 @@ options:
     type: str
     choices: [ absent, present, restarted, running, stopped ]
     default: present
+version_added: 1.1.0
 '''
 
 # XXX

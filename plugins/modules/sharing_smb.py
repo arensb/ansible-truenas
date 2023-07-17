@@ -129,6 +129,7 @@ options:
     description:
       - Enables support for Apple Time Machine backups.
     type: bool
+version_added: 1.4.3
 '''
 
 EXAMPLES = '''

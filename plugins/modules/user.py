@@ -168,6 +168,7 @@ options:
       - If the I(IUID) is already taken, this will create a second user with
         the same I(UID).
     type: int
+version_added: 0.1.0
 '''
 
 EXAMPLES = '''

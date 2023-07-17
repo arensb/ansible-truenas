@@ -31,6 +31,7 @@ options:
   v3owner:
     description:
       - Enable the NFSv3 ownership model for NFSv4.
+version_added: 0.4.0
 '''
 
 # XXX

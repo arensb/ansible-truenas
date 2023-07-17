@@ -21,6 +21,7 @@ options:
       - Whether to store system logs on the system dataset.
       - If unset, logs will be stored in C(/var).
     type: bool
+version_added: 0.5.0
 '''
 
 EXAMPLES = '''

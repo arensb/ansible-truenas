@@ -26,6 +26,7 @@ options:
     type: str
     choices: [ absent, present ]
     default: present
+version_added: 0.3.0
 '''
 
 # XXX

@@ -133,6 +133,7 @@ options:
       - Day of week when the task should run, in cron format.
     type: str
     aliases: ['dow']
+version_added: 1.5.0
 '''
 
 # XXX

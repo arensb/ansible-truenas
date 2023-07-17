@@ -29,6 +29,7 @@ options:
       - At least one of C(state) and C(enabled) is required.
     type: str
     choices: [ started, stopped, restarted, reloaded ]
+version_added: 0.1.0
 '''
 
 EXAMPLES = '''

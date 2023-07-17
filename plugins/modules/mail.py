@@ -60,6 +60,7 @@ options:
       - Password for I(smtp_user) on the SMTP server. Required if C(smtp=true).
       - See also I(smtp) and I(smtp_user).
     type: str
+version_added: 1.3.0
 '''
 
 # XXX - Ought to have more examples with nontrivial SMTP, and OAuth.

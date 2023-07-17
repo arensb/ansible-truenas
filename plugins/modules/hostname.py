@@ -11,6 +11,7 @@ __metaclass__ = type
 DOCUMENTATION = '''
 ---
 module: hostname
+version_added: 0.1.0
 short_description: Set the hostname.
 description:
   - Set the hostname, as part of the host's network configuration.

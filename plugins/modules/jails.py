@@ -15,6 +15,7 @@ options:
       - Does not move existing jails (or plugins). They continue to run
         wherever they currently are.
     type: str
+version_added: 1.1.0
 '''
 
 # XXX

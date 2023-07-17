@@ -107,6 +107,7 @@ options:
     type: str
     choices: [ absent, present ]
     default: present
+version_added: 0.1.0
 '''
 
 EXAMPLES = '''

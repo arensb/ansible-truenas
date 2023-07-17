@@ -41,6 +41,7 @@ author:
 - Andrew Arensburger (@arensb)
 notes:
 - Supports C(check_mode)
+version_added: 0.1.0
 '''
 
 EXAMPLES = '''
