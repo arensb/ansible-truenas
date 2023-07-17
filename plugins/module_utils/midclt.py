@@ -46,6 +46,15 @@ class MidcltError(Exception):
 
 class Midclt:
 
+    # See whether 'midclt' exists, so we can abort early on if the
+    # rest isn't going to work.
+    try:
+        import shutil
+        if shutil.which(MIDCLT_CMD) is None:
+            raise FileNotFoundError(f"Can't find command {MIDCLT_CMD}.")
+    except ModuleNotFoundError:
+        raise
+
     @staticmethod
     def _to_json(msg):
         """Given a string printed by 'midclt', convert it to JSON."""
