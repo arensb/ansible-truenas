@@ -18,21 +18,14 @@ tarball:	docs
 clean::
 	${RM} arensb-truenas-*.tar.gz
 
-# XXX - Ought to autogenerate this from `ls modules/plugins/*.py'
-MODULES=\
-	${COLLECTION}.filesystem \
-	${COLLECTION}.group \
-	${COLLECTION}.jail \
-	${COLLECTION}.jails \
-	${COLLECTION}.mail \
-	${COLLECTION}.nfs \
-	${COLLECTION}.plugin \
-	${COLLECTION}.pool_snapshot_task \
-	${COLLECTION}.service \
-	${COLLECTION}.sharing_nfs \
-	${COLLECTION}.sharing_smb \
-	${COLLECTION}.systemdataset \
-	${COLLECTION}.user
+# Generate list of modules from plugins/modules/*.py:
+# List the files, strip the directory name and .py suffix, then
+# add the collection name in front, so
+# plugins/modules/foo.py -> arensb.truenas.foo
+MODULES = $(addprefix ${COLLECTION}., \
+	$(basename \
+	$(notdir \
+	$(wildcard plugins/modules/*.py))))
 
 check-docs:	ansible_collections/arensb/truenas
 	/usr/bin/env ANSIBLE_COLLECTIONS_PATH=. \
