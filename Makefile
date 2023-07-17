@@ -2,6 +2,16 @@ COLLECTION = arensb.truenas
 # Directory where generated HTML docs will go
 DOCS_DIR = docs
 
+# Root of the documentation web site repo.
+#
+# This can be either a relative or absolute path, and it may point to
+# a subdirectory within a git repo: You might use /path/to/dir as the
+# repo for an entire web site, and use /path/to/dir/truenas for that
+# portion of the site that documents this collection. In this case you
+# would use
+# DOCS_SITE = /path/to/dir/truenas
+DOCS_SITE = docs-site/truenas
+
 RM = rm -rf
 
 # See whether this is a dry run
@@ -68,5 +78,9 @@ update-doc-site:	documentation
 	+rsync ${RSYNC_DRYRUN} \
 		 -avi \
 		--delete \
-		docs/build/html/ docs-site/truenas/
+		docs/build/html/ ${DOCS_SITE}/
+	(cd ${DOCS_SITE}; \
+	 git add . ; \
+	 git commit -m "Automatic update."; \
+	)
 	echo "Don't forget to git push the docs site."
