@@ -10,20 +10,22 @@ DOCUMENTATION = '''
 module: truenas_facts
 short_description: Gather TrueNAS-related facts
 description:
-  - Gather facts about a TrueNAS host, in the same way as M(setup) does.
+  - Gather facts about a TrueNAS host, in the same way as
+    C(setup) does.
   - Any facts discovered by this module will be mixed in with those
-    discovered by other modules such as M(setup).
+    discovered by other modules such as C(setup).
   - See U(https://docs.ansible.com/ansible/latest/reference_appendices/config.html#facts-modules)
-    for how to use this module, as well as the R(Examples) section.
+    for how to use this module, as well as the Examples section.
   - You can set the environment variable C(ANSIBLE_FACTS_MODULES) to
     C(arensb.truenas.truenas_facts) to use only this module to gather facts,
     or to C(setup, arensb.truenas.truenas_facts) to use both the standard
-    M(setup) module and this one.
+    C(setup) module and this one.
   - Likewise, you can set the C(ansible_facts_modules) inventory
     variable to the list of modules to use, either just
     C(arensb.truenas.truenas_facts), or C([setup,
     arensb.truenas.truenas_facts]).
-  - This module may be used on non-TrueNAS hosts: it should simply fail
+  - |
+    This module may be used on non-TrueNAS hosts: it should simply fail
     gracefully and do nothing.
 notes:
   - Supports C(check_mode).
@@ -43,8 +45,17 @@ EXAMPLES = '''
     - debug: var=ansible_facts
 '''
 
-# XXX
+# XXX - Look up these descriptions in exchanges about NFS failing.
 RETURN = '''
+ansible_facts.truenas_product_name:
+  description:
+    - A string giving the overall name of the product, usually
+      C(TrueNAS)
+  type: str
+ansible_facts.truenas_product_type:
+  description:
+    - The flavor of TrueNAS. One of C(CORE), XXX, XXX...
+  type: str
 '''
 
 from ansible.module_utils.basic import AnsibleModule
