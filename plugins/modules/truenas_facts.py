@@ -186,6 +186,7 @@ def main():
         from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
             import MiddleWare as MW
     except ImportError as e:
+        result['msg'] = f"Can't load required module: {e}"
         result['skipped'] = True
         module.exit_json(**result)
 

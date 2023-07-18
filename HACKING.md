@@ -32,7 +32,12 @@ about.
 
 1. `git push`
 
+1. Create a release in github.
+
 1. `make tarball`. Upload the new tarball to Ansible Galaxy.
+
+1. `make documentation; make update-doc-site`. Push the docs out to the
+web site.
 
 1. Toast!
 
