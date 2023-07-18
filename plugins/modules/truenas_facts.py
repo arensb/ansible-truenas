@@ -42,7 +42,7 @@ description:
 notes:
   - Supports C(check_mode).
   - Should run correctly on non-TrueNAS hosts.
-version_added: 1.6.3
+version_added: 1.7.0
 seealso:
   - name: Ansible Configuration Settings
     description: Configure which fact-gathering modules to use.
