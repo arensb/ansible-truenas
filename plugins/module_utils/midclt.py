@@ -13,12 +13,6 @@
 # midclt call user.query '[["username", "=", "root" ]]'
 # midclt call plugin.defaults '{"plugin":"syncthing"}'
 
-# XXX - There are multiple ways of controlling the middleware daemon:
-# midclt is the command-lineversion, but I think the recommended way
-# is to use the REST API.
-
-# It'd be
-
 __metaclass__ = type
 """
 This module adds support for midclt on TrueNAS.
@@ -51,8 +45,15 @@ class MidcltError(Exception):
 
 
 class Midclt:
-    # XXX - Maybe other commands beside "call"?:
-    # ping, waitready, sql, subscribe.
+
+    # See whether 'midclt' exists, so we can abort early on if the
+    # rest isn't going to work.
+    try:
+        import shutil
+        if shutil.which(MIDCLT_CMD) is None:
+            raise FileNotFoundError(f"Can't find command {MIDCLT_CMD}.")
+    except ModuleNotFoundError:
+        raise
 
     @staticmethod
     def _to_json(msg):
