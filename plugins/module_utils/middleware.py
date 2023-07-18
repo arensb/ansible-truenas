@@ -13,6 +13,7 @@ import os
 # XXX - Ought to define an exception type for things that can go wrong
 # with middleware calls.
 
+
 class MiddleWare:
     def __init__(self):
         """Initialize the MiddleWare client.
