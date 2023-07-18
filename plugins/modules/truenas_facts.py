@@ -59,6 +59,7 @@ ansible_facts.truenas_product_type:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
+from datetime import datetime
 
 
 def main():
@@ -96,131 +97,52 @@ def main():
         result['skipped'] = True
         module.exit_json(**result)
 
-    result['msg'] += f"mw: {MW}.\n"
-
-    result['ansible_facts'] = {
-        "fact1": "value1",
-        "fact2": ["a", "list", "of", "values"],
-        "fact3": {
-            "key": "value",
-            "key2": ["another", "value"],
-        },
-    }
-    module.exit_json(**result)
-    return
-
-    # XXX - Get the OS version, product, and whatnot.
-
-    # XXX - system.boot_id
-    # XXX - system.build_time
-    # XXX - system.environment
-    # XXX - system.feature_enabled
-    #   Break down by feature?
-    # XXX - system.host_id
-    # XXX - system.info - This returns a structure. Is it better to
-
-    # Assign variables from properties, for convenience
-    name = module.params['name']
-    # XXX
-
-    # XXX - Look up the resource
     try:
-        resource_info = mw.call("resource.query",
-                                [["name", "=", name]])
-        if len(resource_info) == 0:
-            # No such resource
-            resource_info = None
+        result['ansible_facts']['truenas_boot_id'] = \
+            mw.call("system.boot_id", output='str')
+        result['ansible_facts']['truenas_host_id'] = \
+            mw.call("system.host_id", output='str')
+        result['ansible_facts']['truenas_product_name'] = \
+            mw.call("system.product_name", output='str')
+        result['ansible_facts']['truenas_product_type'] = \
+            mw.call("system.product_type", output='str')
+        result['ansible_facts']['truenas_environment'] = \
+            mw.call("system.environment", output='str')
+        result['ansible_facts']['truenas_state'] = \
+            mw.call("system.state", output='str')
+        result['ansible_facts']['truenas_system_info'] = \
+            mw.call("system.info")
+
+        # The build time is a timestamp, but it's returned in different
+        # ways by different middlewared APIs.
+        #
+        # Also, different Ansible modules deal with timestamps
+        # differently: some use time_t, others use human-readable strings.
+        # So for now at least, let's return a datetime.datetime
+        build_time = mw.call("system.build_time")
+        if isinstance(build_time, datetime):
+            # The direct Python connection to middlewared returns
+            # a datetime.datetime object, so just return that.
+            result['ansible_facts']['truenas_build_time'] = build_time
+        elif isinstance(build_time, dict) and '$date' in build_time:
+            # 'midclt' returns a dict of the form
+            #   {"$date": 1234567890000}
+            # which is the number of milliseconds since the epoch.
+            # Convert that to a datetime.
+            result['ansible_facts']['truenas_build_time'] = \
+                datetime.fromtimestamp(build_time['$date']/1000)
         else:
-            # Resource exists
-            resource_info = resource_info[0]
+            # This is unexpected. Add a warning message, return the
+            # supplied value, and hope for the best.
+            module.warn(f'Unexpected type or build_time: {type(build_time)}.')
+            result['ansible_facts']['truenas_build_time'] = build_time
+
+        # Get the set of features and whether they're enabled.
+        result['truenas_features'] = {}
+        for feat in ('DEDUP', 'FIBRECHANNEL', 'JAILS', 'VM'):
+            feat_set = mw.call("system.feature_enabled", feat, output='str')
+            result['truenas_features'][feat] = feat_set
     except Exception as e:
-        module.fail_json(msg=f"Error looking up resource {name}: {e}")
-
-    # First, check whether the resource even exists.
-    if resource_info is None:
-        # Resource doesn't exist
-
-        if state == 'present':
-            # Resource is supposed to exist, so create it.
-
-            # Collect arguments to pass to resource.create()
-            arg = {
-                "resourcename": name,
-            }
-
-            if feature is not None:
-                arg['feature'] = feature
-
-            if module.check_mode:
-                result['msg'] = f"Would have created resource {name} with {arg}"
-            else:
-                #
-                # Create new resource
-                #
-                try:
-                    err = mw.call("resource.create", arg)
-                    result['msg'] = err
-                except Exception as e:
-                    result['failed_invocation'] = arg
-                    module.fail_json(msg=f"Error creating resource {name}: {e}")
-
-                # Return whichever interesting bits resource.create()
-                # returned.
-                result['resource_id'] = err
-
-            result['changed'] = True
-        else:
-            # Resource is not supposed to exist.
-            # All is well
-            result['changed'] = False
-
-    else:
-        # Resource exists
-        if state == 'present':
-            # Resource is supposed to exist
-
-            # Make list of differences between what is and what should
-            # be.
-            arg = {}
-
-            if feature is not None and resource_info['feature'] != feature:
-                arg['feature'] = feature
-
-            # If there are any changes, resource.update()
-            if len(arg) == 0:
-                # No changes
-                result['changed'] = False
-            else:
-                #
-                # Update resource.
-                #
-                if module.check_mode:
-                    result['msg'] = f"Would have updated resource {name}: {arg}"
-                else:
-                    try:
-                        err = mw.call("resource.update",
-                                      resource_info['id'],
-                                      arg)
-                    except Exception as e:
-                        module.fail_json(msg=f"Error updating resource {name} with {arg}: {e}")
-                        # Return any interesting bits from err
-                        result['status'] = err['status']
-                result['changed'] = True
-        else:
-            # Resource is not supposed to exist
-
-            if module.check_mode:
-                result['msg'] = f"Would have deleted resource {name}"
-            else:
-                try:
-                    #
-                    # Delete resource.
-                    #
-                    err = mw.call("resource.delete",
-                                  resource_info['id'])
-                except Exception as e:
-                    module.fail_json(msg=f"Error deleting resource {name}: {e}")
-            result['changed'] = True
         result['skipped'] = True
         result['msg'] = f"Error looking up facts: {e}"
         module.exit_json(**result)
