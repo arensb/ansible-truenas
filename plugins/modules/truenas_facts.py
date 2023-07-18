@@ -1,8 +1,20 @@
 #!/usr/bin/python
 __metaclass__ = type
 
-# XXX - Make sure this does nothing on non-TrueNAS hosts, so that it
-# can safely be added to the default set of fact-gathering modules.
+# XXX - This module adds to the execution time: at a first pass, about
+# 1 second using client api, and 7 seconds(!) using midclt. It might
+# be useful to profile the different calls, and see if there are any
+# that are slow and less-useful.
+
+# XXX - Currently, this module skips any time something goes wrong, on
+# the assumption that it's on a non-TrueNAS system, so it shouldn't
+# really be running. But in fact, if it _is_ on a TrueNAS box, a
+# failure should cause a real failure.
+#
+# So maybe we can decree that the various middleware modules must
+# raise an exception during class initialization or forever hold their
+# peace, so that if the 'import' succeeds, anything after that is
+# deemed to be an error.
 
 # XXX
 DOCUMENTATION = '''
@@ -37,7 +49,6 @@ seealso:
     link: https://docs.ansible.com/ansible/latest/reference_appendices/config.html#facts-modules
 '''
 
-# XXX
 EXAMPLES = '''
 - name: Manually gather information
   collections: arensb.truenas
@@ -49,7 +60,6 @@ EXAMPLES = '''
     - debug: var=ansible_facts
 '''
 
-# XXX - Look up these descriptions in exchanges about NFS failing.
 RETURN = '''
 ansible_facts.truenas_boot_id:
   description:
