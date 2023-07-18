@@ -80,6 +80,7 @@ def main():
         from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
             import MiddleWare as MW
     except ImportError as e:
+        result['skipped'] = True
         module.exit_json(**result)
 
     # Creating a MiddleWare client can fail if the TrueNAS-related
@@ -88,9 +89,11 @@ def main():
         mw = MW.client()
     except ModuleNotFoundError as e:
         result['msg'] = f'Got module not found exeption {e}'
+        result['skipped'] = True
         module.exit_json(**result)
     except FileNotFoundError as e:
         result['msg'] = f'Got file not found exeption {e}'
+        result['skipped'] = True
         module.exit_json(**result)
 
     result['msg'] += f"mw: {MW}.\n"
@@ -218,6 +221,9 @@ def main():
                 except Exception as e:
                     module.fail_json(msg=f"Error deleting resource {name}: {e}")
             result['changed'] = True
+        result['skipped'] = True
+        result['msg'] = f"Error looking up facts: {e}"
+        module.exit_json(**result)
 
     module.exit_json(**result)
 
