@@ -174,24 +174,25 @@ def main():
         # XXX - Maybe abort on "UNKNOWN"?
 
         if want_state == "started":
-            # XXX - Make sure service is running
+            # Make sure service is running
             if service_state['state'] != "RUNNING":
                 if module.check_mode:
-                    module.warn(f"Ought to start service {service_state['name']}")
                     pass
                 else:
-                    module.warn(f"Starting service {service_state['name']}")
                     start_service(service_state['name'])
                 result['changed'] = True
+                result['msg'] = "service started"
 
-            pass
         elif want_state == "stopped":
-            # XXX - Make sure service is not running
+            # Make sure service is not running
             if service_state['state'] != "STOPPED":
                 if module.check_mode:
                     pass
                 else:
                     stop_service(service_state['name'])
+                result['changed'] = True
+                result['msg'] = "service stopped"
+
         elif want_state == "restarted":
             # Unconditionally restart the service
             if module.check_mode:
