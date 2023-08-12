@@ -137,7 +137,7 @@ def main():
         # If the service was not found, 'err' is an empty array: [].
     except Exception as e:
         # XXX - Should limit it to expected exceptions
-        module.fail_json(msg=f"Error getting service {service} state: {e.stderr}")
+        module.fail_json(msg=f"Error getting service {service} state: {e}")
 
     result['service_state'] = service_state
 
