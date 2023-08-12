@@ -107,6 +107,8 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             name=dict(type='str', required=True, default=None),
+            # state doesn't default to anything, for compatibility with
+            # builtin.service.
             state=dict(type='str',
                        choices=['started', 'stopped', 'reloaded', 'restarted']),
             enabled=dict(type='bool'),
@@ -128,16 +130,16 @@ def main():
 
     # Get information about the service
     try:
-        # err = Midclt.call("service.query",
-        #                   [["service", "=", service]])
         err = mw.call("service.query",
                       [["service", "=", service]])
+
+        # If the service was found, 'err' should be an array of 1 entries.
+        # If the service was not found, 'err' is an empty array: [].
     except Exception as e:
         # XXX - Should limit it to expected exceptions
         module.fail_json(msg=f"Error getting service {service} state: {e.stderr}")
 
-    # If the service was found, 'err' should be an array of 1 entries.
-    # If the service was not found, 'err' is an empty array: [].
+    result['service_state'] = service_state
 
     # XXX - Check that the service was found. What to do if it wasn't?
 
