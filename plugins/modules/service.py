@@ -154,6 +154,7 @@ def main():
         # XXX - Should limit it to expected exceptions
         module.fail_json(msg=f"Error getting service {service} state: {e}")
 
+    # XXX - Mostly for debugging, I think.
     result['service_state'] = service_state
 
     # XXX - Check that the service was found. What to do if it wasn't?
@@ -174,7 +175,15 @@ def main():
 
         if want_state == "started":
             # XXX - Make sure service is running
-            module.warn("Ought to make sure service is running.")
+            if service_state['state'] != "RUNNING":
+                if module.check_mode:
+                    module.warn(f"Ought to start service {service_state['name']}")
+                    pass
+                else:
+                    module.warn(f"Starting service {service_state['name']}")
+                    start_service(service_state['name'])
+                result['changed'] = True
+
             pass
         elif want_state == "stopped":
             # XXX - Make sure service is not running
