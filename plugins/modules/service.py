@@ -135,6 +135,21 @@ def main():
 
         # If the service was found, 'err' should be an array of 1 entries.
         # If the service was not found, 'err' is an empty array: [].
+        if len(err) == 0:
+            module.fail_json(msg=f"Unknown service: {service}")
+
+        # Create a convenience data structure describing the current
+        # state of the service.
+        service_state = {
+            'id': int(err[0]['id']),
+            'name': err[0]['service'],
+            'enabled': bool(err[0]['enable']),
+            'state': err[0]['state'],
+            'pids': err[0]['pids'],
+        }
+
+        result['service_state'] = service_state
+
     except Exception as e:
         # XXX - Should limit it to expected exceptions
         module.fail_json(msg=f"Error getting service {service} state: {e}")
@@ -142,13 +157,6 @@ def main():
     result['service_state'] = service_state
 
     # XXX - Check that the service was found. What to do if it wasn't?
-
-    # XXX - Do we want these? They're purely informational.
-    result['service_id'] = err[0]['id']
-    result['name'] = err[0]['service']
-    result['enabled'] = err[0]['enable']
-    result['state'] = err[0]['state']
-    result['pids'] = err[0]['pids']
 
     # XXX - API:
     # - service.query
@@ -166,20 +174,21 @@ def main():
 
         if want_state == "started":
             # XXX - Make sure service is running
+            module.warn("Ought to make sure service is running.")
             pass
         elif want_state == "stopped":
             # XXX - Make sure service is not running
-            if result['state'] != "STOPPED":
+            if service_state['state'] != "STOPPED":
                 if module.check_mode:
                     pass
                 else:
-                    stop_service(result['name'])
+                    stop_service(service_state['name'])
         elif want_state == "restarted":
             # Unconditionally restart the service
             if module.check_mode:
                 pass
             else:
-                err = restart_service(result['name'])
+                err = restart_service(service_state['name'])
             result['changed'] = True
             result['msg'] = "service restarted"
 
@@ -188,14 +197,14 @@ def main():
             if module.check_mode:
                 pass
             else:
-                err = reload_service(result['name'])
+                err = reload_service(service_state['name'])
             result['changed'] = True
             result['msg'] = "service reloaded"
 
     # XXX - Check whether the enabledness is correct.
     want_enabled = module.params['enabled']
     if want_enabled is not None:
-        if result['enabled'] != want_enabled:
+        if service_state['enabled'] != want_enabled:
             # XXX - Enable or disable, as required.
             # call service.update, with "id", and "enable: true"
             # (I think)
