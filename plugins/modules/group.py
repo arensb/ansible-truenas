@@ -63,12 +63,19 @@ from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
 def main():
     module = AnsibleModule(
         argument_spec=dict(
-            # gid(int)
             gid=dict(type='int'),
-            # group name(str)
             name=dict(type='str', required=True),
+
             # sudo(bool)
             # sudo_nopasswd(bool)
+
+            # XXX - The sudo stuff here looks a lot like the sudo
+            # stuff in the 'user' module. So most likely it's been
+            # changed in TrueNAS SCALE as well. if so, go with a
+            # new-style interface: use 'sudo_commands' and
+            # 'sudo_commands_nopasswd' instead of 'sudo (bool)' and
+            # 'sudo_nopasswd (bool)'
+
             # smb(bool) - whether the group should be mapped onto an NT group.
 
             # users (list of uids) I think it's more intuitive to
@@ -77,16 +84,11 @@ def main():
 
             # local(bool) - what's this?
             # id_type_both(bool) - what's this?
-
-            # From standard group module:
-            # - gid(int)
-            # - local(bool)
-            # = name(str)
-            # - non_unique(bool)
-            non_unique=dict(type='bool', default=False),
-            # - state(absent, *present)
-            state=dict(type='str', default='present', choices=['absent', 'present'])
             # - system(bool)
+
+            non_unique=dict(type='bool', default=False),
+            state=dict(type='str', default='present',
+                       choices=['absent', 'present'])
         ),
         supports_check_mode=True,
         required_if=[
