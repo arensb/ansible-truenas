@@ -220,9 +220,22 @@ def main():
             # (I think)
 
             # midclt call service.update afp '{"enable": false}'
-            pass
+            if not module.check_mode:
+                try:
+                    err = mw.call("service.update", service,
+                                  {"enable": want_enabled})
+                    result['enable_err'] = err
+                except Exception as e:
+                    module.fail_json(msg=f"Error enabling service {service}: {e}")
 
-    # XXX - Set result['changed']
+            result['changed'] = True
+            enable_msg = "service " + ("enabled" if want_enabled else "disabled")
+            if len(result['msg']) > 0:
+                # We already have a message from above, from
+                # starting/stopping/restarting the service.
+                result['msg'] += "; " + enable_msg
+            else:
+                result['msg'] = enable_msg
 
     module.exit_json(**result)
 
