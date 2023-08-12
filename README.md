@@ -1,9 +1,6 @@
 # Ansible Collection - arensb.truenas
 
-Control a TrueNAS box using its API.
-
-## Supported versions of Ansible
-- Tested with 2.10.8
+Manage a [TrueNAS](https://www.truenas.com/) machine.
 
 ## Included content
 
@@ -17,22 +14,8 @@ collection only supports running `midclt` commands on the box. So you
 will need root access there, just as for any other Ansible client. In
 the future, it may support RESTful control.
 
-### Modules
-Name                                | Description
------------------------------------ | ------------------
-`arensb.truenas.filesystem`         | Manage ZFS filesystems.
-`arensb.truenas.group`              | Manage Unix groups.
-`arensb.truenas.hostname`           | Set the hostname.
-`arensb.truenas.jail`               | Set up a jail.
-`arensb.truenas.jails`              | Manage the jail system.
-`arensb.truenas.nfs`                | Manage NFS service configuration.
-`arensb.truenas.plugin`             | Manage plugins and their jails.
-`arensb.truenas.pool_snapshot_task` | Periodic snapshots of ZFS volumes.
-`arensb.truenas.service`            | Manage services.
-`arensb.truenas.sharing_nfs`        | Manage NFS exports.
-`arensb.truenas.sharing_smb`        | Manage SMB shares.
-`arensb.truenas.systemdataset`      | Manage the system dataset.
-`arensb.truenas.user`               | Manage users.
+See [the online documentation](https://arensb.github.io/truenas/index.html)
+for details on each included module.
 
 ## Installing this collection
 
@@ -40,13 +23,6 @@ The easiest way to install this collection is
 [through Ansible Galaxy](https://galaxy.ansible.com/arensb/truenas):
 
     ansible-galaxy collection install arensb.truenas
-
-<!--
-If you want a git repository, e.g., for development:
-
-1. Pick a directory `/my/collections/ansible_collections` to put the collection in.
-2. Make sure that in your `ansible.cfg`, you have
- -->
 
 ## Examples
 
@@ -71,11 +47,6 @@ ones, you may want to use the full name to avoid confusion:
       tasks:
         - arensb.truenas.hostname:
             name: new-hostname
-
-The individual modules also have documentation strings, and should work with
-`ansible-doc`, e.g.:
-
-    ansible-doc -t module arensb.truenas.user
 
 ## Environment Variables
 
@@ -107,13 +78,20 @@ Example:
 ## Contributing to this collection
 The best way to contribute a patch or feature is to create a pull request.
 
-The `plugins/modules/template` file provides a starting point for new modules.
+If you'd like to write your own module, the `extras/template` file
+provides a good starting point.
+
+The [HACKING][HACKING.md] file has some tips on how to get around.
 
 ## Documentation
 
 See [the online documentation](https://arensb.github.io/truenas/index.html).
 
+## Supported versions of Ansible
+- Tested with 2.10.8
+
 ## Changelog
+
 See [the user-friendly docs](https://arensb.github.io/truenas/CHANGELOG.html),
 or the latest [changelog.yaml](changelogs/changelog.yaml).
 
