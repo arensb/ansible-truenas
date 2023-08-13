@@ -157,18 +157,9 @@ def main():
     # XXX - Mostly for debugging, I think.
     result['service_state'] = service_state
 
-    # XXX - Check that the service was found. What to do if it wasn't?
-
-    # XXX - API:
-    # - service.query
-    # - service.reload (service)
-    # - service.restart (service)
-    # - service.start (service)
-    # - service.started (service)
-
     want_state = module.params['state']
 
-    # XXX - Check whether the state is correct.
+    # Check whether the state is correct.
     # midctl state can be "RUNNING", "STOPPED", "UNKNOWN".
     if want_state is not None:
         # XXX - Maybe abort on "UNKNOWN"?
@@ -211,15 +202,12 @@ def main():
             result['changed'] = True
             result['msg'] = "service reloaded"
 
-    # XXX - Check whether the enabledness is correct.
+    # Check whether the enabledness is correct.
     want_enabled = module.params['enabled']
     if want_enabled is not None:
         if service_state['enabled'] != want_enabled:
-            # XXX - Enable or disable, as required.
-            # call service.update, with "id", and "enable: true"
-            # (I think)
+            # Enable or disable, as required.
 
-            # midclt call service.update afp '{"enable": false}'
             if not module.check_mode:
                 try:
                     err = mw.call("service.update", service,
@@ -229,10 +217,11 @@ def main():
                     module.fail_json(msg=f"Error enabling service {service}: {e}")
 
             result['changed'] = True
+
+            # Add a message to result['msg'], preserving the one from
+            # above, if there is one.
             enable_msg = "service " + ("enabled" if want_enabled else "disabled")
             if len(result['msg']) > 0:
-                # We already have a message from above, from
-                # starting/stopping/restarting the service.
                 result['msg'] += "; " + enable_msg
             else:
                 result['msg'] = enable_msg
