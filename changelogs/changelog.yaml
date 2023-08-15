@@ -67,3 +67,8 @@ releases:
     - description: Gather TrueNAS-related facts
       name: truenas_facts
       namespace: ''
+  1.7.1:
+    changes:
+      bugfixes:
+        - "In 'service', services weren't actually being enabled/disabled, or
+          started/stopped."
