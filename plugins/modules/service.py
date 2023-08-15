@@ -107,6 +107,8 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             name=dict(type='str', required=True, default=None),
+            # state doesn't default to anything, for compatibility with
+            # builtin.service.
             state=dict(type='str',
                        choices=['started', 'stopped', 'reloaded', 'restarted']),
             enabled=dict(type='bool'),
@@ -128,56 +130,66 @@ def main():
 
     # Get information about the service
     try:
-        # err = Midclt.call("service.query",
-        #                   [["service", "=", service]])
         err = mw.call("service.query",
                       [["service", "=", service]])
+
+        # If the service was found, 'err' should be an array of 1 entries.
+        # If the service was not found, 'err' is an empty array: [].
+        if len(err) == 0:
+            module.fail_json(msg=f"Unknown service: {service}")
+
+        # Create a convenience data structure describing the current
+        # state of the service.
+        service_state = {
+            'id': int(err[0]['id']),
+            'name': err[0]['service'],
+            'enabled': bool(err[0]['enable']),
+            'state': err[0]['state'],
+            'pids': err[0]['pids'],
+        }
+
+        result['service_state'] = service_state
+
     except Exception as e:
         # XXX - Should limit it to expected exceptions
-        module.fail_json(msg=f"Error getting service {service} state: {e.stderr}")
+        module.fail_json(msg=f"Error getting service {service} state: {e}")
 
-    # If the service was found, 'err' should be an array of 1 entries.
-    # If the service was not found, 'err' is an empty array: [].
-
-    # XXX - Check that the service was found. What to do if it wasn't?
-
-    # XXX - Do we want these? They're purely informational.
-    result['service_id'] = err[0]['id']
-    result['name'] = err[0]['service']
-    result['enabled'] = err[0]['enable']
-    result['state'] = err[0]['state']
-    result['pids'] = err[0]['pids']
-
-    # XXX - API:
-    # - service.query
-    # - service.reload (service)
-    # - service.restart (service)
-    # - service.start (service)
-    # - service.started (service)
+    # XXX - Mostly for debugging, I think.
+    result['service_state'] = service_state
 
     want_state = module.params['state']
 
-    # XXX - Check whether the state is correct.
+    # Check whether the state is correct.
     # midctl state can be "RUNNING", "STOPPED", "UNKNOWN".
     if want_state is not None:
         # XXX - Maybe abort on "UNKNOWN"?
 
         if want_state == "started":
-            # XXX - Make sure service is running
-            pass
-        elif want_state == "stopped":
-            # XXX - Make sure service is not running
-            if result['state'] != "STOPPED":
+            # Make sure service is running
+            if service_state['state'] != "RUNNING":
                 if module.check_mode:
                     pass
                 else:
-                    stop_service(result['name'])
+                    start_service(service_state['name'])
+                result['changed'] = True
+                result['msg'] = "service started"
+
+        elif want_state == "stopped":
+            # Make sure service is not running
+            if service_state['state'] != "STOPPED":
+                if module.check_mode:
+                    pass
+                else:
+                    stop_service(service_state['name'])
+                result['changed'] = True
+                result['msg'] = "service stopped"
+
         elif want_state == "restarted":
             # Unconditionally restart the service
             if module.check_mode:
                 pass
             else:
-                err = restart_service(result['name'])
+                err = restart_service(service_state['name'])
             result['changed'] = True
             result['msg'] = "service restarted"
 
@@ -186,22 +198,33 @@ def main():
             if module.check_mode:
                 pass
             else:
-                err = reload_service(result['name'])
+                err = reload_service(service_state['name'])
             result['changed'] = True
             result['msg'] = "service reloaded"
 
-    # XXX - Check whether the enabledness is correct.
+    # Check whether the enabledness is correct.
     want_enabled = module.params['enabled']
     if want_enabled is not None:
-        if result['enabled'] != want_enabled:
-            # XXX - Enable or disable, as required.
-            # call service.update, with "id", and "enable: true"
-            # (I think)
+        if service_state['enabled'] != want_enabled:
+            # Enable or disable, as required.
 
-            # midclt call service.update afp '{"enable": false}'
-            pass
+            if not module.check_mode:
+                try:
+                    err = mw.call("service.update", service,
+                                  {"enable": want_enabled})
+                    result['enable_err'] = err
+                except Exception as e:
+                    module.fail_json(msg=f"Error enabling service {service}: {e}")
 
-    # XXX - Set result['changed']
+            result['changed'] = True
+
+            # Add a message to result['msg'], preserving the one from
+            # above, if there is one.
+            enable_msg = "service " + ("enabled" if want_enabled else "disabled")
+            if len(result['msg']) > 0:
+                result['msg'] += "; " + enable_msg
+            else:
+                result['msg'] = enable_msg
 
     module.exit_json(**result)
 
