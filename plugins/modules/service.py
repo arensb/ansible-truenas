@@ -154,9 +154,6 @@ def main():
         # XXX - Should limit it to expected exceptions
         module.fail_json(msg=f"Error getting service {service} state: {e}")
 
-    # XXX - Mostly for debugging, I think.
-    result['service_state'] = service_state
-
     want_state = module.params['state']
 
     # Check whether the state is correct.
