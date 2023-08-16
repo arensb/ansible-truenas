@@ -70,9 +70,12 @@ releases:
   1.7.1:
     changes:
       bugfixes:
-        - "In 'service', services weren't actually being enabled/disabled, or
-          started/stopped."
+      - In 'service', services weren't actually being enabled/disabled, or started/stopped.
   1.7.2:
     changes:
       bugfixes:
-        - Remove an unneeded, undocumented, and confusing result value.
+      - Remove an unneeded, undocumented, and confusing result value.
+      minor_changes:
+      - Flesh out instructions for building a release.
+    fragments:
+    - build-release.yaml
