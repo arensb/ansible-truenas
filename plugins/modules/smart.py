@@ -61,21 +61,27 @@ options:
 version_added: 1.8.0
 '''
 
-# XXX
 EXAMPLES = '''
-- name: Configure SMART for disk da0
+- name: Configure S.M.A.R.T. service
   hosts: myhost
   become: yes
   tasks:
     - arensb.truenas.smart:
         power_mode: never
+        # Generate report if a disk is 2 degrees hotter or cooler than
+        # last time.
         temp_difference: 2
-        temp_informational: 40
-        temp_critical: 45
+        # Generate a LOG_INFO message if a disk goes above 40 degrees.
+        temp_info: 40
+        # Generate a LOG_CRIT message if a disk goes above 45 degrees.
+        temp_crit: 45
 '''
 
-# XXX
 RETURN = '''
+status:
+  description:
+    - A data structure giving the current state of the S.M.A.R.T.
+      service, after this module has made changes.
 '''
 
 from ansible.module_utils.basic import AnsibleModule
@@ -143,8 +149,16 @@ def main():
     #   "critical": 0
     # }
 
-    if feature is not None and smart_info['feature'] != feature:
-        arg['feature'] = feature
+    if power_mode is not None and \
+       smart_info['powermode'].lower() != power_mode:
+        arg['powermode'] = power_mode.upper()
+    if temp_difference is not None and \
+       smart_info['difference'] != temp_difference:
+        arg['difference'] = temp_difference
+    if temp_info is not None and smart_info['informational'] != temp_info:
+        arg['informational'] = temp_info
+    if temp_crit is not None and smart_info['critical'] != temp_crit:
+        arg['critical'] = temp_crit
 
     # If there are any changes, smart.update()
     if len(arg) == 0:
@@ -159,8 +173,9 @@ def main():
         else:
             try:
                 err = mw.call("smart.update",
-                              smart_info['id'],
                               arg)
+                # New state of the S.M.A.R.T. service.
+                result['status'] = err
             except Exception as e:
                 module.fail_json(msg=f"Error updating S.M.A.R.T. with {arg}: {e}")
                 # Return any interesting bits from err
