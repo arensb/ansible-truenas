@@ -102,6 +102,19 @@ from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
 
 
 def main():
+    def diskname2id(name: str):
+        """Convert a disk name like 'da0' to an ID."""
+        # Based on middlewared/plugins/disk_/identify_freebsd.py
+
+        try:
+            disk_id = mw.call("disk.device_to_identifier",
+                              name,
+                              output='str')
+        except Exception as e:
+            module.fail_json(msg=f"Can't look up disk {name}: {e}")
+
+        return disk_id
+
     # XXX - schedule: similar to pool_snapshot_task
     #   hour
     #   dom - day of month (1-31)
@@ -207,29 +220,9 @@ def main():
             else:
                 arg['disks'] = []
 
-                # Look up the list of disks: we need to use their LUN
-                # IDs in the S.M.A.R.T. task request.
-                try:
-                    disk_data = mw.call("device.get_disks")
-                except Exception as e:
-                    module.fail_json(msg=f"Error looking up disks: {e}")
-
                 for disk in disks:
-                    # Look up the disk in the list of known disks, to
-                    # get its ID.
-                    if disk not in disk_data:
-                        module.fail_json(msg=f"Unknown disk: {disk}")
+                    arg['disks'].append(diskname2id(disk))
 
-                    # Construct a disk identifier out of the
-                    # information we have.
-                    if 'serial_lunid' in disk_data[disk]:
-                        arg['disks'].\
-                            append("{{serial_lunid}}"
-                                   f"{disk_data[disk]['serial_lunid']}")
-                    elif 'serial' in disk_data[disk]:
-                        arg['disks'].\
-                            append("{{serial}}"
-                                   f"{disk_data[disk]['serial']}")
                 # At this point, arg['disks'] should be an array of
                 # the form:
                 # ["{serial_lunid}ABC12345_1111111111111111",
@@ -286,6 +279,21 @@ def main():
             # Make list of differences between what is and what should
             # be.
             arg = {}
+
+            if disks is not None:
+                # Look up the list of disks: we need to use their LUN
+                # IDs in the S.M.A.R.T. task request.
+                try:
+                    disk_data = mw.call("device.get_disks")
+                except Exception as e:
+                    module.fail_json(msg=f"Error looking up disks: {e}")
+
+                # Make a list of disks that we want to check,
+                # expressed in serial-number form, the way middlewared
+                # wants.
+                want_disks = []
+                # XXX - Write a helper function to map short name to
+                # disk ID.
 
             # XXX - Need to call device.get_disks to map disks to IDs.
             # XXX - disks. Use set comparison, because order doesn't matter.
