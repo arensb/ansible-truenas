@@ -104,7 +104,6 @@ from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
 def main():
     def diskname2id(name: str):
         """Convert a disk name like 'da0' to an ID."""
-        # Based on middlewared/plugins/disk_/identify_freebsd.py
 
         try:
             disk_id = mw.call("disk.device_to_identifier",
@@ -249,7 +248,8 @@ def main():
                 arg['schedule']['dow'] = weekday
 
             if module.check_mode:
-                result['msg'] = f"Would have created resource {name} with {arg}"
+                result['msg'] = f"Would have created resource {name} " \
+                    f"with {arg}"
             else:
                 #
                 # Create new resource
@@ -259,7 +259,8 @@ def main():
                     result['msg'] = err
                 except Exception as e:
                     result['failed_invocation'] = arg
-                    module.fail_json(msg=f"Error creating S.M.A.R.T. Test task {name}: {e}")
+                    module.fail_json(msg="Error creating S.M.A.R.T. Test "
+                                     f"task {name}: {e}")
 
                 # Return whichever interesting bits smart.test.create()
                 # returned.
