@@ -282,22 +282,24 @@ def main():
             arg = {}
 
             if disks is not None:
-                # Look up the list of disks: we need to use their LUN
-                # IDs in the S.M.A.R.T. task request.
-                try:
-                    disk_data = mw.call("device.get_disks")
-                except Exception as e:
-                    module.fail_json(msg=f"Error looking up disks: {e}")
+                if "ALL" in disks:
+                    # We want to monitor all disks.
+                    if smart_test_info['all_disks'] is False:
+                        smart_test_info['all_disks'] = True
+                        result['changed'] = True
+                else:
+                    # Only want to monitor some disks.
+                    want_disks = [diskname2id(disk) for disk in disks]
 
-                # Make a list of disks that we want to check,
-                # expressed in serial-number form, the way middlewared
-                # wants.
-                want_disks = []
-                # XXX - Write a helper function to map short name to
-                # disk ID.
-
-            # XXX - Need to call device.get_disks to map disks to IDs.
-            # XXX - disks. Use set comparison, because order doesn't matter.
+                    if smart_test_info['all_disks'] is True:
+                        arg['all_disks'] = False
+                        arg['disks'] = want_disks
+                        result['changed'] = True
+                    else:
+                        # Use set comparison, because order doesn't matter.
+                        if set(smart_test_info['disks']) != set(want_disks):
+                            smart_test_info['disks'] = want_disks
+                            result['changed'] = True
 
             if test is not None and smart_test_info['type'] != test.upper():
                 arg['type'] = test.upper()
