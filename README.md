@@ -81,7 +81,7 @@ The best way to contribute a patch or feature is to create a pull request.
 If you'd like to write your own module, the `extras/template` file
 provides a good starting point.
 
-The [HACKING][HACKING.md] file has some tips on how to get around.
+The [HACKING](HACKING.md) file has some tips on how to get around.
 
 ## Documentation
 
