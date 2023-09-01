@@ -1,9 +1,25 @@
 #!/usr/bin/python
 __metaclass__ = type
 
-# XXX - One-line description of module
+# XXX - Comparing schedules is harder than it looks: hour, day of the
+# month, day of the week, month are all comma-separated lists of
+# values.
+#
+# Hour can include ranges, e.g., "1-5,9-10".
+#
+# Likewise day of the month, e.g., "1-5,9-12".
+#
+# Day of the week is given as "sun", "mon", etc.
+#
+# Month is given as "jan", "feb", "mar", etc.
+#
+# The simple solution would be to just punt, and compare strings. That
+# means that if the current cron job has "0 0 * * sun", but the caller
+# has "weekday: 0" or "weekday: Sunday", that'll be seen as a change.
+#
+# This is probably good enough, at least for now. I'm not sure that
+# normalizing cron times to compare them is worth the effort.
 
-# XXX
 DOCUMENTATION = '''
 ---
 module: smart_test
@@ -39,24 +55,31 @@ options:
   hour:
     description:
       - Hour when the task should run, in cron format.
+      - This is a comma-separated list of integer ranges.
     type: str
   day:
     description:
       - Day of month when the task should run, in cron format.
+      - This is a comma-separated list of integer ranges, e.g.,
+        "10", "1-5", "1,3,7-10".
     type: str
     aliases: ['date', 'dom']
   month:
     description:
       - Month when the task should run, in cron format.
+      - This is a comma-separated list of month names or numbers,
+        e.g., "jan,feb,mar".
     type: str
   weekday:
     description:
       - Day of week when the task should run, in cron format.
+      - This is a comma-separated list of day numbers of abbreviations,
+        e.g. "1", "1,5", "sun,mon".
     type: str
     aliases: ['dow']
   state:
     description:
-      - Whether the resource should exist or not.
+      - Whether the task should exist or not.
     type: str
     choices: [ absent, present ]
     default: present
@@ -274,17 +297,27 @@ def main():
             # Create an empty schedule.
             schedule = {}
 
+            # XXX - These comparisons are simplistic: they consider
+            # "1-3" and "1,2,3" to be different, as well as "0" and
+            # "sun". See comment at the top of the file.
+            #
+            # But implementing a real schedule comparison is probably
+            # not worth the effort.
             if hour is not None and \
                smart_test_info['schedule']['hour'] != hour:
                 schedule['hour'] = hour
+
             if day is not None and smart_test_info['schedule']['dom'] != day:
                 schedule['dom'] = day
+
             if month is not None and \
                smart_test_info['schedule']['month'] != month:
                 schedule['month'] = month
+
             if weekday is not None and \
                smart_test_info['schedule']['dow'] != weekday:
                 schedule['dow'] = weekday
+
             if len(schedule) > 0:
                 arg['schedule'] = schedule
 
@@ -297,14 +330,16 @@ def main():
                 # Update the S.M.A.R.T. Test task
                 #
                 if module.check_mode:
-                    result['msg'] = f"Would have updated S.M.A.R.T. Test task {name}: {arg}"
+                    result['msg'] = "Would have updated " \
+                        f"S.M.A.R.T. Test task {name}: {arg}"
                 else:
                     try:
                         err = mw.call("smart.test.update",
                                       smart_test_info['id'],
                                       arg)
                     except Exception as e:
-                        module.fail_json(msg=f"Error updating S.M.A.R.T. Test task {name} with {arg}: {e}")
+                        module.fail_json(msg="Error updating S.M.A.R.T. "
+                                         f"Test task {name} with {arg}: {e}")
                         # Return any interesting bits from err
                         result['status'] = err['status']
                 result['changed'] = True
@@ -312,7 +347,8 @@ def main():
             # S.M.A.R.T. Test task is not supposed to exist
 
             if module.check_mode:
-                result['msg'] = f"Would have deleted S.M.A.R.T. Test task {name}"
+                result['msg'] = "Would have deleted S.M.A.R.T. Test " \
+                    f"task {name}"
             else:
                 try:
                     #
@@ -321,7 +357,8 @@ def main():
                     err = mw.call("smart.test.delete",
                                   smart_test_info['id'])
                 except Exception as e:
-                    module.fail_json(msg=f"Error deleting S.M.A.R.T. Test task {name}: {e}")
+                    module.fail_json(msg="Error deleting S.M.A.R.T. "
+                                     f"Test task {name}: {e}")
             result['changed'] = True
 
     module.exit_json(**result)
