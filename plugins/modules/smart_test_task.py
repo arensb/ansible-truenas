@@ -94,6 +94,9 @@ EXAMPLES = '''
 # task: the newly-created task.
 # deleted_tasks: list of deleted tasks, when deleting.
 RETURN = '''
+task:
+  description:
+    - A structure describing a newly-created task.
 '''
 
 from ansible.module_utils.basic import AnsibleModule
@@ -264,7 +267,7 @@ def main():
 
                 # Return whichever interesting bits smart.test.create()
                 # returned.
-                result['smart_test_task'] = err
+                result['task'] = err
 
             result['changed'] = True
         else:
