@@ -206,13 +206,6 @@ def main():
             # Collect arguments to pass to resource.create()
             arg = {
                 'desc': name,
-                'schedule': {
-                    # Default values:
-                    'hour': '*',
-                    'dom': '*',
-                    'month': '*',
-                    'dow': '*',
-                },
             }
 
             # Special value "ALL" means to check all disks.
@@ -236,8 +229,10 @@ def main():
                 # Convert to upper case.
                 arg['type'] = test.upper()
 
-            # Set the time when the test should occur. If any value
-            # hasn't been specified, it defaults to "*", above.
+            # Start with an empty schedule.
+            schedule = {}
+
+            # Set the time when the test should occur.
             if hour is not None:
                 arg['schedule']['hour'] = hour
 
@@ -249,6 +244,10 @@ def main():
 
             if weekday is not None:
                 arg['schedule']['dow'] = weekday
+
+            if len(schedule) > 0:
+                # One or more schedule fields were specified.
+                arg['schedule'] = schedule
 
             if module.check_mode:
                 result['msg'] = f"Would have created resource {name} " \
