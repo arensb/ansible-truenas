@@ -71,11 +71,36 @@ options:
 version_added: 
 '''
 
-# XXX
 EXAMPLES = '''
+- name: Create a default periodic scrub task.
+  hosts: zfs_host
+  become: yes
+  tasks:
+    - arensb.truenas.pool_scrub_task:
+      pool: tank
+
+- name: Create a weekly task with a 35-day threshold
+  hosts: zfs_host
+  become: yes
+  tasks:
+    - arensb.truenas.pool_scrub_task:
+      pool: tank
+      description: Test weekly, scrub monthly.
+      threshold: 35
+      hour: "3"
+      day: "*"
+      month: "*"
+      weekday: "tue"
+
+- name: Delete an existing scrub task.
+  hosts: zfs_host
+  become: yes
+  tasks:
+    - arensb.truenas.pool_scrub_task:
+      pool: tank
+      state: absent
 '''
 
-# XXX
 RETURN = '''
 task:
   description:
