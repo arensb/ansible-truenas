@@ -1,14 +1,11 @@
 #!/usr/bin/python
 __metaclass__ = type
 
-# XXX - One-line description of module
-
 # XXX - When smart_jobs (or whatever) is written, add to description:
   # - This module does not schedule S.M.A.R.T. scans. That is done
   #   by C(smart_scan).
 # XXX - Check version_added
 
-# XXX
 DOCUMENTATION = '''
 ---
 module: smart
@@ -90,21 +87,8 @@ from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
 
 
 def main():
-    # XXX - interval (int): minutes between tests
-    # (technically, time when smartd should wake up and check whether any
-    # tests are needed)
-
-    # XXX - difference (int): temp_difference?
-    # XXX - informational (int): temp_info? Message LOG_INFO if
-    # temperature above this level.
-    # XXX - critical (int): temp_critical? Message LOG_CRIT if
-    # temperature above this level.
-
-    # XXX - critical, informational, difference: 0 == disabled.
-
     module = AnsibleModule(
         argument_spec=dict(
-            # XXX
             interval=dict(type='int'),
             power_mode=dict(type='str',
                             choices=['never', 'sleep', 'standby', 'idle']),
@@ -138,16 +122,6 @@ def main():
     # Make list of differences between what is and what should
     # be.
     arg = {}
-
-    # XXX
-    # {
-    #   "id": 1,
-    #   "interval": 30,
-    #   "powermode": "NEVER",
-    #   "difference": 0,
-    #   "informational": 0,
-    #   "critical": 0
-    # }
 
     if interval is not None and smart_info['interval'] != interval:
         arg['interval'] = interval
