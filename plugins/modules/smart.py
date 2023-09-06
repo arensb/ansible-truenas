@@ -149,6 +149,8 @@ def main():
     #   "critical": 0
     # }
 
+    if interval is not None and smart_info['interval'] != interval:
+        arg['interval'] = interval
     if power_mode is not None and \
        smart_info['powermode'].lower() != power_mode:
         arg['powermode'] = power_mode.upper()
