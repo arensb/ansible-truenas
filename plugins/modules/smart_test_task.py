@@ -234,16 +234,16 @@ def main():
 
             # Set the time when the test should occur.
             if hour is not None:
-                arg['schedule']['hour'] = hour
+                schedule['hour'] = hour
 
             if day is not None:
-                arg['schedule']['dom'] = day
+                schedule['dom'] = day
 
             if month is not None:
-                arg['schedule']['month'] = month
+                schedule['month'] = month
 
             if weekday is not None:
-                arg['schedule']['dow'] = weekday
+                schedule['dow'] = weekday
 
             if len(schedule) > 0:
                 # One or more schedule fields were specified.
