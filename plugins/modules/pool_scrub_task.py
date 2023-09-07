@@ -1,9 +1,6 @@
 #!/usr/bin/python
 __metaclass__ = type
 
-# XXX - One-line description of module
-
-# XXX
 DOCUMENTATION = '''
 ---
 module: pool_scrub_task
@@ -68,7 +65,7 @@ options:
     type: str
     choices: [ absent, present ]
     default: present
-version_added: 
+version_added: 1.8.0
 '''
 
 EXAMPLES = '''
@@ -168,9 +165,6 @@ def main():
             scrub_info = scrub_info[0]
     except Exception as e:
         module.fail_json(msg=f"Error looking up scrub task for {pool}: {e}")
-
-    # XXX - Look up the pool ID from its name.
-    # pool.query("name","=",pool)
 
     # First, check whether the task even exists.
     if scrub_info is None:
