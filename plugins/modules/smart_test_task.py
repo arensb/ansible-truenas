@@ -106,10 +106,33 @@ options:
     type: str
     choices: [ absent, present ]
     default: present
-version_added: XXX
+version_added: 1.8.0
 '''
 
 EXAMPLES = '''
+- name: Run a SHORT test every month
+  hosts: my-truenas-server
+  tasks:
+    - arensb.truenas.smart_test_task:
+        name: "Monthly job"
+        disks: ALL
+        test: short
+        hour: 13
+        day: 1
+        month: "*"
+
+- name: Run a SHORT test twice a month on some disks
+  hosts: my-truenas-server
+  tasks:
+    - arensb.truenas.smart_test_task:
+        name: "Bimonthly job on ada0, ada1"
+        disks:
+          - ada0
+          - ada1
+        test: short
+        hour: 3
+        day: 1,15
+        month: "*"
 '''
 
 # XXX - Should be the same as pool_snapshot_task, for consistency:
@@ -119,6 +142,8 @@ RETURN = '''
 task:
   description:
     - A structure describing a newly-created task.
+  type: dict
+  returned: Success, when created.
 '''
 
 from ansible.module_utils.basic import AnsibleModule
