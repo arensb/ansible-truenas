@@ -1,11 +1,6 @@
 #!/usr/bin/python
 __metaclass__ = type
 
-# XXX - When smart_jobs (or whatever) is written, add to description:
-  # - This module does not schedule S.M.A.R.T. scans. That is done
-  #   by C(smart_scan).
-# XXX - Check version_added
-
 DOCUMENTATION = '''
 ---
 module: smart
@@ -14,6 +9,8 @@ description:
   - Configure the S.M.A.R.T. service.
   - To turn on the S.M.A.R.T. service and make sure it starts
     at boot time, see C(service).
+  - This module does not schedule S.M.A.R.T. scans. That is done
+    by C(smart_scan).
 options:
   interval:
     description:
