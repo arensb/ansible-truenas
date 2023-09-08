@@ -20,9 +20,32 @@ __metaclass__ = type
 # This is probably good enough, at least for now. I'm not sure that
 # normalizing cron times to compare them is worth the effort.
 
+# XXX - There's no good way to delete all tasks and go back to a known
+# blank slate. Maybe we want to change the rules if state==absent:
+# don't require a name, schedule, or type, and delete anything that
+# matches the given criteria.
+#
+# It's tempting to say that
+#     - smart_test_task:
+#         disks: ALL
+#         state: absent
+#
+# should delete all jobs on all disks, but that might be a step too
+# far. That should delete all jobs with 'all_disks' set.
+#
+# What if we have
+#
+#     - smart_test_task:
+#         disks: ada0
+#         state: absent
+#
+# and there's a matching job that runs on [ ada0, ada1 ]? In this
+# case, the sensible thing to do might be to just edit the job and
+# remove ada0.
+
 DOCUMENTATION = '''
 ---
-module: smart_test
+module: smart_test_task
 short_description: Schedule S.M.A.R.T. tests
 description:
   - Schedule S.M.A.R.T. tests under "Tasks".
@@ -86,7 +109,6 @@ options:
 version_added: XXX
 '''
 
-# XXX
 EXAMPLES = '''
 '''
 
@@ -116,22 +138,6 @@ def main():
             module.fail_json(msg=f"Can't look up disk {name}: {e}")
 
         return disk_id
-
-    # XXX - schedule: similar to pool_snapshot_task
-    #   hour
-    #   dom - day of month (1-31)
-    #   month
-    #   dow - day of week
-    # desc(str) - description - name
-    # all_disks(bool)
-    # disks(list(str))
-    # type (enum: LONG, SHORT, CONVEYANCE, OFFLINE)
-    #
-    # disks is an array of strings. Can include the magic value "all",
-    # meaning all disks.
-
-    # XXX - Doesn't take a "minute" parameter. Do we want to accept
-    # one anyway, just for compatibility with cron? Just ignore it.
 
     module = AnsibleModule(
         argument_spec=dict(
