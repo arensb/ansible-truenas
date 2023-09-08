@@ -25,6 +25,8 @@ about.
 
 1. If you added a module, add it to `README.md`.
 
+1. If you added a module, add `version_added` to its `DOCUMENTATION` string.
+
 1. Run `antsibull-changelog lint` and `antsibull-changelog release`.
 
 1. Commit changes.

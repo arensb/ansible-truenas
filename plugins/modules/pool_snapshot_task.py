@@ -206,18 +206,8 @@ import re
 
 def main():
     # Required arguments:
-    # - dataset (path)
     # - recursive (bool)
     #   I don't know what a good default might be
-    # - lifetime_value (int)
-    # - lifetime_unit (enum)
-    # - naming_schema (str)
-    # - schedule (cron job)
-    #
-    # Other arguments:
-    # - exclude (list(path))
-    # - allow_empty (bool)
-    # - enabled (bool)
 
     # dataset(str): name of the pool, volume, filesystem being backed up,
     #   e.g., "tank", "tank/iocage", "tank/iocage/download",
