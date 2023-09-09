@@ -23,8 +23,6 @@ using `make documentation`.
 1. Update `changelogs/changelog.yaml` and list changes the users care
 about.
 
-1. If you added a module, add it to `README.md`.
-
 1. If you added a module, add `version_added` to its `DOCUMENTATION` string.
 
 1. Run `antsibull-changelog lint` and `antsibull-changelog release`.
