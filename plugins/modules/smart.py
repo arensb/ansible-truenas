@@ -23,12 +23,12 @@ options:
       - Selects the power mode. Options are C(never), C(sleep), C(standby),
         and C(idle). These correspond to the C(-n POWERMODE) option to
         C(smartd).
-      - C(never): Check the device regardless of its power mode.
-      - C(sleep): Check the device unless it is in C(sleep) mode.
-      - C(standby): Check the device unless it is in C(sleep) or C(standby)
-        mode.
-      - C(idle): Check the device unless it is in C(sleep), C(standby), or
-        C(idle) mode.
+      - "C(never): Check the device regardless of its power mode."
+      - "C(sleep): Check the device unless it is in C(sleep) mode."
+      - "C(standby): Check the device unless it is in C(sleep) or C(standby)
+        mode."
+      - "C(idle): Check the device unless it is in C(sleep), C(standby), or
+        C(idle) mode."
     type: str
     choices: [ NEVER, SLEEP, STANDBY, IDLE ]
   temp_difference:
