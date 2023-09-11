@@ -32,7 +32,7 @@ about.
 1. Tag the git commit with the new release version, in the format
 `v1.2.3`.
 
-1. `git push`
+1. `git push; git push --tags`
 
 1. Create a release in github.
 
