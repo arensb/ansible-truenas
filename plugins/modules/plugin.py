@@ -132,6 +132,10 @@ plugin:
     - An object describing a newly-created plugin.
 '''
 
+# XXX - The new plugin has both "name" and "id" set to the "id" of the
+# jail it's on. These always seem to be the same. I don't know what
+# the difference is. I guess let's go with "id" as the ID of the jail.
+
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
     import MiddleWare as MW
