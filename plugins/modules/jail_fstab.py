@@ -4,10 +4,6 @@ __metaclass__ = type
 # XXX - One-line description of module
 # Manage a jail's fstab
 
-# XXX - Would be nice to allow "mount" to be relative to the jail. I
-# think the way to do this is call jail.get_iocroot (undocumented). Then root is
-# {iocroot}/jails/{jailname}/root
-
 # XXX
 DOCUMENTATION = '''
 ---
@@ -41,7 +37,10 @@ options:
       mount:
         description:
           - The directory where the device should be mounted.
-          - This is an absolute path, as seen from outside the jail.
+          - If this begins with C(/), it is an absolute path, as seen
+            from outside the jail. Otherwise, it is a relative path,
+            relative to the jail's root, typically
+            C(/mnt/<pool>/iocage/jails/<jail-name>/root).
         required: yes
         type: str
       fstype:
@@ -77,22 +76,21 @@ options:
 version_added: XXX
 '''
 
-# XXX
 EXAMPLES = '''
-- name: Mount a directory inside a jail
-  arensb.truenas.jail_fstab:
-    jail: the-jail-name
-    fstab: /mnt/data/my-data /mnt/data/iocage/jails/the-jail-name/root/my-data nullfs ro 0 0
-- name: Explicit fstab structure
+- name: Mount some directories inside a jail
   arensb.truenas.jail_fstab:
     jail: the-jail-name
     fstab:
+      # Absolute mount point:
       - src: /mnt/data/my-data
         mount: /mnt/data/iocage/jails/the-jail-name/root/my-data
         fstype: nullfs
         options: ro
         dump: 0
         pass: 0
+      # Relative mount point:
+      - src: /mnt/data/more-data
+        mount: data/more
 '''
 
 # XXX
@@ -122,8 +120,7 @@ def main():
         try:
             iocroot = mw.call("jail.get_iocroot", output='str')
         except Exception as e:
-            # return None
-            return "Can't get iocroot: {e}"
+            return None
 
         return iocroot
 
@@ -225,7 +222,8 @@ def main():
             # okay.
             result['msg'] += f"This entry exists. Need to check it.\n"
 
-        # XXX - If "mount" begins with "/", it's absolute. Otherwise, it's relative to jail root:
+        # XXX - If "mount" begins with "/", it's absolute. Otherwise,
+        # it's relative to jail root:
         # {iocroot}/jails/{jailname}/root
 
         # XXX - Figure out whether to ADD or REPLACE this fstb entry,
