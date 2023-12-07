@@ -1,7 +1,6 @@
 #!/usr/bin/python
 __metaclass__ = type
 
-# XXX - One-line description of module
 # Manage a jail's fstab
 
 # XXX
@@ -11,6 +10,12 @@ module: jail_fstab
 short_description: "Manage a jail's fstab"
 description:
   - Add, remove, mount, and unmount filesystems that a jail sees.
+  - Note that changes can only be made when the jail is stopped,
+    so this module will attempt to stop the jail if it needs to, and
+    then restart it after the changes are made.
+  - If you do not want production jails to be restarted without your
+    explicit approval, you can add a clause like
+    C(check_mode: "{{ restart_jails != 'yes' }}")
 options:
   append:
     description:
@@ -194,16 +199,28 @@ def main():
 
     # Look up the jail and its fstab
     try:
+        jail_info = mw.call("jail.query",
+                            [["id", "=", jail]],
+                            # We only care about state for now.
+                            {"select": ["state"]})
+
+        if len(jail_info) == 0:
+            # No such jail
+            module.fail_json(msg=f"No such jail {jail}")
+        else:
+            # Jail exists
+            jail_info = jail_info[0]
+
         fstab_info = mw.call("jail.fstab",
                              jail,
                              {"action": "LIST"})
-
     except Exception as e:
         module.fail_json(msg=f"Error looking up jail {jail}: {e}")
 
     # Filter out the "SYSTEM" entries and only keep the "USER" ones.
     fstab_info = {k: v for (k, v) in fstab_info.items()
                   if v['type'] == "USER"}
+    result['jail_info'] = jail_info
     result['fstab'] = fstab_info
 
     # Iterate over the provided list of mount points and see if they
@@ -250,14 +267,10 @@ def main():
             # - source
             # - destination
             # others are optional.
-
-            # XXX - Required fields for REMOVE:
-            # - source
-            # - destination
         else:
             # XXX - This entry exists in the jail. Make sure it's
             # okay.
-            result['msg'] += f"This entry exists. Need to check it.\n"
+            result['msg'] += "This entry exists. Need to check it.\n"
 
         # XXX - If "mount" begins with "/", it's absolute. Otherwise,
         # it's relative to jail root:
@@ -273,6 +286,36 @@ def main():
 
         # XXX - For any remaining fstab entries:
         # jail.fstab <jail-name> {entry, action: REMOVE}
+
+        # XXX - Required fields for REMOVE:
+        # - source
+        # - destination
+
+    # XXX - If there are any changes:
+    # - Check the jail upness.
+    result['msg'] += f"jail state: {jail_info['state']}\n"
+    #   jail.query, check state==up
+
+    # - Stop jail if necessary
+    if jail_info['state'] == "up":
+        # XXX - Need to shut down jail.
+        result['msg'] += "Need to shut down jail.\n"
+        pass
+    else:
+        result['msg'] += f"Jail is {jail_info['state']}, not up. Not shutting down.\n"
+
+    # - apply the changes
+    for change in changes:
+        result['msg'] += f"Need to make a change: {change}\n"
+        # XXX
+
+    # - Start jail if it was up before
+    if jail_info['state'] == "up":
+        # XXX - Need to restart jail
+        result['msg'] += "Need to restart jail.\n"
+        pass
+    else:
+        result['msg'] += "Jail wasn't up. Not restarting.\n"
 
     module.exit_json(**result)
 
