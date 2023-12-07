@@ -4,6 +4,10 @@ __metaclass__ = type
 # XXX - One-line description of module
 # Manage a jail's fstab
 
+# XXX - Would be nice to allow "mount" to be relative to the jail. I
+# think the way to do this is call jail.get_iocroot (undocumented). Then root is
+# {iocroot}/jails/{jailname}/root
+
 # XXX
 DOCUMENTATION = '''
 ---
@@ -104,8 +108,25 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
     import MiddleWare as MW
 
+iocroot = None
 
 def main():
+    def get_iocroot():
+        global iocroot
+
+        # Return cached value, if there is one.
+        if iocroot is not None:
+            return iocroot
+
+        # Look up the iocage root.
+        try:
+            iocroot = mw.call("jail.get_iocroot", output='str')
+        except Exception as e:
+            # return None
+            return "Can't get iocroot: {e}"
+
+        return iocroot
+
     module = AnsibleModule(
         argument_spec=dict(
             jail=dict(type='str', required=True),
@@ -134,9 +155,10 @@ def main():
     jail = module.params['jail']
     fstab = module.params['fstab']
     append = module.params['append']
-    # XXX
 
-    # XXX - Look up the jail and its fstab
+    result['iocroot'] = get_iocroot()
+
+    # Look up the jail and its fstab
     try:
         fstab_info = mw.call("jail.fstab",
                              jail,
@@ -150,20 +172,64 @@ def main():
                   if v['type'] == "USER"}
     result['fstab'] = fstab_info
 
-    # XXX - Iterate over the provided list of mount points and see if
-    # they match what the caller wants.
+    # Iterate over the provided list of mount points and see if they
+    # match what the caller wants.
+
+    # XXX - Need to stop jail when adding, removing a mountpoint.
+
+    # Make a list of changes to apply. This is a list of elements of
+    # the form
+    # { action: <action>, entry: <entry> }
+    # where <action> is one of "add", "remove", or "replace"
+    # and <entry> is an element from the `fstab' parameter.
+    changes = []
 
     for fs in fstab:
-        result['msg'] += f"Checking {fs}.\n"
-        if isinstance(fs, str):
-            # XXX - Split the string into fields
-            result['msg'] += "Ought to split string into fields.\n"
+        # XXX - Debugging
+        result['msg'] += f"Checking {fs['mount']}.\n"
+
+        mount_full = fs['mount']
+        if not mount_full.startswith("/"):
+            # This is a relative path. Make it absolute.
+            mount_full = f"{get_iocroot()}/jails/{jail}/root/{fs['mount']}"
+
+        result['msg'] += f"  mount_full: {mount_full}\n"
+        # Look for this fstab entry. This construct is "clever", so
+        # may need to be rewritten:
+        # - Iterate over all k=>v items in fstab_info.
+        #   k is an integer, the item's position in fstab, and
+        #   isn't interesting.
+        #   v is {"entry: [src, mount, fstab, options, dump, fsck_pass]}
+        # - We grep out the ones where 'mount' is the one we want.
+        # - Use next() to pick only the first item, if one exists, or
+        #   return None as a default, if no suitable entry is found.
+        entry = next((v['entry'] for (k, v) in fstab_info.items()
+                      if v['entry'][1] == mount_full),
+                     None)
+
+        if entry is None:
+            # XXX - This entry does not exist in the jail. Need to
+            # create it.
+            result['msg'] += f"No such entry. Need to add it.\n"
+
+            # XXX - Required fields for ADD:
+            # - source
+            # - destination
+            # others are optional.
+
+            # XXX - Required fields for REMOVE:
+            # - source
+            # - destination
         else:
-            result['msg'] += "This fs is already split.\n"
+            # XXX - This entry exists in the jail. Make sure it's
+            # okay.
+            result['msg'] += f"This entry exists. Need to check it.\n"
+
+        # XXX - If "mount" begins with "/", it's absolute. Otherwise, it's relative to jail root:
+        # {iocroot}/jails/{jailname}/root
 
         # XXX - Figure out whether to ADD or REPLACE this fstb entry,
         # or leave it alone.
-
 
     if append:
         result['msg'] += "Other fs-es may exist.\n"
