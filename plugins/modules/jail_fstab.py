@@ -73,6 +73,19 @@ options:
         type: int
         required: no
         default: 0
+      state:
+        description:
+          - Whether the filesystem should be mounted or not.
+          - Set C(state) to C(absent) to ensure that nothing is mounted
+            at a given mount point.
+          - By default, filesystems are mounted, because it is assumed that
+            you want them available. In addition, setting C(append) to C(no)
+            ensures that any filesystems not on the list are unmounted.
+          - When C(state) is C(present), the C(source) parameter is required.
+            When C(state) is C(absent), C(source) can be omitted.
+        type: str
+        choices: [ 'present', 'absent' ]
+        default: present
 version_added: XXX
 '''
 
@@ -91,6 +104,24 @@ EXAMPLES = '''
       # Relative mount point:
       - src: /mnt/data/more-data
         mount: data/more
+
+# Making changes to fstab involves stopping the jail, then restarting it.
+# This shows how to not affect running services unless the 'bounce_jails'
+# variable is set to 'yes'.
+- name: Don't halt production services
+  arensb.truenas.jail_fstab:
+    jail: the-jail-name
+    fstab:
+      - src: /mnt/data/my-data
+        mount: /mnt/data/iocage/jails/the-jail-name/root/my-data
+  check_mode: "{{ ansible_check_mode or bounce_jails != 'yes' }}"
+
+- name: Ensure that a filesystem is *not* mounted:
+  arensb.truenas.jail_fstab:
+    jail: the-jail-name
+    fstab:
+        - mount: /mnt/data/iocage/jails/the-jail-name/root/old-data
+          state: absent
 '''
 
 # XXX
@@ -129,13 +160,19 @@ def main():
             jail=dict(type='str', required=True),
             fstab=dict(type='list', elements='dict',
                        options=dict(
-                           src=dict(type='str', required=True),
+                           src=dict(type='str'),
                            mount=dict(type='str', required=True),
                            fstype=dict(type='str', default="nullfs"),
                            options=dict(type='str', default="ro"),
                            dump=dict(type='int', default=0),
                            fsck_pass=dict(type='int', default=0),
-                       )),
+                           state=dict(type='str', default='present',
+                                      choices=['present', 'absent'])
+                       ),
+                       required_if=[
+                           ('state', 'present', ('src', 'mount'))
+                       ]
+                       ),
             append=dict(type='bool', default=False),
             ),
         supports_check_mode=True,
