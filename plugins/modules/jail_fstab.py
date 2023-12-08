@@ -239,12 +239,17 @@ def main():
         # XXX - Debugging
         result['msg'] += f"Checking {fs['mount']}.\n"
 
-        mount_full = fs['mount']
-        if not mount_full.startswith("/"):
+        # If "mount" begins with "/", it's absolute. Otherwise, it's
+        # relative to jail root:
+        # {iocroot}/jails/{jailname}/root
+        fs['mount_full'] = fs['mount']
+        if not fs['mount_full'].startswith("/"):
             # This is a relative path. Make it absolute.
-            mount_full = f"{get_iocroot()}/jails/{jail}/root/{fs['mount']}"
+            fs['mount_full'] = f"{get_iocroot()}/jails/{jail}/root/{fs['mount']}"
 
-        result['msg'] += f"  mount_full: {mount_full}\n"
+        # XXX - Debugging
+        result['msg'] += f"  mount_full: {fs['mount_full']}\n"
+
         # Look for this fstab entry. This construct is "clever", so
         # may need to be rewritten:
         # - Iterate over all k=>v items in fstab_info.
@@ -255,7 +260,7 @@ def main():
         # - Use next() to pick only the first item, if one exists, or
         #   return None as a default, if no suitable entry is found.
         entry = next((v['entry'] for (k, v) in fstab_info.items()
-                      if v['entry'][1] == mount_full),
+                      if v['entry'][1] == fs['mount_full']),
                      None)
 
         if entry is None:
