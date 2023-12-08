@@ -292,13 +292,12 @@ def main():
             # XXX - Debugging.
             result['msg'] += "This entry exists. Need to check it.\n"
 
-            # Collect a set of things to change about this mount point
-            change_fields = {}
             if fs['state'] == "absent":
                 # It's present, but is supposed to be absent.
-                changes.append({
-                    "action": "remove",
-                    "entry": entry,
+                change_args.append({
+                    "action": "REMOVE",
+                    "source": entry[0],
+                    "destination": entry[1],
                 })
                 result['changed'] = True
 
@@ -306,43 +305,49 @@ def main():
                 # know.
                 continue
 
+            # Collect a set of things to change about this mount point
+            # XXX - Need "index"
+            args = {}
+
             # Source
             if entry[0] != fs['src']:
                 result['msg'] += f"src: {entry[0]} != {fs['src']}\n"
-                change_fields['source'] = fs['src']
+                args['source'] = fs['src']
+
+            # XXX - Destination
 
             # fstype
             if fs['fstype'] is not None and \
                entry[2] != fs['fstype']:
                 result['msg'] += f"fstype: {entry[2]} != {fs['fstype']}\n"
-                change_fields['fstype'] = fs['fstype']
+                args['fstype'] = fs['fstype']
 
             # Options
             if fs['options'] is not None and \
                entry[3] != fs['options']:
                 result['msg'] += f"options: {entry[3]} != {fs['options']}\n"
-                change_fields['fsoptions'] = fs['options']
+                args['fsoptions'] = fs['options']
 
             # Dump
             if fs['dump'] is not None and \
                int(entry[4]) != fs['dump']:
                 result['msg'] += f"dump: {entry[4]} != {fs['dump']}\n"
-                change_fields['dump'] = fs['dump']
+                args['dump'] = fs['dump']
 
             # fsck_pass
             if fs['fsck_pass'] is not None and \
                int(entry[5]) != fs['fsck_pass']:
                 result['msg'] += f"pass: {entry[5]} != {fs['fsck_pass']}\n"
-                change_fields['pass'] = fs['fsck_pass']
+                args['pass'] = fs['fsck_pass']
 
-            if len(change_fields) > 0:
-                changes.append({
+            if len(args) > 0:
+                change_args.append({
                     "action": "replace",
                     "entry": entry,
-                    "fields": change_fields,
+                    "fields": args,
                 })
                 result['changed'] = True
-            result['msg'] += f"change_fields: {change_fields}\n"
+            result['msg'] += f"change_fields: {args}\n"
 
     if not append:
         result['msg'] += "Ought to delete other fs-es.\n"
@@ -361,14 +366,14 @@ def main():
         result['extra_fses'] = extra_fses
 
         for entry in extra_fses:
-            changes.append({
+            change_args.append({
                 "action": "remove",
                 "entry": entry,
             })
             result['changed'] = True
 
     # XXX - If there are any changes:
-    if len(changes) > 0:
+    if len(change_args) > 0:
         # - Check the jail upness.
         result['msg'] += f"jail state: {jail_info['state']}\n"
 
@@ -387,7 +392,7 @@ def main():
             result['msg'] += f"Jail is {jail_info['state']}, not up. Not shutting down.\n"
 
         # - apply the changes
-        for change in changes:
+        for change in change_args:
             result['msg'] += f"Need to make a change: {change}\n"
 
             # Arguments to pass to jail.fstab call:
@@ -443,24 +448,24 @@ def main():
             # Resource is supposed to exist, so create it.
 
             # Collect arguments to pass to resource.create()
-            arg = {
+            args = {
                 "resourcename": jail,
             }
 
             if feature is not None:
-                arg['feature'] = feature
+                args['feature'] = feature
 
             if module.check_mode:
-                result['msg'] = f"Would have created resource {jail} with {arg}"
+                result['msg'] = f"Would have created resource {jail} with {args}"
             else:
                 #
                 # Create new resource
                 #
                 try:
-                    err = mw.call("resource.create", arg)
+                    err = mw.call("resource.create", args)
                     result['msg'] = err
                 except Exception as e:
-                    result['failed_invocation'] = arg
+                    result['failed_invocation'] = args
                     module.fail_json(msg=f"Error creating resource {jail}: {e}")
 
                 # Return whichever interesting bits resource.create()
@@ -480,13 +485,13 @@ def main():
 
             # Make list of differences between what is and what should
             # be.
-            arg = {}
+            args = {}
 
             if feature is not None and fstab_info['feature'] != feature:
-                arg['feature'] = feature
+                args['feature'] = feature
 
             # If there are any changes, resource.update()
-            if len(arg) == 0:
+            if len(args) == 0:
                 # No changes
                 result['changed'] = False
             else:
@@ -494,14 +499,14 @@ def main():
                 # Update resource.
                 #
                 if module.check_mode:
-                    result['msg'] = f"Would have updated resource {jail}: {arg}"
+                    result['msg'] = f"Would have updated resource {jail}: {args}"
                 else:
                     try:
                         err = mw.call("resource.update",
                                       fstab_info['id'],
-                                      arg)
+                                      args)
                     except Exception as e:
-                        module.fail_json(msg=f"Error updating resource {jail} with {arg}: {e}")
+                        module.fail_json(msg=f"Error updating resource {jail} with {args}: {e}")
                         # Return any interesting bits from err
                         result['status'] = err['status']
                 result['changed'] = True
