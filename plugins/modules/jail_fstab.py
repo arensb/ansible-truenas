@@ -3,7 +3,6 @@ __metaclass__ = type
 
 # Manage a jail's fstab
 
-# XXX
 DOCUMENTATION = '''
 ---
 module: jail_fstab
@@ -144,6 +143,7 @@ from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
 
 iocroot = None
 
+
 def main():
     def get_iocroot():
         global iocroot
@@ -155,7 +155,7 @@ def main():
         # Look up the iocage root.
         try:
             iocroot = mw.call("jail.get_iocroot", output='str')
-        except Exception as e:
+        except Exception:
             return None
 
         return iocroot
@@ -195,6 +195,7 @@ def main():
     fstab = module.params['fstab']
     append = module.params['append']
 
+    # XXX - Error-checking
     result['iocroot'] = get_iocroot()
 
     # Look up the jail and its fstab
@@ -229,12 +230,11 @@ def main():
 
     # XXX - Need to stop jail when adding, removing a mountpoint.
 
-    # Make a list of changes to apply. This is a list of elements of
-    # the form
-    # { action: <action>, entry: <entry> }
-    # where <action> is one of "add", "remove", or "replace"
-    # and <entry> is an element from the `fstab' parameter.
-    changes = []
+    # The jail needs to be stopped before making any changes, so in
+    # this phase, we're just going to make a list of all the changes
+    # to make. Specifically, we're going to construct a set of
+    # arguments to call `jail.fstab' on.
+    change_args = []
 
     for fs in fstab:
         # XXX - Debugging
@@ -243,16 +243,18 @@ def main():
         # If "mount" begins with "/", it's absolute. Otherwise, it's
         # relative to jail root:
         # {iocroot}/jails/{jailname}/root
+
         fs['mount_full'] = fs['mount']
         if not fs['mount_full'].startswith("/"):
             # This is a relative path. Make it absolute.
-            fs['mount_full'] = f"{get_iocroot()}/jails/{jail}/root/{fs['mount']}"
+            fs['mount_full'] = \
+                f"{get_iocroot()}/jails/{jail}/root/{fs['mount']}"
 
         # XXX - Debugging
         result['msg'] += f"  mount_full: {fs['mount_full']}\n"
 
-        # Look for this fstab entry. This construct is "clever", so
-        # may need to be rewritten:
+        # Look for this fstab entry in the jail. This construct is
+        # "clever", so may need to be rewritten:
         # - Iterate over all k=>v items in fstab_info.
         #   k is an integer, the item's position in fstab, and
         #   isn't interesting.
@@ -267,14 +269,14 @@ def main():
         if entry is None:
             if fs['state'] == 'absent':
                 # The entry doesn't exist, and is supposed to not
-                # exist.
+                # exist. This is fine.
                 continue
 
-            # XXX - This entry does not exist in the jail. Need to
-            # create it.
+            # This entry does not exist in the jail, but should.
+            # Create it.
             result['msg'] += "No such entry. Need to add it.\n"
 
-            # XXX - Required fields for ADD:
+            # Required fields for ADD:
             # - source
             # - destination
             # others are optional.
@@ -284,8 +286,10 @@ def main():
             })
             result['changed'] = True
         else:
-            # XXX - This entry exists in the jail. Make sure it's
-            # okay.
+            # This entry exists in the jail. Make sure it matches what
+            # the caller wants.
+
+            # XXX - Debugging.
             result['msg'] += "This entry exists. Need to check it.\n"
 
             # Collect a set of things to change about this mount point
