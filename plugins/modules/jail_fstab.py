@@ -264,29 +264,82 @@ def main():
                      None)
 
         if entry is None:
+            if fs['state'] == 'absent':
+                # The entry doesn't exist, and is supposed to not
+                # exist.
+                continue
+
             # XXX - This entry does not exist in the jail. Need to
             # create it.
-            result['msg'] += f"No such entry. Need to add it.\n"
+            result['msg'] += "No such entry. Need to add it.\n"
 
             # XXX - Required fields for ADD:
             # - source
             # - destination
             # others are optional.
+            changes.append({
+                "action": "add",
+                "entry": entry,
+            })
+            result['changed'] = True
         else:
             # XXX - This entry exists in the jail. Make sure it's
             # okay.
             result['msg'] += "This entry exists. Need to check it.\n"
 
-        # XXX - If "mount" begins with "/", it's absolute. Otherwise,
-        # it's relative to jail root:
-        # {iocroot}/jails/{jailname}/root
+            # Collect a set of things to change about this mount point
+            change_fields = {}
+            if fs['state'] == "absent":
+                # It's present, but is supposed to be absent.
+                changes.append({
+                    "action": "remove",
+                    "entry": entry,
+                })
+                result['changed'] = True
 
-        # XXX - Figure out whether to ADD or REPLACE this fstb entry,
-        # or leave it alone.
+                # It's supposed to be absent. That's all we need to
+                # know.
+                continue
 
-    if append:
-        result['msg'] += "Other fs-es may exist.\n"
-    else:
+            # Source
+            if entry[0] != fs['src']:
+                result['msg'] += f"src: {entry[0]} != {fs['src']}\n"
+                change_fields['source'] = fs['src']
+
+            # fstype
+            if fs['fstype'] is not None and \
+               entry[2] != fs['fstype']:
+                result['msg'] += f"fstype: {entry[2]} != {fs['fstype']}\n"
+                change_fields['fstype'] = fs['fstype']
+
+            # Options
+            if fs['options'] is not None and \
+               entry[3] != fs['options']:
+                result['msg'] += f"options: {entry[3]} != {fs['options']}\n"
+                change_fields['fsoptions'] = fs['options']
+
+            # Dump
+            if fs['dump'] is not None and \
+               int(entry[4]) != fs['dump']:
+                result['msg'] += f"dump: {entry[4]} != {fs['dump']}\n"
+                change_fields['dump'] = fs['dump']
+
+            # fsck_pass
+            if fs['fsck_pass'] is not None and \
+               int(entry[5]) != fs['fsck_pass']:
+                result['msg'] += f"pass: {entry[5]} != {fs['fsck_pass']}\n"
+                change_fields['pass'] = fs['fsck_pass']
+
+            if len(change_fields) > 0:
+                changes.append({
+                    "action": "replace",
+                    "entry": entry,
+                    "fields": change_fields,
+                })
+                result['changed'] = True
+            result['msg'] += f"change_fields: {change_fields}\n"
+
+    if not append:
         result['msg'] += "Ought to delete other fs-es.\n"
 
         # XXX - For any remaining fstab entries:
@@ -296,31 +349,82 @@ def main():
         # - source
         # - destination
 
+        # Make a list of fstab_info items that don't appear in fstab.
+        listed_mounts = [m['mount_full'] for m in fstab]
+        extra_fses = [v['entry'] for (k, v) in fstab_info.items()
+                      if v['entry'][1] not in listed_mounts]
+        result['extra_fses'] = extra_fses
+
+        for entry in extra_fses:
+            changes.append({
+                "action": "remove",
+                "entry": entry,
+            })
+            result['changed'] = True
+
     # XXX - If there are any changes:
-    # - Check the jail upness.
-    result['msg'] += f"jail state: {jail_info['state']}\n"
-    #   jail.query, check state==up
+    if len(changes) > 0:
+        # - Check the jail upness.
+        result['msg'] += f"jail state: {jail_info['state']}\n"
 
-    # - Stop jail if necessary
-    if jail_info['state'] == "up":
-        # XXX - Need to shut down jail.
-        result['msg'] += "Need to shut down jail.\n"
-        pass
-    else:
-        result['msg'] += f"Jail is {jail_info['state']}, not up. Not shutting down.\n"
+        # Stop jail if necessary
+        if jail_info['state'] == "up":
+            # Need to shut down jail.
+            if module.check_mode:
+                result['msg'] += "Need to shut down jail.\n"
+            else:
+                try:
+                    mw.job("jail.stop", jail)
+                except Exception as e:
+                    module.fail_json(msg=f"Error shutting down jail {jail}: {e}")
 
-    # - apply the changes
-    for change in changes:
-        result['msg'] += f"Need to make a change: {change}\n"
-        # XXX
+        else:
+            result['msg'] += f"Jail is {jail_info['state']}, not up. Not shutting down.\n"
 
-    # - Start jail if it was up before
-    if jail_info['state'] == "up":
-        # XXX - Need to restart jail
-        result['msg'] += "Need to restart jail.\n"
-        pass
-    else:
-        result['msg'] += "Jail wasn't up. Not restarting.\n"
+        # - apply the changes
+        for change in changes:
+            result['msg'] += f"Need to make a change: {change}\n"
+
+            # Arguments to pass to jail.fstab call:
+            args = {
+                "source": change['entry'][0],
+                "destination": change['entry'][1],
+            }
+
+            # # XXX - This is calling for a switch statement, but those
+            # # were introduced in Python 3.10, and I don't know if
+            # # that's been universally adopted yet.
+            # if change['action'] == 'add':
+            #     # Go through all the specified fields and add them to
+            #     # the arguments.
+            #     args['action'] = "ADD"
+            #     for (k, v) in change['fields']:
+            #         args[k] = v
+            # elif change['action'] == 'replace':
+            #     args['action'] = "REPLACE"
+            #     for (k, v) in change['fields']:
+            #         args[k] = v
+            # elif change['action'] == "remove":
+            #     args['action'] = "REMOVE"
+
+            for (k, v) in change['fields']:
+                args[k] = v
+
+            if module.check_mode:
+                result['msg'] += "Ought to make a change: {change['action']}: {args}"
+
+        # - Start jail if it was up before
+        if jail_info['state'] == "up":
+            # Need to restart jail
+            if module.check_mode:
+                result['msg'] += "Need to restart jail.\n"
+            else:
+                try:
+                    mw.job("jail.start", jail)
+                except Exception as e:
+                    module.fail_json(msg=f"Error restarting jail {jail}: {e}")
+        else:
+            result['msg'] += "Jail wasn't up. Not restarting.\n"
 
     module.exit_json(**result)
 
