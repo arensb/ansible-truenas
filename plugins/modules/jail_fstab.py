@@ -217,10 +217,11 @@ def main():
     except Exception as e:
         module.fail_json(msg=f"Error looking up jail {jail}: {e}")
 
+    result['jail_info'] = jail_info
+
     # Filter out the "SYSTEM" entries and only keep the "USER" ones.
     fstab_info = {k: v for (k, v) in fstab_info.items()
                   if v['type'] == "USER"}
-    result['jail_info'] = jail_info
     result['fstab'] = fstab_info
 
     # Iterate over the provided list of mount points and see if they
