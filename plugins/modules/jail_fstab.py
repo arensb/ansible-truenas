@@ -280,10 +280,21 @@ def main():
             # - source
             # - destination
             # others are optional.
-            changes.append({
-                "action": "add",
-                "entry": entry,
-            })
+            args = {
+                "action": "ADD",
+                "source": fs['src'],
+                "destination": fs['mount'],
+            }
+            if "fstype" in fs:
+                args['fstype'] = fs['fstype']
+            if "options" in fs:
+                args['fsoptions'] = fs['options']
+            if "dump" in fs:
+                args['dump'] = fs['dump']
+            if "fsck_pass" in fs:
+                args['dump'] = fs['fsck_pass']
+
+            change_args.append(args)
             result['changed'] = True
         else:
             # This entry exists in the jail. Make sure it matches what
