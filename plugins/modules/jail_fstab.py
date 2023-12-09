@@ -90,7 +90,7 @@ options:
         type: str
         choices: [ 'present', 'absent' ]
         default: present
-version_added: XXX
+version_added: 1.8.0
 '''
 
 EXAMPLES = '''
@@ -253,18 +253,36 @@ def main():
         # XXX - Debugging
         result['msg'] += f"  mount_full: {fs['mount_full']}\n"
 
-        # Look for this fstab entry in the jail. This construct is
-        # "clever", so may need to be rewritten:
-        # - Iterate over all k=>v items in fstab_info.
-        #   k is an integer, the item's position in fstab, and
-        #   isn't interesting.
-        #   v is {"entry: [src, mount, fstab, options, dump, fsck_pass]}
-        # - We grep out the ones where 'mount' is the one we want.
-        # - Use next() to pick only the first item, if one exists, or
-        #   return None as a default, if no suitable entry is found.
-        entry = next((v['entry'] for (k, v) in fstab_info.items()
-                      if v['entry'][1] == fs['mount_full']),
-                     None)
+        # fstab_info is a dict of entries of the form:
+        # "NNN" : { "entry": [...], "type": "SYSTEM|USER" }
+        # The "entry" sub-field is an array of strings:
+        # 0: source
+        # 1: destination
+        # 2: fstype
+        # 3: fsoptions
+        # 4: dump
+        # 5: pass
+        #
+        # We need the key, in case we need to replace the fstab entry.
+        for nth, fields in fstab_info.items():
+            if fields['entry'][1] != fs['mount_full']:
+                # This isn't the one we're looking for.
+                continue
+
+            # Found it.
+            entry = {
+                "source": fields['entry'][0],
+                "destination": fields['entry'][1],
+                "fstype": fields['entry'][2],
+                "fsoptions": fields['entry'][3],
+                "dump": fields['entry'][4],
+                "pass": fields['entry'][5],
+                "index": nth,
+                "type": fields['type'],
+            }
+
+            # There shouldn't be more than one.
+            break
 
         if entry is None:
             if fs['state'] == 'absent':
@@ -295,69 +313,54 @@ def main():
                 args['dump'] = fs['fsck_pass']
 
             change_args.append(args)
-            result['changed'] = True
+
+        elif fs['state'] == "absent":
+            # It's present, but is supposed to be absent.
+            change_args.append({
+                "index": entry['index'],
+                "action": "REMOVE",
+                # "source": entry['source'],
+                # "destination": entry['destination'],
+            })
+
         else:
-            # This entry exists in the jail. Make sure it matches what
-            # the caller wants.
+            # This entry exists in the jail, and is supposed to. Make
+            # sure it matches what the caller wants.
 
             # XXX - Debugging.
             result['msg'] += "This entry exists. Need to check it.\n"
 
-            if fs['state'] == "absent":
-                # It's present, but is supposed to be absent.
-                change_args.append({
-                    "action": "REMOVE",
-                    "source": entry[0],
-                    "destination": entry[1],
-                })
-                result['changed'] = True
-
-                # It's supposed to be absent. That's all we need to
-                # know.
-                continue
-
             # Collect a set of things to change about this mount point
-            # XXX - Need "index"
             args = {}
 
             # Source
-            if entry[0] != fs['src']:
-                result['msg'] += f"src: {entry[0]} != {fs['src']}\n"
+            if entry['source'] != fs['src']:
                 args['source'] = fs['src']
-
-            # XXX - Destination
 
             # fstype
             if fs['fstype'] is not None and \
-               entry[2] != fs['fstype']:
-                result['msg'] += f"fstype: {entry[2]} != {fs['fstype']}\n"
+               entry['fstype'] != fs['fstype']:
                 args['fstype'] = fs['fstype']
 
             # Options
             if fs['options'] is not None and \
-               entry[3] != fs['options']:
-                result['msg'] += f"options: {entry[3]} != {fs['options']}\n"
+               entry['fsoptions'] != fs['options']:
                 args['fsoptions'] = fs['options']
 
             # Dump
             if fs['dump'] is not None and \
-               int(entry[4]) != fs['dump']:
-                result['msg'] += f"dump: {entry[4]} != {fs['dump']}\n"
+               int(entry['dump']) != fs['dump']:
                 args['dump'] = fs['dump']
 
             # fsck_pass
             if fs['fsck_pass'] is not None and \
-               int(entry[5]) != fs['fsck_pass']:
-                result['msg'] += f"pass: {entry[5]} != {fs['fsck_pass']}\n"
+               int(entry['pass']) != fs['fsck_pass']:
                 args['pass'] = fs['fsck_pass']
 
             if len(args) > 0:
-                change_args.append({
-                    "action": "replace",
-                    "entry": entry,
-                    "fields": args,
-                })
-                result['changed'] = True
+                args['action'] = "REPLACE"
+                args['index'] = entry['index']
+
             result['msg'] += f"change_fields: {args}\n"
 
     if not append:
@@ -381,12 +384,13 @@ def main():
                 "action": "remove",
                 "entry": entry,
             })
-            result['changed'] = True
 
     # XXX - If there are any changes:
     if len(change_args) > 0:
         # - Check the jail upness.
         result['msg'] += f"jail state: {jail_info['state']}\n"
+
+        result['changed'] = True
 
         # Stop jail if necessary
         if jail_info['state'] == "up":
@@ -403,36 +407,11 @@ def main():
             result['msg'] += f"Jail is {jail_info['state']}, not up. Not shutting down.\n"
 
         # - apply the changes
-        for change in change_args:
-            result['msg'] += f"Need to make a change: {change}\n"
-
-            # Arguments to pass to jail.fstab call:
-            args = {
-                "source": change['entry'][0],
-                "destination": change['entry'][1],
-            }
-
-            # # XXX - This is calling for a switch statement, but those
-            # # were introduced in Python 3.10, and I don't know if
-            # # that's been universally adopted yet.
-            # if change['action'] == 'add':
-            #     # Go through all the specified fields and add them to
-            #     # the arguments.
-            #     args['action'] = "ADD"
-            #     for (k, v) in change['fields']:
-            #         args[k] = v
-            # elif change['action'] == 'replace':
-            #     args['action'] = "REPLACE"
-            #     for (k, v) in change['fields']:
-            #         args[k] = v
-            # elif change['action'] == "remove":
-            #     args['action'] = "REMOVE"
-
-            for (k, v) in change['fields']:
-                args[k] = v
+        for args in change_args:
+            result['msg'] += f"Need to make a change: {args}\n"
 
             if module.check_mode:
-                result['msg'] += "Ought to make a change: {change['action']}: {args}"
+                result['msg'] += "Ought to make a change: {args}\n"
 
         # - Start jail if it was up before
         if jail_info['state'] == "up":
