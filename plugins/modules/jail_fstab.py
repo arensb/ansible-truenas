@@ -153,10 +153,8 @@ def main():
             return iocroot
 
         # Look up the iocage root.
-        try:
-            iocroot = mw.call("jail.get_iocroot", output='str')
-        except Exception:
-            return None
+        # This call might raise an exception.
+        iocroot = mw.call("jail.get_iocroot", output='str')
 
         return iocroot
 
@@ -194,9 +192,6 @@ def main():
     jail = module.params['jail']
     fstab = module.params['fstab']
     append = module.params['append']
-
-    # XXX - Error-checking
-    result['iocroot'] = get_iocroot()
 
     # Look up the jail and its fstab
     try:
@@ -246,9 +241,12 @@ def main():
 
         fs['mount_full'] = fs['mount']
         if not fs['mount_full'].startswith("/"):
-            # This is a relative path. Make it absolute.
-            fs['mount_full'] = \
-                f"{get_iocroot()}/jails/{jail}/root/{fs['mount']}"
+            try:
+                # This is a relative path. Make it absolute.
+                fs['mount_full'] = \
+                    f"{get_iocroot()}/jails/{jail}/root/{fs['mount']}"
+            except Exception as e:
+                module.fail_json(msg=f"Error looking up iocroot: {e}")
 
         # XXX - Debugging
         result['msg'] += f"  mount_full: {fs['mount_full']}\n"
