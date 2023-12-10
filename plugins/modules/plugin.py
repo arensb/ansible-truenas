@@ -212,9 +212,11 @@ def main():
             # Get list of packages in this repo.
             try:
                 packages = mw.job("plugin.available",
-                                  {"plugin_repository": repo['git_repository']})
+                                  {"plugin_repository":
+                                   repo['git_repository']})
             except Exception as e:
-                module.fail_json(msg=f"Error looking up packages in repo {repo['name']}: {e}")
+                module.fail_json(msg="Error looking up packages in "
+                                 f"repo {repo['name']}: {e}")
 
             # Look for the package in this repo
             for pkg in packages:
@@ -229,7 +231,9 @@ def main():
                         # Found it
                         return (repo_url, pkg['plugin'])
         else:
-            module.fail_json(msg=f"Can't find package {plugin if plugin_id is None else plugin_id} in any repository.")
+            module.fail_json(msg="Can't find package "
+                             f"{plugin if plugin_id is None else plugin_id}"
+                             " in any repository.")
 
         module.fail_json(msg="Should never get this far.")
 
