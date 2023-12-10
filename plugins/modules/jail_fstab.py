@@ -12,9 +12,9 @@ description:
   - Note that changes can only be made when the jail is stopped,
     so this module will attempt to stop the jail if it needs to, and
     then restart it after the changes are made.
-  - If you do not want production jails to be restarted without your
+  - 'If you do not want production jails to be restarted without your
     explicit approval, you can add a clause like
-    C(check_mode: "{{ restart_jails != 'yes' }}")
+    C(check_mode: "{{ restart_jails != ''yes'' }}")'
 options:
   append:
     description:
