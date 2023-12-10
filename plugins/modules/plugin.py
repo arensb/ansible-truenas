@@ -105,7 +105,7 @@ EXAMPLES = '''
 - name: Install a plugin by name from a specific collection
   arensb.truenas.plugin:
     name: Plex 2
-    plugin: Plugin Media Server
+    plugin: Plex Media Server
     repository: iXsystems
 
 - name: "Fully specified: use both plugin ID and repository URL"
