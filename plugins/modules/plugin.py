@@ -100,6 +100,8 @@ EXAMPLES = '''
 - name: Install a plugin by name from any collection
   arensb.truenas.plugin:
     name: Plex
+    # The value of the "plugin" parameter can be copied from
+    # the Plugins page on the TrueNAS web interface.
     plugin: Plex Media Server
 
 - name: Install a plugin by name from a specific collection
@@ -123,6 +125,23 @@ EXAMPLES = '''
     name: Janet's Library
     plugin: Calibre-Web
     repository: Community
+
+# Install a plugin and configure its jail
+- name: Install a plugin by name
+  arensb.truenas.plugin:
+    name: Plex
+    plugin: Plex Media Server
+  register: plugin_status
+- name: Mount filesystems
+  arensb.truenas.jail_fstab:
+    # The default value here is so that this play doesn't fail
+    # in check mode when the plugin hasn't been installed yet.
+    jail: "{{ plugin_status.plugin.id | default('nonexistent') }}"
+    fstab:
+      - src: /mnt/mypool/data
+        mount: /data
+      - src: /mnt/mypool/data2
+        mount /data/more-data
 '''
 
 # XXX
@@ -131,6 +150,10 @@ plugin:
   description:
     - An object describing a newly-created plugin.
 '''
+
+# XXX - The new plugin has both "name" and "id" set to the "id" of the
+# jail it's on. These always seem to be the same. I don't know what
+# the difference is. I guess let's go with "id" as the ID of the jail.
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
@@ -354,8 +377,7 @@ def main():
                 # Create new plugin
                 #
                 try:
-                    err = mw.call("plugin.create", arg)
-                    result['msg'] = err
+                    err = mw.job("plugin.create", arg)
                 except Exception as e:
                     result['failed_invocation'] = arg
                     module.fail_json(msg=f"Error creating plugin {name}: {e}")
