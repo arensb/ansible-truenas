@@ -141,23 +141,8 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
     import MiddleWare as MW
 
-iocroot = None
-
 
 def main():
-    def get_iocroot():
-        global iocroot
-
-        # Return cached value, if there is one.
-        if iocroot is not None:
-            return iocroot
-
-        # Look up the iocage root.
-        # This call might raise an exception.
-        iocroot = mw.call("jail.get_iocroot", output='str')
-
-        return iocroot
-
     module = AnsibleModule(
         argument_spec=dict(
             jail=dict(type='str', required=True),
@@ -220,6 +205,13 @@ def main():
     fstab_info = {k: v for (k, v) in fstab_info.items()
                   if v['type'] == "USER"}
     result['fstab'] = fstab_info
+
+    # Get the root of the jail. We're going to need it in a second.
+    try:
+        iocroot = mw.call("jail.get_iocroot", output='str')
+    except Exception as e:
+        module.fail_json(msg=f"Error looking up iocroot: {e}")
+    jail_root = f"{iocroot}/jails/{jail}/root"
 
     # Iterate over the provided list of mount points and see if they
     # match what the caller wants.
