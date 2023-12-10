@@ -295,6 +295,7 @@ def main():
         else:
             # Plugin exists
             plugin_info = plugin_info[0]
+            result['plugin'] = plugin_info
     except Exception as e:
         module.fail_json(msg=f"Error looking up plugin {name}: {e}")
 
