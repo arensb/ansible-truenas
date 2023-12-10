@@ -213,6 +213,41 @@ def main():
         module.fail_json(msg=f"Error looking up iocroot: {e}")
     jail_root = f"{iocroot}/jails/{jail}/root"
 
+    # fstab_info is in the form returned by jail.fstab("LIST"). This
+    # has two problems:
+    #
+    # 1) It's hard to work with: the elements are of the form
+    #  "14": {
+    #    "entry": [
+    #      "/mnt/mypool/mydata",
+    #      "/mnt/mypool/iocage/jails/mymail/root/mydata",
+    #      "nullfs",
+    #      "ro",
+    #      "0",
+    #      "0"
+    #    ],
+    #    "type": "USER"
+    #  },
+    #
+    # 2) The mount directory (entry[1]) is a full path as seen by the
+    # host, while every other command ("ADD", "REPLACE", "REMOVE")
+    # wants a mount point relative to the jail's root, as seen inside
+    # the jail: "/data".
+    #
+    # So before going any further, let's rewrite fstab_info in object
+    # form.
+    fstab_info = [{
+        "index": k,
+        "source": v['entry'][0],
+        "destination": v['entry'][1],
+        # "mount" is the mount point, relative to the jail.
+        "mount": v['entry'][1].removeprefix(jail_root),
+        "fstype": v['entry'][2],
+        "fsoptions": v['entry'][3],
+        "dump": v['entry'][4],
+        "pass": v['entry'][5],
+    } for (k, v) in fstab_info.items()]
+
     # Iterate over the provided list of mount points and see if they
     # match what the caller wants.
 
