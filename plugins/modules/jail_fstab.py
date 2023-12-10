@@ -41,9 +41,7 @@ options:
       mount:
         description:
           - The directory where the device should be mounted.
-          - If this begins with C(/), it is an absolute path, as seen
-            from outside the jail. Otherwise, it is a relative path,
-            relative to the jail's root, typically
+          - This is a relative path, relative to the jail's root, typically
             C(/mnt/<pool>/iocage/jails/<jail-name>/root).
         required: yes
         type: str
@@ -98,16 +96,14 @@ EXAMPLES = '''
   arensb.truenas.jail_fstab:
     jail: the-jail-name
     fstab:
-      # Absolute mount point:
       - src: /mnt/data/my-data
-        mount: /mnt/data/iocage/jails/the-jail-name/root/my-data
+        mount: /my-data
         fstype: nullfs
         options: ro
         dump: 0
         pass: 0
-      # Relative mount point:
       - src: /mnt/data/more-data
-        mount: data/more
+        mount: /data/more
 
 # Making changes to fstab involves stopping the jail, then restarting it.
 # This shows how to not affect running services unless the 'bounce_jails'
@@ -117,14 +113,14 @@ EXAMPLES = '''
     jail: the-jail-name
     fstab:
       - src: /mnt/data/my-data
-        mount: /mnt/data/iocage/jails/the-jail-name/root/my-data
+        mount: /my-data
   check_mode: "{{ ansible_check_mode or bounce_jails != 'yes' }}"
 
 - name: Ensure that a filesystem is *not* mounted:
   arensb.truenas.jail_fstab:
     jail: the-jail-name
     fstab:
-        - mount: /mnt/data/iocage/jails/the-jail-name/root/old-data
+        - mount: /old-data
           state: absent
 '''
 
