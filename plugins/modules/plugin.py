@@ -100,6 +100,8 @@ EXAMPLES = '''
 - name: Install a plugin by name from any collection
   arensb.truenas.plugin:
     name: Plex
+    # The value of the "plugin" parameter can be copied from
+    # the Plugins page on the TrueNAS web interface.
     plugin: Plex Media Server
 
 - name: Install a plugin by name from a specific collection
@@ -123,6 +125,23 @@ EXAMPLES = '''
     name: Janet's Library
     plugin: Calibre-Web
     repository: Community
+
+# Install a plugin and configure its jail
+- name: Install a plugin by name
+  arensb.truenas.plugin:
+    name: Plex
+    plugin: Plex Media Server
+  register: plugin_status
+- name: Mount filesystems
+  arensb.truenas.jail_fstab:
+    # The default value here is so that this play doesn't fail
+    # in check mode when the plugin hasn't been installed yet.
+    jail: "{{ plugin_status.plugin.id | default('nonexistent') }}"
+    fstab:
+      - src: /mnt/mypool/data
+        mount: /data
+      - src: /mnt/mypool/data2
+        mount /data/more-data
 '''
 
 # XXX
