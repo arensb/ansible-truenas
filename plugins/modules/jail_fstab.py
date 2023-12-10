@@ -399,12 +399,38 @@ def main():
             result['msg'] += \
                 f"Jail is {jail_info['state']}, not up. Not shutting down.\n"
 
-        # - apply the changes
+        # Apply the changes
+
+        # XXX - The following is wrong: you _can_ delete by mount
+        # point instead of index, but ADD, REPLACE, and DELETE all use
+        # a mountpoint as seen by the jail. LIST, on the other hand,
+        # returns an absolute path as seen by the host.
+
+        # For action=DELETE, it looks as though you can specify the
+        # source and destination, but that doesn't seem to work,
+        # presumably due to a bug. So to delete an entry, we need to
+        # specify its index.
+        #
+        # But let's say we want to delete the 10th and 12th entries.
+        # Once we delete the 10th entry, the other one is now in 11th
+        # place, so if we delete the 12th entry, we'll delete the
+        # wrong entry.
+        #
+        # To solve this, we should sort the entries by descending
+        # index. Problem is, not all elements of change_args have an
+        # "index" element. So maybe we need to
         for args in change_args:
             result['msg'] += f"Need to make a change: {args}\n"
 
             if module.check_mode:
                 result['msg'] += "Ought to make a change: {args}\n"
+            else:
+                try:
+                    err = mw.call("jail.fstab", jail, args)
+                except Exception as e:
+                    module.fail_json(
+                        msg=f"Error modifying fstab with {args}: error {e}")
+                result['status'].append(err)
 
         # - Start jail if it was up before
         if jail_info['state'] == "up":
