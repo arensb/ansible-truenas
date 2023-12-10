@@ -99,12 +99,29 @@ releases:
     release_date: '2023-09-11'
   1.8.1:
     changes:
-      release_summary:
-      - Mostly bug fixes.
+      release_summary: Mostly bug fixes.
       bugfixes:
       - '`plugin` result wasn''t always being returned.'
       minor_changes:
       - Fix documentation.
     fragments:
     - plugin.yml
+    release_date: '2023-12-10'
+  1.9.0:
+    changes:
+      release_summary:
+      - Add the `jail_fstab` module.
+      bugfixes:
+      - '`plugin` module: Wait until plugin has finished installing before returning.'
+      major_changes:
+      - Added the `jail_fstab` module, to manage filesystems in jails.
+      minor_changes:
+      - Expand documentation. Include some more common use cases.
+    fragments:
+    - jail_fstab.yml
+    - plugin.yml
+    modules:
+    - description: Manage a jail's fstab
+      name: jail_fstab
+      namespace: ''
     release_date: '2023-12-10'
