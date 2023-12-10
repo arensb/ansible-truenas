@@ -189,8 +189,12 @@ def main():
 
     result = dict(
         changed=False,
-        msg=''
+        msg='',
+        status=[]
     )
+    if module.check_mode:
+        # List of changes being made
+        result['changes'] = []
 
     mw = MW.client()
 
@@ -218,8 +222,6 @@ def main():
                              {"action": "LIST"})
     except Exception as e:
         module.fail_json(msg=f"Error looking up jail {jail}: {e}")
-
-    result['jail_info'] = jail_info
 
     # Filter out the "SYSTEM" entries and only keep the "USER" ones.
     fstab_info = {k: v for (k, v) in fstab_info.items()
@@ -278,16 +280,10 @@ def main():
     change_args = []
 
     for fs in fstab:
-        # XXX - Debugging
-        result['msg'] += f"Checking {fs['mount']}.\n"
-
         # Find the fstab_info entry that corresponds to 'fs'. Note
         # that this construct is "clever" (he said with disdain).
         entry = next((i for i in fstab_info if i['mount'] == fs['mount']),
                      None)
-
-        # XXX - Debugging
-        result['msg'] += f"entry: {entry}\n"
 
         if entry is None:
             if fs['state'] == 'absent':
@@ -297,7 +293,6 @@ def main():
 
             # This entry does not exist in the jail, but should.
             # Create it.
-            result['msg'] += "No such entry. Need to add it.\n"
 
             # Required fields for ADD:
             # - source
@@ -330,9 +325,6 @@ def main():
         else:
             # This entry exists in the jail, and is supposed to. Make
             # sure it matches what the caller wants.
-
-            # XXX - Debugging.
-            result['msg'] += "This entry exists. Need to check it.\n"
 
             # Collect a set of things to change about this mount point
             args = {}
@@ -370,15 +362,10 @@ def main():
                 args['destination'] = fs['mount']
                 change_args.append(args)
 
-            result['msg'] += f"change_fields: {args}\n"
-
     if not append:
-        result['msg'] += "Ought to delete other fs-es.\n"
-
         # Make a list of fstab_info items that don't appear in fstab.
         listed_mounts = [m['mount'] for m in fstab]
         extra_fses = [i for i in fstab_info if i['mount'] not in listed_mounts]
-        result['extra_fses'] = extra_fses
 
         for entry in extra_fses:
             # For some reason, both source and destination are
@@ -393,31 +380,24 @@ def main():
     # If needed, stop the jail first and bring it up afterward.
     if len(change_args) > 0:
         # Check the jail upness.
-        result['msg'] += f"jail state: {jail_info['state']}\n"
-
         result['changed'] = True
 
         # Stop jail if necessary
         if jail_info['state'] == "up":
             # Need to shut down jail.
             if module.check_mode:
-                result['msg'] += "Need to shut down jail.\n"
+                result['changes'].append("shut down jail")
             else:
                 try:
                     mw.job("jail.stop", jail)
                 except Exception as e:
                     module.fail_json(
                         msg=f"Error shutting down jail {jail}: {e}")
-        else:
-            result['msg'] += \
-                f"Jail is {jail_info['state']}, not up. Not shutting down.\n"
 
         # Apply the changes
         for args in change_args:
-            result['msg'] += f"Need to make a change: {args}\n"
-
             if module.check_mode:
-                result['msg'] += f"Ought to make a change: {args}\n"
+                result['changes'].append(args)
             else:
                 try:
                     err = mw.call("jail.fstab", jail, args)
@@ -425,20 +405,18 @@ def main():
                     module.fail_json(
                         msg=f"Error modifying fstab with {args}: error {e}")
                 # XXX - What should the 'status' field be?
-                result['status'] = err
+                result['status'].append(err)
 
         # Start jail if it was up before
         if jail_info['state'] == "up":
             # Need to restart jail
             if module.check_mode:
-                result['msg'] += "Need to restart jail.\n"
+                result['changes'].append("restart jail")
             else:
                 try:
                     mw.job("jail.start", jail)
                 except Exception as e:
                     module.fail_json(msg=f"Error restarting jail {jail}: {e}")
-        else:
-            result['msg'] += "Jail wasn't up. Not restarting.\n"
 
     module.exit_json(**result)
 
