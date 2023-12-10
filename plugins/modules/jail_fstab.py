@@ -247,8 +247,6 @@ def main():
     # Iterate over the provided list of mount points and see if they
     # match what the caller wants.
 
-    # XXX - Need to stop jail when adding, removing a mountpoint.
-
     # The jail needs to be stopped before making any changes, so in
     # this phase, we're just going to make a list of all the changes
     # to make. Specifically, we're going to construct a set of
@@ -259,52 +257,13 @@ def main():
         # XXX - Debugging
         result['msg'] += f"Checking {fs['mount']}.\n"
 
-        # If "mount" begins with "/", it's absolute. Otherwise, it's
-        # relative to jail root:
-        # {iocroot}/jails/{jailname}/root
-
-        fs['mount_full'] = fs['mount']
-        if not fs['mount_full'].startswith("/"):
-            try:
-                # This is a relative path. Make it absolute.
-                fs['mount_full'] = \
-                    f"{get_iocroot()}/jails/{jail}/root/{fs['mount']}"
-            except Exception as e:
-                module.fail_json(msg=f"Error looking up iocroot: {e}")
+        # Find the fstab_info entry that corresponds to 'fs'. Note
+        # that this construct is "clever" (he said with disdain).
+        entry = next((i for i in fstab_info if i['mount'] == fs['mount']),
+                     None)
 
         # XXX - Debugging
-        result['msg'] += f"  mount_full: {fs['mount_full']}\n"
-
-        # fstab_info is a dict of entries of the form:
-        # "NNN" : { "entry": [...], "type": "SYSTEM|USER" }
-        # The "entry" sub-field is an array of strings:
-        # 0: source
-        # 1: destination
-        # 2: fstype
-        # 3: fsoptions
-        # 4: dump
-        # 5: pass
-        #
-        # We need the key, in case we need to replace the fstab entry.
-        for nth, fields in fstab_info.items():
-            if fields['entry'][1] != fs['mount_full']:
-                # This isn't the one we're looking for.
-                continue
-
-            # Found it.
-            entry = {
-                "source": fields['entry'][0],
-                "destination": fields['entry'][1],
-                "fstype": fields['entry'][2],
-                "fsoptions": fields['entry'][3],
-                "dump": fields['entry'][4],
-                "pass": fields['entry'][5],
-                "index": nth,
-                "type": fields['type'],
-            }
-
-            # There shouldn't be more than one.
-            break
+        result['msg'] += f"entry: {entry}\n"
 
         if entry is None:
             if fs['state'] == 'absent':
@@ -339,10 +298,9 @@ def main():
         elif fs['state'] == "absent":
             # It's present, but is supposed to be absent.
             change_args.append({
-                "index": entry['index'],
                 "action": "REMOVE",
-                # "source": entry['source'],
-                # "destination": entry['destination'],
+                "source": entry['source'],
+                "destination": entry['mount'],
             })
 
         else:
@@ -381,35 +339,36 @@ def main():
 
             if len(args) > 0:
                 args['action'] = "REPLACE"
+                # Grr. For some reason, jail.fstab("REPLACE") demands
+                # index, source, and destination.
                 args['index'] = entry['index']
+                args['source'] = fs['src']
+                args['destination'] = fs['mount']
+                change_args.append(args)
 
             result['msg'] += f"change_fields: {args}\n"
 
     if not append:
         result['msg'] += "Ought to delete other fs-es.\n"
 
-        # XXX - For any remaining fstab entries:
-        # jail.fstab <jail-name> {entry, action: REMOVE}
-
-        # XXX - Required fields for REMOVE:
-        # - source
-        # - destination
-
         # Make a list of fstab_info items that don't appear in fstab.
-        listed_mounts = [m['mount_full'] for m in fstab]
-        extra_fses = [v['entry'] for (k, v) in fstab_info.items()
-                      if v['entry'][1] not in listed_mounts]
+        listed_mounts = [m['mount'] for m in fstab]
+        extra_fses = [i for i in fstab_info if i['mount'] not in listed_mounts]
         result['extra_fses'] = extra_fses
 
         for entry in extra_fses:
+            # For some reason, both source and destination are
+            # required for action=REMOVE
             change_args.append({
-                "action": "remove",
-                "entry": entry,
+                "action": "REMOVE",
+                "source": entry['source'],
+                "destination": entry['mount'],
             })
 
-    # XXX - If there are any changes:
+    # If there are any changes, apply them.
+    # If needed, stop the jail first and bring it up afterward.
     if len(change_args) > 0:
-        # - Check the jail upness.
+        # Check the jail upness.
         result['msg'] += f"jail state: {jail_info['state']}\n"
 
         result['changed'] = True
@@ -425,45 +384,26 @@ def main():
                 except Exception as e:
                     module.fail_json(
                         msg=f"Error shutting down jail {jail}: {e}")
-
         else:
             result['msg'] += \
                 f"Jail is {jail_info['state']}, not up. Not shutting down.\n"
 
         # Apply the changes
-
-        # XXX - The following is wrong: you _can_ delete by mount
-        # point instead of index, but ADD, REPLACE, and DELETE all use
-        # a mountpoint as seen by the jail. LIST, on the other hand,
-        # returns an absolute path as seen by the host.
-
-        # For action=DELETE, it looks as though you can specify the
-        # source and destination, but that doesn't seem to work,
-        # presumably due to a bug. So to delete an entry, we need to
-        # specify its index.
-        #
-        # But let's say we want to delete the 10th and 12th entries.
-        # Once we delete the 10th entry, the other one is now in 11th
-        # place, so if we delete the 12th entry, we'll delete the
-        # wrong entry.
-        #
-        # To solve this, we should sort the entries by descending
-        # index. Problem is, not all elements of change_args have an
-        # "index" element. So maybe we need to
         for args in change_args:
             result['msg'] += f"Need to make a change: {args}\n"
 
             if module.check_mode:
-                result['msg'] += "Ought to make a change: {args}\n"
+                result['msg'] += f"Ought to make a change: {args}\n"
             else:
                 try:
                     err = mw.call("jail.fstab", jail, args)
                 except Exception as e:
                     module.fail_json(
                         msg=f"Error modifying fstab with {args}: error {e}")
-                result['status'].append(err)
+                # XXX - What should the 'status' field be?
+                result['status'] = err
 
-        # - Start jail if it was up before
+        # Start jail if it was up before
         if jail_info['state'] == "up":
             # Need to restart jail
             if module.check_mode:
