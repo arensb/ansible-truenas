@@ -358,8 +358,7 @@ def main():
                 # Create new plugin
                 #
                 try:
-                    err = mw.call("plugin.create", arg)
-                    result['msg'] = err
+                    err = mw.job("plugin.create", arg)
                 except Exception as e:
                     result['failed_invocation'] = arg
                     module.fail_json(msg=f"Error creating plugin {name}: {e}")
