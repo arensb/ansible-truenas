@@ -392,10 +392,12 @@ def main():
                 try:
                     mw.job("jail.stop", jail)
                 except Exception as e:
-                    module.fail_json(msg=f"Error shutting down jail {jail}: {e}")
+                    module.fail_json(
+                        msg=f"Error shutting down jail {jail}: {e}")
 
         else:
-            result['msg'] += f"Jail is {jail_info['state']}, not up. Not shutting down.\n"
+            result['msg'] += \
+                f"Jail is {jail_info['state']}, not up. Not shutting down.\n"
 
         # - apply the changes
         for args in change_args:
