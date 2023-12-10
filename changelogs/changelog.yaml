@@ -97,3 +97,14 @@ releases:
       name: smart_test_task
       namespace: ''
     release_date: '2023-09-11'
+  1.8.1:
+    changes:
+      release_summary:
+      - Mostly bug fixes.
+      bugfixes:
+      - '`plugin` result wasn''t always being returned.'
+      minor_changes:
+      - Fix documentation.
+    fragments:
+    - plugin.yml
+    release_date: '2023-12-10'
