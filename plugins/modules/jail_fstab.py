@@ -88,7 +88,7 @@ options:
         type: str
         choices: [ 'present', 'absent' ]
         default: present
-version_added: 1.8.0
+version_added: 1.9.0
 '''
 
 EXAMPLES = '''
