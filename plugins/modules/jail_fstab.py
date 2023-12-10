@@ -161,7 +161,8 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             jail=dict(type='str', required=True),
-            fstab=dict(type='list', elements='dict',
+            fstab=dict(type='list', required=True,
+                       elements='dict',
                        options=dict(
                            src=dict(type='str'),
                            mount=dict(type='str', required=True),
