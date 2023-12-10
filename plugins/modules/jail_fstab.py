@@ -124,13 +124,37 @@ EXAMPLES = '''
           state: absent
 '''
 
-# XXX
 RETURN = '''
 fstab:
   description:
-    - The jail's fstab.
-    - This is returned in check mode as well.
+    - 'The fstab of the jail fstab. This is a dict of elements of the form
+      C({"IDX": [source, destination, fstype, fsoptions, dump, pass], "type": "USER"})'
+    - "C(IDX) is an integer string: the position of the entry in its fstab,
+      zero-based."
+    - C(source) is the device being mounted, or the directory being shared
+      with the jail.
+    - C(destination) is the directory where the filesystem is mounted.
+      This is an absolute path as seen from outside the jail.
+    - C(fstype) is the mount's filesystem type. For a null mount (filesystem
+      shared with the jail), this is C(nullfs).
+    - C(fsoptions) are the options passed to C(mount).
+    - C(dump) and C(pass) are the dump and pass values from the C(fstab)
+      entry.
+    - C(type) specifies whether this is a system or user filesystem. In this
+      module, it is always C("USER").
+    - C(fstab) is returned in check mode as well.
   type: dict
+changes:
+  description:
+    - In check mode, this is a detailed list of changed that would
+      be made.
+  type: list
+status:
+  description:
+    - This module may affect multiple filesystems. C(status) is a list
+      of results, one for each change made.
+    - For a successful change, this is typically C(True).
+  type: list
 '''
 
 from ansible.module_utils.basic import AnsibleModule
