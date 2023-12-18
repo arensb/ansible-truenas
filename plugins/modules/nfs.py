@@ -6,7 +6,7 @@ __metaclass__ = type
 # x udp (bool)
 # x allow_nonroot (bool)
 # x v4 (bool)
-# - v4_v3owner (bool)
+# x v4_v3owner (bool)
 # - v4_krb (bool)
 # - v4_domain (str)
 # - bindip (list of ip addrs)
@@ -76,6 +76,7 @@ def main():
             udp=dict(type='bool'),
             allow_nonroot=dict(type='bool'),
             nfsv4=dict(type='bool'),
+            v3owner=dict(type='bool'),
             ),
         supports_check_mode=True,
     )
@@ -92,6 +93,7 @@ def main():
     udp = module.params['udp']
     allow_nonroot = module.params['allow_nonroot']
     nfsv4 = module.params['nfsv4']
+    v3owner = module.params['v3owner']
 
     # XXX - Look up the resource
     try:
@@ -115,6 +117,9 @@ def main():
 
     if nfsv4 is not None and nfs_info['v4'] != nfsv4:
         arg['v4'] = nfsv4
+
+    if v3owner is not None and nfs_info['v4_v3owner'] is not v3owner:
+        arg['v4_v3owner'] = v3owner
 
     # If there are any changes, nfs.update()
     if len(arg) == 0:
