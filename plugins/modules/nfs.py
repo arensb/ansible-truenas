@@ -9,7 +9,7 @@ __metaclass__ = type
 # x v4_v3owner (bool)
 # x v4_krb (bool)
 # x v4_domain (str)
-# - bindip (list of ip addrs)
+# x bindip (list of ip addrs)
 # - mountd_port (int)
 # - rpclockd_port (int)
 # - usersd_manage_gids (bool)
@@ -60,6 +60,12 @@ options:
       - Passes the C(-domain) option to C(nfsuserd).
       - Ignored unless C(nfsv4) is true.
     type: str
+  bindip:
+    description:
+      - List of IP addresses on which to listen for NFS requests.
+        When this is the empty list, listen on all available addresses.
+    type: list
+    elements: str
 version_added: 0.4.0
 '''
 
@@ -92,6 +98,7 @@ def main():
             v3owner=dict(type='bool'),
             krb=dict(type='bool'),
             domain=dict(type='str'),
+            bindip=dict(type='list', elements='str'),
             ),
         supports_check_mode=True,
     )
@@ -111,6 +118,7 @@ def main():
     v3owner = module.params['v3owner']
     krb = module.params['krb']
     domain = module.params['domain']
+    bindip = module.params['bindip']
 
     # Look up the resource
     try:
@@ -143,6 +151,10 @@ def main():
 
     if domain is not None and nfs_info['v4_domain'] != domain:
         arg['v4_domain'] = domain
+
+    if bindip is not None and \
+       set(bindip) != set(nfs_info['bindip']):
+        arg['bindip'] = bindip
 
     # If there are any changes, nfs.update()
     if len(arg) == 0:
