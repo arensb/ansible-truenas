@@ -2,8 +2,8 @@
 __metaclass__ = type
 
 # XXX - Options
-# - udp (bool)
 # x servers(int, 1-256): number of nfsd servers
+# x udp (bool)
 # - allow_nonroot (bool)
 # x v4 (bool)
 # - v4_v3owner (bool)
@@ -24,6 +24,13 @@ description:
   - Configure the NFS service.
   - For individual NFS exports, see C(sharing_nfs)
 options:
+  udp:
+    description:
+      - If true, serve UDP clients. Use this if you have NFS clients
+        that have to use UDP.
+      - This sets the C(-u) option to C(nfsd).
+    type: bool
+    type: bool
   nfsv4:
     description:
       - If true, enable NFSv4. Otherwise, use NFSv3.
@@ -62,6 +69,7 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             servers=dict(type='int'),
+            udp=dict(type='bool'),
             nfsv4=dict(type='bool'),
             ),
         supports_check_mode=True,
@@ -76,6 +84,7 @@ def main():
 
     # Assign variables from properties, for convenience
     servers = module.params['servers']
+    udp = module.params['udp']
     nfsv4 = module.params['nfsv4']
 
     # XXX - Look up the resource
@@ -90,6 +99,9 @@ def main():
 
     if servers is not None and nfs_info['servers'] != servers:
         arg['servers'] = servers
+
+    if udp is not None and nfs_info['udp'] is not udp:
+        arg['udp'] = udp
 
     if nfsv4 is not None and nfs_info['v4'] != nfsv4:
         arg['v4'] = nfsv4
