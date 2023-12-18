@@ -2,8 +2,8 @@
 __metaclass__ = type
 
 # XXX - Options
-# - servers(int, 1-256): number of nfsd servers
 # - udp (bool)
+# x servers(int, 1-256): number of nfsd servers
 # - allow_nonroot (bool)
 # x v4 (bool)
 # - v4_v3owner (bool)
@@ -28,6 +28,11 @@ options:
     description:
       - If true, enable NFSv4. Otherwise, use NFSv3.
     type: bool
+  servers:
+    description:
+      - The number of NFS servers to create. This value is passed
+        to the C(-n) parameter of C(nfsd).
+    type: int
   v3owner:
     description:
       - Enable the NFSv3 ownership model for NFSv4.
@@ -56,6 +61,7 @@ from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
 def main():
     module = AnsibleModule(
         argument_spec=dict(
+            servers=dict(type='int'),
             nfsv4=dict(type='bool'),
             ),
         supports_check_mode=True,
@@ -69,6 +75,7 @@ def main():
     mw = MW.client()
 
     # Assign variables from properties, for convenience
+    servers = module.params['servers']
     nfsv4 = module.params['nfsv4']
 
     # XXX - Look up the resource
@@ -80,6 +87,9 @@ def main():
     # Make list of differences between what is and what should
     # be.
     arg = {}
+
+    if servers is not None and nfs_info['servers'] != servers:
+        arg['servers'] = servers
 
     if nfsv4 is not None and nfs_info['v4'] != nfsv4:
         arg['v4'] = nfsv4
