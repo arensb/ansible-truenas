@@ -10,7 +10,7 @@ __metaclass__ = type
 # x v4_krb (bool)
 # x v4_domain (str)
 # x bindip (list of ip addrs)
-# - mountd_port (int)
+# x mountd_port (int)
 # - rpclockd_port (int)
 # - usersd_manage_gids (bool)
 # - mountd_log (bool)
@@ -66,6 +66,11 @@ options:
         When this is the empty list, listen on all available addresses.
     type: list
     elements: str
+  mountd_port:
+    description:
+      - Specifies the port that C(mountd) should bind to.
+      - This passes the C(-p) option to C(mountd).
+    type: int
 version_added: 0.4.0
 '''
 
@@ -99,6 +104,7 @@ def main():
             krb=dict(type='bool'),
             domain=dict(type='str'),
             bindip=dict(type='list', elements='str'),
+            mountd_port=dict(type='int'),
             ),
         supports_check_mode=True,
     )
@@ -119,6 +125,7 @@ def main():
     krb = module.params['krb']
     domain = module.params['domain']
     bindip = module.params['bindip']
+    mountd_port = module.params['mountd_port']
 
     # Look up the resource
     try:
@@ -155,6 +162,9 @@ def main():
     if bindip is not None and \
        set(bindip) != set(nfs_info['bindip']):
         arg['bindip'] = bindip
+
+    if mountd_port is not None and nfs_info['mountd_port'] != mountd_port:
+        arg['mountd_port'] = mountd_port
 
     # If there are any changes, nfs.update()
     if len(arg) == 0:
