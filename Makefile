@@ -2,6 +2,8 @@ COLLECTION = arensb.truenas
 # Directory where generated HTML docs will go
 DOCS_DIR = docs
 
+PYTHON = python3
+
 # Root of the documentation web site repo.
 #
 # This can be either a relative or absolute path, and it may point to
@@ -62,7 +64,7 @@ documentation:	venv-docs compatibility-link plugins/modules/*.py
 	)
 
 venv-docs:	requirements.txt
-	python3 -m venv venv-docs
+	$(PYTHON) -m venv venv-docs
 	venv-docs/bin/pip install -r requirements.txt
 
 clean::
