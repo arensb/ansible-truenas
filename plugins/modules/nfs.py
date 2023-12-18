@@ -1,22 +1,6 @@
 #!/usr/bin/python
 __metaclass__ = type
 
-# XXX - Options
-# x servers(int, 1-256): number of nfsd servers
-# x udp (bool)
-# x allow_nonroot (bool)
-# x v4 (bool)
-# x v4_v3owner (bool)
-# x v4_krb (bool)
-# x v4_domain (str)
-# x bindip (list of ip addrs)
-# x mountd_port (int)
-# x rpcstatd_port (int)
-# x rpclockd_port (int)
-# x userd_manage_gids (bool)
-# x mountd_log (bool)
-# x statd_lockd_log (bool)
-
 DOCUMENTATION = '''
 ---
 module: nfs
@@ -103,7 +87,6 @@ options:
 version_added: 0.4.0
 '''
 
-# XXX
 EXAMPLES = '''
 - name: Enable NFSv4
   hosts: nfs_server
@@ -113,8 +96,14 @@ EXAMPLES = '''
         nfsv4: yes
 '''
 
-# XXX
 RETURN = '''
+status:
+  description:
+    - A data structure describing the state of the NFS service.
+    - In check_mode and when no changes are needed, this is the current
+      state of the NFS service. When changes have successfully been made,
+      this is the new state of the NFS service.
+  type: dict
 '''
 
 from ansible.module_utils.basic import AnsibleModule
@@ -171,6 +160,8 @@ def main():
         nfs_info = mw.call("nfs.config")
     except Exception as e:
         module.fail_json(msg=f"Error looking up nfs configuration: {e}")
+
+    result['status'] = nfs_info
 
     # Make list of differences between what is and what should
     # be.
@@ -238,10 +229,10 @@ def main():
             try:
                 err = mw.call("nfs.update",
                               arg)
+                result['status'] = err
             except Exception as e:
                 module.fail_json(msg=f"Error updating nfs with {arg}: {e}")
-                # Return any interesting bits from err
-                result['status'] = err['status']
+
         result['changed'] = True
 
     module.exit_json(**result)
