@@ -4,7 +4,7 @@ __metaclass__ = type
 # XXX - Options
 # x servers(int, 1-256): number of nfsd servers
 # x udp (bool)
-# - allow_nonroot (bool)
+# x allow_nonroot (bool)
 # x v4 (bool)
 # - v4_v3owner (bool)
 # - v4_krb (bool)
@@ -30,6 +30,10 @@ options:
         that have to use UDP.
       - This sets the C(-u) option to C(nfsd).
     type: bool
+  allow_nonroot:
+    description:
+      - When true, allow non-root requests to be served.
+      - Sets the C(-n) option to C(mountd).
     type: bool
   nfsv4:
     description:
@@ -70,6 +74,7 @@ def main():
         argument_spec=dict(
             servers=dict(type='int'),
             udp=dict(type='bool'),
+            allow_nonroot=dict(type='bool'),
             nfsv4=dict(type='bool'),
             ),
         supports_check_mode=True,
@@ -85,6 +90,7 @@ def main():
     # Assign variables from properties, for convenience
     servers = module.params['servers']
     udp = module.params['udp']
+    allow_nonroot = module.params['allow_nonroot']
     nfsv4 = module.params['nfsv4']
 
     # XXX - Look up the resource
@@ -102,6 +108,10 @@ def main():
 
     if udp is not None and nfs_info['udp'] is not udp:
         arg['udp'] = udp
+
+    if allow_nonroot is not None and nfs_info['allow_nonroot'] \
+       is not allow_nonroot:
+        arg['allow_nonroot'] = allow_nonroot
 
     if nfsv4 is not None and nfs_info['v4'] != nfsv4:
         arg['v4'] = nfsv4
