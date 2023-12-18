@@ -13,8 +13,8 @@ __metaclass__ = type
 # x mountd_port (int)
 # x rpcstatd_port (int)
 # x rpclockd_port (int)
-# - usersd_manage_gids (bool)
 # - mountd_log (bool)
+# x userd_manage_gids (bool)
 # - statd_lockd_log (bool)
 
 DOCUMENTATION = '''
@@ -82,6 +82,11 @@ options:
       - Specifies the port that C(rpc.lockd) binds to.
       - This passes the C(-p) option to C(rpc.lockd).
     type: int
+  userd_manage_gids:
+    description:
+      - Use this when a user is a member of more than 16 groups.
+      - Passes the C(-manage-gids) option to C(nfsuserd).
+    type: bool
 version_added: 0.4.0
 '''
 
@@ -118,6 +123,7 @@ def main():
             mountd_port=dict(type='int'),
             rpcstatd_port=dict(type='int'),
             rpclockd_port=dict(type='int'),
+            userd_manage_gids=dict(type='bool'),
             ),
         supports_check_mode=True,
     )
@@ -141,6 +147,7 @@ def main():
     mountd_port = module.params['mountd_port']
     rpcstatd_port = module.params['rpcstatd_port']
     rpclockd_port = module.params['rpclockd_port']
+    userd_manage_gids = module.params['userd_manage_gids']
 
     # Look up the resource
     try:
@@ -188,6 +195,10 @@ def main():
     if rpclockd_port is not None and \
        nfs_info['rpclockd_port'] != rpclockd_port:
         arg['rpclockd_port'] = rpclockd_port
+
+    if userd_manage_gids is not None and \
+       nfs_info['userd_manage_gids'] is not userd_manage_gids:
+        arg['userd_manage_gids'] = userd_manage_gids
 
     # If there are any changes, nfs.update()
     if len(arg) == 0:
