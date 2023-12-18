@@ -86,3 +86,9 @@ update-doc-site:	documentation
 	 git commit -m "Automatic update."; \
 	)
 	echo "Don't forget to git push the docs site."
+
+# Check for errors.
+lint::
+	$(PYTHON) -m py_compile \
+		plugins/modules/*.py \
+		plugins/module_utils/*.py
