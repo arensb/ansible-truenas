@@ -31,6 +31,8 @@ options:
   fstab:
     description:
       - List of mount points. Each element is a dictionary.
+      - Most people will only need to specify C(src), C(mount), and
+        C(options). The rest are advanced options.
     type: list
     suboptions:
       src:
@@ -55,6 +57,8 @@ options:
       options:
         description:
           - Filesystem options to pass to C(mount). Comma-separated string.
+          - The most common values are C(ro) (read-only) and C(rw)
+            (read-write).
         type: str
         default: "ro"
       dump:
