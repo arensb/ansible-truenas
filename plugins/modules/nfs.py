@@ -13,8 +13,8 @@ __metaclass__ = type
 # x mountd_port (int)
 # x rpcstatd_port (int)
 # x rpclockd_port (int)
-# - mountd_log (bool)
 # x userd_manage_gids (bool)
+# x mountd_log (bool)
 # - statd_lockd_log (bool)
 
 DOCUMENTATION = '''
@@ -87,6 +87,11 @@ options:
       - Use this when a user is a member of more than 16 groups.
       - Passes the C(-manage-gids) option to C(nfsuserd).
     type: bool
+  mountd_log:
+    description:
+      - When true, log successful mount requests.
+      - Passes the C(-l) option to C(mountd).
+    type: bool
 version_added: 0.4.0
 '''
 
@@ -124,6 +129,7 @@ def main():
             rpcstatd_port=dict(type='int'),
             rpclockd_port=dict(type='int'),
             userd_manage_gids=dict(type='bool'),
+            mountd_log=dict(type='bool'),
             ),
         supports_check_mode=True,
     )
@@ -148,6 +154,7 @@ def main():
     rpcstatd_port = module.params['rpcstatd_port']
     rpclockd_port = module.params['rpclockd_port']
     userd_manage_gids = module.params['userd_manage_gids']
+    mountd_log = module.params['mountd_log']
 
     # Look up the resource
     try:
@@ -199,6 +206,9 @@ def main():
     if userd_manage_gids is not None and \
        nfs_info['userd_manage_gids'] is not userd_manage_gids:
         arg['userd_manage_gids'] = userd_manage_gids
+
+    if mountd_log is not None and nfs_info['mountd_log'] is not mountd_log:
+        arg['mountd_log'] = mountd_log
 
     # If there are any changes, nfs.update()
     if len(arg) == 0:
