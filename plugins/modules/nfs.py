@@ -15,7 +15,7 @@ __metaclass__ = type
 # x rpclockd_port (int)
 # x userd_manage_gids (bool)
 # x mountd_log (bool)
-# - statd_lockd_log (bool)
+# x statd_lockd_log (bool)
 
 DOCUMENTATION = '''
 ---
@@ -92,6 +92,14 @@ options:
       - When true, log successful mount requests.
       - Passes the C(-l) option to C(mountd).
     type: bool
+  statd_lockd_log:
+    description:
+      - When true, turn on extra logging of C(rpc.statd) and C(rpc.lockd),
+        for debugging.
+      - Passes the C(-d) flag to C(rpc.statd) and C(-d 10) to
+        C(rpc.lockd).
+      - These are debugging flags and are not normally needed.
+    type: bool
 version_added: 0.4.0
 '''
 
@@ -130,6 +138,7 @@ def main():
             rpclockd_port=dict(type='int'),
             userd_manage_gids=dict(type='bool'),
             mountd_log=dict(type='bool'),
+            statd_lockd_log=dict(type='bool'),
             ),
         supports_check_mode=True,
     )
@@ -155,6 +164,7 @@ def main():
     rpclockd_port = module.params['rpclockd_port']
     userd_manage_gids = module.params['userd_manage_gids']
     mountd_log = module.params['mountd_log']
+    statd_lockd_log = module.params['statd_lockd_log']
 
     # Look up the resource
     try:
@@ -209,6 +219,10 @@ def main():
 
     if mountd_log is not None and nfs_info['mountd_log'] is not mountd_log:
         arg['mountd_log'] = mountd_log
+
+    if statd_lockd_log is not None and \
+       nfs_info['statd_lockd_log'] is not statd_lockd_log:
+        arg['statd_lockd_log'] = statd_lockd_log
 
     # If there are any changes, nfs.update()
     if len(arg) == 0:
