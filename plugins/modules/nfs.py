@@ -12,7 +12,7 @@ __metaclass__ = type
 # x bindip (list of ip addrs)
 # x mountd_port (int)
 # x rpcstatd_port (int)
-# - rpclockd_port (int)
+# x rpclockd_port (int)
 # - usersd_manage_gids (bool)
 # - mountd_log (bool)
 # - statd_lockd_log (bool)
@@ -77,6 +77,11 @@ options:
       - Specifies the port that C(rpc.statd) binds to.
       - This passes the C(-p) option to C(rpc.statd).
     type: int
+  rpclockd_port:
+    description:
+      - Specifies the port that C(rpc.lockd) binds to.
+      - This passes the C(-p) option to C(rpc.lockd).
+    type: int
 version_added: 0.4.0
 '''
 
@@ -112,6 +117,7 @@ def main():
             bindip=dict(type='list', elements='str'),
             mountd_port=dict(type='int'),
             rpcstatd_port=dict(type='int'),
+            rpclockd_port=dict(type='int'),
             ),
         supports_check_mode=True,
     )
@@ -134,6 +140,7 @@ def main():
     bindip = module.params['bindip']
     mountd_port = module.params['mountd_port']
     rpcstatd_port = module.params['rpcstatd_port']
+    rpclockd_port = module.params['rpclockd_port']
 
     # Look up the resource
     try:
@@ -177,6 +184,10 @@ def main():
     if rpcstatd_port is not None and \
        nfs_info['rpcstatd_port'] != rpcstatd_port:
         arg['rpcstatd_port'] = rpcstatd_port
+
+    if rpclockd_port is not None and \
+       nfs_info['rpclockd_port'] != rpclockd_port:
+        arg['rpclockd_port'] = rpclockd_port
 
     # If there are any changes, nfs.update()
     if len(arg) == 0:
