@@ -7,7 +7,7 @@ __metaclass__ = type
 # x allow_nonroot (bool)
 # x v4 (bool)
 # x v4_v3owner (bool)
-# - v4_krb (bool)
+# x v4_krb (bool)
 # - v4_domain (str)
 # - bindip (list of ip addrs)
 # - mountd_port (int)
@@ -47,6 +47,13 @@ options:
   v3owner:
     description:
       - Enable the NFSv3 ownership model for NFSv4.
+      - Ignored unless C(nfsv4) is true.
+  krb:
+    description:
+      - Turn on Kerberos for NFSv4. Forces shares to fail without a
+        Kerberos ticket.
+      - This enables the C(gssd) daemon.
+      - Ignored unless C(nfsv4) is true.
 version_added: 0.4.0
 '''
 
@@ -77,6 +84,7 @@ def main():
             allow_nonroot=dict(type='bool'),
             nfsv4=dict(type='bool'),
             v3owner=dict(type='bool'),
+            krb=dict(type='bool'),
             ),
         supports_check_mode=True,
     )
@@ -94,6 +102,7 @@ def main():
     allow_nonroot = module.params['allow_nonroot']
     nfsv4 = module.params['nfsv4']
     v3owner = module.params['v3owner']
+    krb = module.params['krb']
 
     # XXX - Look up the resource
     try:
@@ -120,6 +129,9 @@ def main():
 
     if v3owner is not None and nfs_info['v4_v3owner'] is not v3owner:
         arg['v4_v3owner'] = v3owner
+
+    if krb is not None and nfs_info['v4_krb'] is not krb:
+        arg['v4_krb'] = krb
 
     # If there are any changes, nfs.update()
     if len(arg) == 0:
