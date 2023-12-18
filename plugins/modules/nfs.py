@@ -8,7 +8,7 @@ __metaclass__ = type
 # x v4 (bool)
 # x v4_v3owner (bool)
 # x v4_krb (bool)
-# - v4_domain (str)
+# x v4_domain (str)
 # - bindip (list of ip addrs)
 # - mountd_port (int)
 # - rpclockd_port (int)
@@ -54,6 +54,12 @@ options:
         Kerberos ticket.
       - This enables the C(gssd) daemon.
       - Ignored unless C(nfsv4) is true.
+  domain:
+    description:
+      - Overrides the default DNS domain name for NFSv4.
+      - Passes the C(-domain) option to C(nfsuserd).
+      - Ignored unless C(nfsv4) is true.
+    type: str
 version_added: 0.4.0
 '''
 
@@ -85,6 +91,7 @@ def main():
             nfsv4=dict(type='bool'),
             v3owner=dict(type='bool'),
             krb=dict(type='bool'),
+            domain=dict(type='str'),
             ),
         supports_check_mode=True,
     )
@@ -103,8 +110,9 @@ def main():
     nfsv4 = module.params['nfsv4']
     v3owner = module.params['v3owner']
     krb = module.params['krb']
+    domain = module.params['domain']
 
-    # XXX - Look up the resource
+    # Look up the resource
     try:
         nfs_info = mw.call("nfs.config")
     except Exception as e:
@@ -132,6 +140,9 @@ def main():
 
     if krb is not None and nfs_info['v4_krb'] is not krb:
         arg['v4_krb'] = krb
+
+    if domain is not None and nfs_info['v4_domain'] != domain:
+        arg['v4_domain'] = domain
 
     # If there are any changes, nfs.update()
     if len(arg) == 0:
