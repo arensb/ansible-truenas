@@ -11,6 +11,7 @@ __metaclass__ = type
 # x v4_domain (str)
 # x bindip (list of ip addrs)
 # x mountd_port (int)
+# x rpcstatd_port (int)
 # - rpclockd_port (int)
 # - usersd_manage_gids (bool)
 # - mountd_log (bool)
@@ -71,6 +72,11 @@ options:
       - Specifies the port that C(mountd) should bind to.
       - This passes the C(-p) option to C(mountd).
     type: int
+  rpcstatd_port:
+    description:
+      - Specifies the port that C(rpc.statd) binds to.
+      - This passes the C(-p) option to C(rpc.statd).
+    type: int
 version_added: 0.4.0
 '''
 
@@ -105,6 +111,7 @@ def main():
             domain=dict(type='str'),
             bindip=dict(type='list', elements='str'),
             mountd_port=dict(type='int'),
+            rpcstatd_port=dict(type='int'),
             ),
         supports_check_mode=True,
     )
@@ -126,6 +133,7 @@ def main():
     domain = module.params['domain']
     bindip = module.params['bindip']
     mountd_port = module.params['mountd_port']
+    rpcstatd_port = module.params['rpcstatd_port']
 
     # Look up the resource
     try:
@@ -165,6 +173,10 @@ def main():
 
     if mountd_port is not None and nfs_info['mountd_port'] != mountd_port:
         arg['mountd_port'] = mountd_port
+
+    if rpcstatd_port is not None and \
+       nfs_info['rpcstatd_port'] != rpcstatd_port:
+        arg['rpcstatd_port'] = rpcstatd_port
 
     # If there are any changes, nfs.update()
     if len(arg) == 0:
