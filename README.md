@@ -9,13 +9,10 @@ configure a TrueNAS machine, using the
 [TrueNAS API](https://www.truenas.com/docs/api/websocket.html)
 to control the Middleware Daemon.
 
-There are several ways to talk to the Middleware, but at present this
-collection only supports running `midclt` commands on the box. So you
-will need root access there, just as for any other Ansible client. In
-the future, it may support RESTful control.
+It aims to be intuitive to use, and to avoid unpleasant surprises.
 
 See [the online documentation](https://arensb.github.io/truenas/index.html)
-for details on each included module.
+for the list of included modules, and how to use them.
 
 ## Installing this collection
 
