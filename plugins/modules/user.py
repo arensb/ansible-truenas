@@ -3,6 +3,16 @@ __metaclass__ = type
 
 # Create and manage users.
 
+# XXX - Bug with passwordless users and SMB under TrueNAS SCALE:
+# https://github.com/arensb/ansible-truenas/issues/12
+#
+# Still not sure of the contours of this one. Under TrueNAS CORE, it
+# looks as though a user's Unix and SMB passwords are more or less
+# independent (XXX this needs to be checked).
+#
+# Under SCALE, however, it sounds as though a user must have a
+# password in order to have access to SMB.
+
 DOCUMENTATION = '''
 ---
 module: user
@@ -115,6 +125,10 @@ options:
       - Specifies whether user should have access to SMB shares.
     type: bool
     default: true
+  smbhash:
+    description:
+      - SMB authorization string, crypted.
+    type: str
   ssh_authorized_keys:
     description:
       - List of ssh public keys to put in the user's C(.ssh/authorized_keys)
@@ -227,7 +241,6 @@ import ansible_collections.arensb.truenas.plugins.module_utils.setup as setup
 # For parsing version numbers
 from packaging import version
 
-
 def main():
     # Figure out which version of TrueNAS we're running, and thus how
     # to call middlewared.
@@ -327,6 +340,7 @@ def main():
             # doing this.
 
             smb=dict(type='bool', default=True),
+            # XXX - Add smbhash
 
             sudo_commands=dict(type='list',
                                elements='str'),
@@ -435,6 +449,7 @@ def main():
     state = module.params['state']
     delete_group = module.params['delete_group']
     smb = module.params['smb']
+    # XXX - Add smbhash
     sudo = module.params['sudo'] \
         if 'sudo' in module.params else None
     sudo_nopasswd = module.params['sudo_nopasswd'] \
@@ -520,6 +535,8 @@ def main():
 
             if smb is not None:
                 arg['smb'] = smb
+
+            # XXX - Add smbhash
 
             if old_sudo_call:
                 # 'old_sudo_call' isn't set to True until we know that
@@ -741,6 +758,8 @@ def main():
 
             if smb is not None and user_info['smb'] != smb:
                 arg['smb'] = smb
+
+            # XXX - Add smbhash
 
             if home is not None:
                 # If the username has also changed, need to update the
