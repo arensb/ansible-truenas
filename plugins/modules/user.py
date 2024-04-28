@@ -103,6 +103,8 @@ options:
       - If you need that functionality, do something like prepend "*LOCK*"
         to the crypt string when locking a user, then remove it when
         unlocking.
+      - "Note: if C(smb) is enabled truenas requires the user to have a
+        password. Disable C(smb) as well if you want a passwordless user."
     type: bool
     default: false
   shell:
@@ -168,6 +170,16 @@ options:
       - If the I(IUID) is already taken, this will create a second user with
         the same I(UID).
     type: int
+  smb:
+    description:
+      - If true, the user is able to be used to authenticate Samba shares. 
+      - Required to be false if C(password_disabled) is true.
+    type: bool
+    default: true
+
+       Help: Samba Authentication
+Set to allow user to authenticate to Samba shares
+     
 version_added: 0.1.0
 '''
 
@@ -192,6 +204,7 @@ EXAMPLES = '''
     comment: "Bob the User"
     group: bobsgroup
     password_disabled: yes
+    smb: no
 
 - name: Delete a user
   arensb.truenas.user:
@@ -278,7 +291,7 @@ def main():
     # x password_disabled(bool)
     # - locked(bool)
     # - microsoft_account(bool)
-    # - smb(bool) - Does user have access to SMB shares?
+    # - smb(bool) - User can be used for SMB auth. Mut-ex with password_disabled
     # x sudo(bool)
     # x sudo_nopasswd(bool)
     # x sudo_commands(bool)
@@ -386,8 +399,11 @@ def main():
             # - profile(str) - Solaris
             # - authorization(str) - Solaris
             # - role(str) - Solaris
+            smb=dict(type='bool', default=True)
         )
-    mod_mutually_exclusive = []
+    mod_mutually_exclusive = [
+            ['password_disabled', ['smb']]
+        ]
     mod_required_if = [
             ['password_disabled', False, ['password']]
         ]
@@ -436,6 +452,7 @@ def main():
     ssh_authorized_keys = module.params['ssh_authorized_keys']
     append_pubkeys = module.params['append_pubkeys']
     shell = module.params['shell']
+    smb = modue.params['smb']
 
     # Warn user against using deprecated options.
     if sudo is not None:
@@ -509,6 +526,9 @@ def main():
 
             if uid is not None:
                 arg['uid'] = uid
+
+            if smb is not None:
+                arg['smb'] = smb
 
             if old_sudo_call:
                 # 'old_sudo_call' isn't set to True until we know that
@@ -727,6 +747,9 @@ def main():
 
             if shell is not None and user_info['shell'] != shell:
                 arg['shell'] = shell
+            
+            if smb is not None and user_info['smb'] != smb:
+                arg['smb'] = smb
 
             if home is not None:
                 # If the username has also changed, need to update the
