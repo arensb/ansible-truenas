@@ -3,15 +3,14 @@ __metaclass__ = type
 
 # Create and manage users.
 
-# XXX - Bug with passwordless users and SMB under TrueNAS SCALE:
-# https://github.com/arensb/ansible-truenas/issues/12
+# SMB and users with disabled passwords:
 #
-# Still not sure of the contours of this one. Under TrueNAS CORE, it
-# looks as though a user's Unix and SMB passwords are more or less
-# independent (XXX this needs to be checked).
+# Under TrueNAS SCALE, a user with SMB enabled also needs to have a
+# password. TrueNAS CORE allows you to create a user with disabled
+# password, but also with SMB turned on.
 #
-# Under SCALE, however, it sounds as though a user must have a
-# password in order to have access to SMB.
+# I think the best way to deal with this is simply to document the
+# behavior.
 
 DOCUMENTATION = '''
 ---
@@ -113,6 +112,8 @@ options:
       - If you need that functionality, do something like prepend "*LOCK*"
         to the crypt string when locking a user, then remove it when
         unlocking.
+      - Note that under TrueNAS SCALE, a user with C(password_disabled)
+        may not use SMB, so be sure to set C(smb: false).
     type: bool
     default: false
   shell:
@@ -123,6 +124,8 @@ options:
   smb:
     description:
       - Specifies whether user should have access to SMB shares.
+      - Under TrueNAS SCALE, a user with C(smb) enabled may not have
+        their password disabled.
     type: bool
     default: true
   ssh_authorized_keys:
@@ -405,7 +408,7 @@ def main():
         )
     mod_mutually_exclusive = []
     mod_required_if = [
-            ['password_disabled', False, ['password']]
+        ['password_disabled', False, ['password']],
         ]
 
     # Make adjustments for systems using the old API.
