@@ -3,6 +3,15 @@ __metaclass__ = type
 
 # Create and manage users.
 
+# SMB and users with disabled passwords:
+#
+# Under TrueNAS SCALE, a user with SMB enabled also needs to have a
+# password. TrueNAS CORE allows you to create a user with disabled
+# password, but also with SMB turned on.
+#
+# I think the best way to deal with this is simply to document the
+# behavior.
+
 DOCUMENTATION = '''
 ---
 module: user
@@ -103,6 +112,8 @@ options:
       - If you need that functionality, do something like prepend "*LOCK*"
         to the crypt string when locking a user, then remove it when
         unlocking.
+      - "Note that under TrueNAS SCALE, a user with C(password_disabled)
+        may not use SMB, so be sure to set C(smb: false)."
     type: bool
     default: false
   shell:
@@ -110,6 +121,13 @@ options:
       - User's shell.
       - Must be one of the allowed shells from C(/etc/shells).
     type: str
+  smb:
+    description:
+      - Specifies whether user should have access to SMB shares.
+      - Under TrueNAS SCALE, a user with C(smb) enabled may not have
+        their password disabled.
+    type: bool
+    default: true
   ssh_authorized_keys:
     description:
       - List of ssh public keys to put in the user's C(.ssh/authorized_keys)
@@ -222,7 +240,6 @@ import ansible_collections.arensb.truenas.plugins.module_utils.setup as setup
 # For parsing version numbers
 from packaging import version
 
-
 def main():
     # Figure out which version of TrueNAS we're running, and thus how
     # to call middlewared.
@@ -278,7 +295,7 @@ def main():
     # x password_disabled(bool)
     # - locked(bool)
     # - microsoft_account(bool)
-    # - smb(bool) - Does user have access to SMB shares?
+    # x smb(bool) - Does user have access to SMB shares?
     # x sudo(bool)
     # x sudo_nopasswd(bool)
     # x sudo_commands(bool)
@@ -320,6 +337,8 @@ def main():
             home=dict(type='path'),
             # XXX - remove: delete home directory. builtin.user allows
             # doing this.
+
+            smb=dict(type='bool', default=True),
 
             sudo_commands=dict(type='list',
                                elements='str'),
@@ -389,7 +408,7 @@ def main():
         )
     mod_mutually_exclusive = []
     mod_required_if = [
-            ['password_disabled', False, ['password']]
+        ['password_disabled', False, ['password']],
         ]
 
     # Make adjustments for systems using the old API.
@@ -427,6 +446,7 @@ def main():
     email = module.params['email']
     state = module.params['state']
     delete_group = module.params['delete_group']
+    smb = module.params['smb']
     sudo = module.params['sudo'] \
         if 'sudo' in module.params else None
     sudo_nopasswd = module.params['sudo_nopasswd'] \
@@ -509,6 +529,9 @@ def main():
 
             if uid is not None:
                 arg['uid'] = uid
+
+            if smb is not None:
+                arg['smb'] = smb
 
             if old_sudo_call:
                 # 'old_sudo_call' isn't set to True until we know that
@@ -727,6 +750,9 @@ def main():
 
             if shell is not None and user_info['shell'] != shell:
                 arg['shell'] = shell
+
+            if smb is not None and user_info['smb'] != smb:
+                arg['smb'] = smb
 
             if home is not None:
                 # If the username has also changed, need to update the
