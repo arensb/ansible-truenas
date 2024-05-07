@@ -112,8 +112,8 @@ options:
       - If you need that functionality, do something like prepend "*LOCK*"
         to the crypt string when locking a user, then remove it when
         unlocking.
-      - Note that under TrueNAS SCALE, a user with C(password_disabled)
-        may not use SMB, so be sure to set C(smb: false).
+      - "Note that under TrueNAS SCALE, a user with C(password_disabled)
+        may not use SMB, so be sure to set C(smb: false)."
     type: bool
     default: false
   shell:

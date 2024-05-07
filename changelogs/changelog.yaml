@@ -99,18 +99,16 @@ releases:
     release_date: '2023-09-11'
   1.8.1:
     changes:
-      release_summary: Mostly bug fixes.
       bugfixes:
       - '`plugin` result wasn''t always being returned.'
       minor_changes:
       - Fix documentation.
+      release_summary: Mostly bug fixes.
     fragments:
     - plugin.yml
     release_date: '2023-12-10'
   1.9.0:
     changes:
-      release_summary:
-      - Add the `jail_fstab` module.
       bugfixes:
       - '`plugin` module: Wait until plugin has finished installing before returning.'
       major_changes:
@@ -125,3 +123,15 @@ releases:
       name: jail_fstab
       namespace: ''
     release_date: '2023-12-10'
+  1.9.1:
+    changes:
+      bugfixes:
+      - TrueNAS SCALE doesn't allow enabling SMB access on users without a password.
+        'smb' used to default to true, which prevented creating users with password
+        disabled. The 'smb' argument can now be set explicitly.
+      major_changes:
+      - Add user "smb" parameter to control SMB access.
+      release_summary: Bug fix.
+    fragments:
+    - user.yml
+    release_date: '2024-05-06'
