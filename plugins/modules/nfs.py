@@ -46,7 +46,7 @@ options:
   v3owner:
     description:
       - Enable the NFSv3 ownership model for NFSv4.
-      - Ignored unless C(nfsv4) is true.
+      - Ignored unless NFSv4 is turned on through `protocols` or `nfsv4`.
   krb:
     description:
       - Turn on Kerberos for NFSv4. Forces shares to fail without a
@@ -102,12 +102,66 @@ version_added: 0.4.0
 '''
 
 EXAMPLES = '''
+- name: Enable UDP
+  hosts: nfs_server
+  become: yes
+  tasks:
+    - arensb.truenas.nfs:
+        udp: yes
+
+- name: Forbid mount requests from non-root accounts
+  hosts: nfs_server
+  become: yes
+  tasks:
+    - arensb.truenas.nfs:
+        allow_nonroot: false
+
+- name: Run 32 servers
+  hosts: nfs_server
+  become: yes
+  tasks:
+    - arensb.truenas.nfs:
+        servers: 32
+
+- name: Enable NFS v3 and v4
+  hosts: nfs_server
+  become: yes
+  tasks:
+    - arensb.truenas.nfs:
+        protocols:
+          - NFSv3
+          - NFSv4
+
+- name: Enable v4. Disable v3 if possible.
+  hosts: nfs_server
+  become: yes
+  tasks:
+    - arensb.truenas.nfs:
+        protocols: NFSv4
+
+# `nfsv4` is deprecated.
 - name: Enable NFSv4
   hosts: nfs_server
   become: yes
   tasks:
     - arensb.truenas.nfs:
         nfsv4: yes
+
+- name: Enable NFS v3 ownership model under v4
+  hosts: nfs_server
+  become: yes
+  tasks:
+    - arensb.truenas.nfs:
+        v3owner: true
+
+- name: Turn on Kerberos
+  hosts: nfs_server
+  become: yes
+  tasks:
+    - arensb.truenas.nfs:
+        krb: true
+
+- name: Listen on a specific interface
 '''
 
 RETURN = '''
