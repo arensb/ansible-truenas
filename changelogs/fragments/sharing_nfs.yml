@@ -1,0 +1,3 @@
+bugfixes:
+  - There was a bug preventing people from exporting NFS filesystems read-only.
+    This is fixed. Patch submitted by Steve Ellis.
