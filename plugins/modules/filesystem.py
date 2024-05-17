@@ -156,7 +156,7 @@ def main():
             }
 
             if comment is not None:
-                arg['comment'] = comment
+                arg['comments'] = comment
 
             if module.check_mode:
                 result['msg'] = f"Would have created filesystem {name} with {arg}"

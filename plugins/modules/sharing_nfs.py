@@ -394,7 +394,7 @@ class NFS1:
                 if enabled is not None and export_info['enabled'] != enabled:
                     arg['enabled'] = enabled
 
-                if readonly is not None and export_info['readonly'] != readonly:
+                if readonly is not None and export_info['ro'] != readonly:
                     arg['ro'] = readonly
 
                 if maproot_user is not None and \
