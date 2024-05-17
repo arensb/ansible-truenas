@@ -135,3 +135,14 @@ releases:
     fragments:
     - user.yml
     release_date: '2024-05-06'
+  1.9.2:
+    changes:
+      bugfixes:
+      - TrueNAS CORE and SCALE have different flags for NFS versions 3 and 4. SCALE
+        allows turning each one on and off independently. CORE only supports this
+        for v4. This change updates the nfs module to enable each protocol separately,
+        where possible.
+      release_summary: Support NFSv4 under TrueNAS SCALE
+    fragments:
+    - nfsv4.yml
+    release_date: '2024-05-17'
