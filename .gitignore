@@ -7,4 +7,3 @@ arensb-truenas-*.tar.gz
 /venv-docs/
 /docs/rst/
 /changelogs/.plugin-cache.yaml
-/changelogs/fragments/
