@@ -20,9 +20,23 @@ options:
       - When true, allow non-root requests to be served.
       - Sets the C(-n) option to C(mountd).
     type: bool
+  protocols:
+    description:
+      - List of supported protocols. The elements are any of
+        `nfsv3`, `nfsv4` or their synonyms.
+    type: list
+    elements: str
+    choices:
+      - nfsv3
+      - nfsv4
+      - NFSv3
+      - NFSv4
+      - v3
+      - v4
   nfsv4:
     description:
       - If true, enable NFSv4. Otherwise, use NFSv3.
+      - Deprecated. Use `protocols` instead.
     type: bool
   servers:
     description:
@@ -32,7 +46,7 @@ options:
   v3owner:
     description:
       - Enable the NFSv3 ownership model for NFSv4.
-      - Ignored unless C(nfsv4) is true.
+      - Ignored unless NFSv4 is turned on through `protocols` or `nfsv4`.
   krb:
     description:
       - Turn on Kerberos for NFSv4. Forces shares to fail without a
@@ -88,12 +102,66 @@ version_added: 0.4.0
 '''
 
 EXAMPLES = '''
+- name: Enable UDP
+  hosts: nfs_server
+  become: yes
+  tasks:
+    - arensb.truenas.nfs:
+        udp: yes
+
+- name: Forbid mount requests from non-root accounts
+  hosts: nfs_server
+  become: yes
+  tasks:
+    - arensb.truenas.nfs:
+        allow_nonroot: false
+
+- name: Run 32 servers
+  hosts: nfs_server
+  become: yes
+  tasks:
+    - arensb.truenas.nfs:
+        servers: 32
+
+- name: Enable NFS v3 and v4
+  hosts: nfs_server
+  become: yes
+  tasks:
+    - arensb.truenas.nfs:
+        protocols:
+          - NFSv3
+          - NFSv4
+
+- name: Enable v4. Disable v3 if possible.
+  hosts: nfs_server
+  become: yes
+  tasks:
+    - arensb.truenas.nfs:
+        protocols: NFSv4
+
+# `nfsv4` is deprecated.
 - name: Enable NFSv4
   hosts: nfs_server
   become: yes
   tasks:
     - arensb.truenas.nfs:
         nfsv4: yes
+
+- name: Enable NFS v3 ownership model under v4
+  hosts: nfs_server
+  become: yes
+  tasks:
+    - arensb.truenas.nfs:
+        v3owner: true
+
+- name: Turn on Kerberos
+  hosts: nfs_server
+  become: yes
+  tasks:
+    - arensb.truenas.nfs:
+        krb: true
+
+- name: Listen on a specific interface
 '''
 
 RETURN = '''
@@ -118,6 +186,9 @@ def main():
             udp=dict(type='bool'),
             allow_nonroot=dict(type='bool'),
             nfsv4=dict(type='bool'),
+            protocols=dict(type='list', elements='str',
+                           choices=['nfsv3', 'NFSv3', 'NFSV3', 'v3', 'V3',
+                                    'nfsv4', 'NFSv4', 'NFSV4', 'v4', 'V4']),
             v3owner=dict(type='bool'),
             krb=dict(type='bool'),
             domain=dict(type='str'),
@@ -129,6 +200,9 @@ def main():
             mountd_log=dict(type='bool'),
             statd_lockd_log=dict(type='bool'),
             ),
+        mutually_exclusive=[
+            ['nfsv4', 'protocols']
+        ],
         supports_check_mode=True,
     )
 
@@ -144,6 +218,7 @@ def main():
     udp = module.params['udp']
     allow_nonroot = module.params['allow_nonroot']
     nfsv4 = module.params['nfsv4']
+    protocols = module.params['protocols']
     v3owner = module.params['v3owner']
     krb = module.params['krb']
     domain = module.params['domain']
@@ -155,7 +230,37 @@ def main():
     mountd_log = module.params['mountd_log']
     statd_lockd_log = module.params['statd_lockd_log']
 
-    # Look up the resource
+    # XXX - Debugging
+    result['nfsv4'] = nfsv4
+    result['protocols'] = protocols
+
+    # Add a table of acceptable synonyms for the protocol names.
+    # nfsvN, NFSvN, NFSVN, vN, VN.
+    # Make it a dict that maps to the values to pass to midclt: NFSV3, NFSV4.
+    protocol_names = {
+        "nfsv3": "NFSV3",	"nfsv4": "NFSV4",
+        "NFSv3": "NFSV3",	"NFSv4": "NFSV4",
+        "NFSV3": "NFSV3",	"NFSV4": "NFSV4",
+        "v3": "NFSV3",  	"v4": "NFSV4",
+        "V3": "NFSV3",          "V4": "NFSV4",
+    }
+
+    # Get the list of protocols that we want. "None" means leave
+    # the list alone, whatever it's currently set to. Otherwise, it's
+    # a set: protocols in the set should be turned on, and protocols
+    # not in the set should be turned off. (Yes, this means that an
+    # empty list says to turn off all protocols. I'm not going to stop
+    # you from doing stupid things.)
+    want_protocols = None
+    if protocols is not None:
+        want_protocols = set([protocol_names[i] for i in protocols])
+    elif nfsv4 is not None:
+        if nfsv4:
+            want_protocols = set(["NFSV3", "NFSV4"])
+        else:
+            want_protocols = set(["NFSV3"])
+    # XXX - Debugging
+    result['want_protocols'] = want_protocols
     try:
         nfs_info = mw.call("nfs.config")
     except Exception as e:
@@ -163,8 +268,12 @@ def main():
 
     result['status'] = nfs_info
 
+    # Check whether nfs_info has key 'protocols'. If yes, use
+    # protocol syntax. Otherwise, use nfsv4 = bool.
+    use_protocols = 'protocols' in nfs_info
+
     # Make list of differences between what is and what should
-    # be.
+
     arg = {}
 
     if servers is not None and nfs_info['servers'] != servers:
@@ -177,11 +286,37 @@ def main():
        is not allow_nonroot:
         arg['allow_nonroot'] = allow_nonroot
 
-    if nfsv4 is not None and nfs_info['v4'] != nfsv4:
-        arg['v4'] = nfsv4
+    if want_protocols is not None:
+        # The user cares which protocols are enabled.
 
-    if v3owner is not None and nfs_info['v4_v3owner'] is not v3owner:
-        arg['v4_v3owner'] = v3owner
+        if not use_protocols:
+            # If you only have a v4 toggle, you're getting v3 whether you
+            # want it or not.
+            want_protocols.add("NFSV3")
+
+        if 'v4' in nfs_info:
+            # This version of TrueNAS uses 'v4'.
+            have_protocols = set(['NFSV3', 'NFSV4']) \
+                if nfs_info['v4'] else set(['NFSV3'])
+        else:
+            # This version of TrueNAS uses 'protocols'
+            have_protocols = set(nfs_info['protocols'])
+
+        # XXX - Debugging
+        result['have_protocols'] = have_protocols
+
+        if have_protocols != want_protocols:
+            if use_protocols:
+                arg['protocols'] = list(want_protocols)
+            else:
+                # This isn't perfect: if you specify
+                #       protocols: ["NFSV4"]
+                #
+                # then on TrueNAS SCALE, it turns off v3 and turns on
+                # v4. On TrueNAS CORE, it turns on v4 and there's no
+                # way to turn off v3.
+                arg['v4'] = 'NFSV4' in want_protocols
+
 
     if krb is not None and nfs_info['v4_krb'] is not krb:
         arg['v4_krb'] = krb
@@ -239,5 +374,7 @@ def main():
 
 
 # Main
+if __name__ == "__main__":
+    main()
 if __name__ == "__main__":
     main()
