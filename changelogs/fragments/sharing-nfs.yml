@@ -1,0 +1,3 @@
+bugfixes:
+  - "Error setting ZFS filesystem description."
+  - "Error setting NFS export read-only flag."
