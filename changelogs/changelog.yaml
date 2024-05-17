@@ -148,10 +148,19 @@ releases:
     release_date: '2024-05-17'
   1.9.3:
     changes:
-      release_summary: Bug fix for read-only NFS exports.
       bugfixes:
       - There was a bug preventing people from exporting NFS filesystems read-only.
         This is fixed. Patch submitted by Steve Ellis.
+      release_summary: Bug fix for read-only NFS exports.
     fragments:
     - sharing_nfs.yml
+    release_date: '2024-05-17'
+  1.9.4:
+    changes:
+      bugfixes:
+      - Error setting NFS export read-only flag.
+      - Error setting ZFS filesystem description.
+      release_summary: Bug fixes.
+    fragments:
+    - sharing-nfs.yml
     release_date: '2024-05-17'
