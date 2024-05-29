@@ -183,11 +183,11 @@ def main():
                                     [["name", "=", pool]])
                 if len(pool_info) == 0:
                     # No such pool
-                    module.json_fail(msg="Error: no such pool: {pool}")
+                    module.fail_json(msg="Error: no such pool: {pool}")
                 else:
                     pool_info = pool_info[0]
             except Exception as e:
-                module.json_fail(msg=f"Error looking up pool {pool}: {e}")
+                module.fail_json(msg=f"Error looking up pool {pool}: {e}")
 
             arg['pool'] = pool_info['id']
 
