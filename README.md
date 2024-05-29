@@ -97,3 +97,4 @@ or the latest [changelog.yaml](changelogs/changelog.yaml).
 - Andrew Arensburger ([@arensb](https://mastodon.social/@arensb))
 - Ed Hull (https://github.com/edhull)
 - Mozzie (https://github.com/MozzieBytes)
+- bmarinov (https://github.com/bmarinov)

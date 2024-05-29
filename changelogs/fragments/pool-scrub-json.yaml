@@ -1,0 +1,4 @@
+changes:
+  release_summary: bug fix
+  bugfixes:
+    - The ``pool_scrub_task`` module would crash when invoked with a nonexistent pool name. Fix contributed by bmarinov.
