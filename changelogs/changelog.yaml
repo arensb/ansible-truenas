@@ -164,3 +164,12 @@ releases:
     fragments:
     - sharing-nfs.yml
     release_date: '2024-05-17'
+  1.9.5:
+    changes:
+      bugfixes:
+      - The ``pool_scrub_task`` module would crash when invoked with a nonexistent
+        pool name. Fix contributed by bmarinov.
+      release_summary: bug fix
+    fragments:
+    - pool-scrub-json.yaml
+    release_date: '2024-05-29'
