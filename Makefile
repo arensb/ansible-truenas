@@ -27,8 +27,9 @@ all::
 tarball:	docs
 	ansible-galaxy collection build --force
 
+# Delete any stray arensb-truenas-*.tar.gz tarballs.
 clean::
-	${RM} arensb-truenas-*.tar.gz
+	${RM} $(subst .,-,${COLLECTION})-*.tar.gz
 
 # Generate list of modules from plugins/modules/*.py:
 # List the files, strip the directory name and .py suffix, then
@@ -39,7 +40,7 @@ MODULES = $(addprefix ${COLLECTION}., \
 	$(notdir \
 	$(wildcard plugins/modules/*.py))))
 
-check-docs:	ansible_collections/arensb/truenas
+check-docs:	ansible_collections/$(subst .,/,${COLLECTION})
 	/usr/bin/env ANSIBLE_COLLECTIONS_PATH=. \
 	ansible-doc \
 		-M .\
