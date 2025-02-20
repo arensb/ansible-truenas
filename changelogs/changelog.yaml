@@ -1,5 +1,16 @@
 ancestor: null
 releases:
+  1.10.0:
+    changes:
+      minor_changes:
+      - Added initscript module, to manage init/shutdown scripts.
+    fragments:
+    - initscripts.yml
+    modules:
+    - description: Manage init/shutdown scripts.
+      name: initscript
+      namespace: ''
+    release_date: '2025-02-20'
   1.4.5:
     changes:
       breaking_changes:
