@@ -154,7 +154,6 @@ def main():
     except Exception as e:
         module.fail_json(msg=f"Error looking up script {name}: {e}")
 
-    result['debug'] += f"got script_info: {script_info}"
     # First, check whether the script even exists.
     if script_info is None:
         # Script doesn't exist
@@ -199,7 +198,6 @@ def main():
 
                 # Return whichever interesting bits initshutdownscript.create()
                 # returned.
-                result['id'] = err['id']
                 result['script'] = err
 
             result['changed'] = True
@@ -219,57 +217,40 @@ def main():
 
             # Check arguments, depending what kind of script this is.
             if cmd is not None:
-                result['debug'] += "type: command\n"
                 # This is a command.
                 if script_info['type'] != "COMMAND":
-                    result['debug'] += "wrong type\n"
                     arg['type'] = "COMMAND"
                 if script_info['command'] != cmd:
-                    result['debug'] += "wrong command\n"
                     arg['cmd'] = cmd
                 if script_info['script'] != "":
-                    result['debug'] += "wrong script\n"
                     arg['script'] = ""
                 if script_info['script_text'] != "":
-                    result['debug'] += "wrong script_text\n"
                     arg['script_text'] = ""
             elif path is not None:
-                result['debug'] += "type: script (path)\n"
                 # This is a script, specified by pathname.
                 if script_info['type'] != "SCRIPT":
-                    result['debug'] += "wrong type\n"
                     arg['type'] = "SCRIPT"
                 if script_info['command'] != "":
-                    result['debug'] += "wrong command\n"
                     arg['cmd'] = ""
                 if script_info['script'] != path:
-                    result['debug'] += "wrong script\n"
                     arg['script'] = path
                 if script_info['script_text'] != "":
-                    result['debug'] += "wrong script_text\n"
                     arg['script_text'] = ""
             else:
-                result['debug'] += "type: script (body)\n"
                 # This is a script, specified by script body.
                 if script_info['type'] != "SCRIPT":
-                    result['debug'] += "wrong type\n"
                     arg['type'] = "SCRIPT"
                 if script_info['command'] != "":
-                    result['debug'] += "wrong command\n"
                     arg['cmd'] = ""
                 if script_info['script'] != "":
-                    result['debug'] += "wrong script\n"
                     arg['script'] = ""
                 if script_info['script_text'] != script:
-                    result['debug'] += "wrong script_tet\n"
                     arg['script_text'] = script
 
             if when is not None and script_info['when'] != when.upper():
-                result['debug'] += "wrong when\n"
                 arg['when'] = when.upper()
 
             if timeout is not None and script_info['timeout'] != timeout:
-                result['debug'] += "wrong timeout\n"
                 arg['timeout'] = timeout
 
             # If there are any changes, initshutdownscript.update()
