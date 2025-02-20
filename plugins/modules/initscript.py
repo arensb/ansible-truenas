@@ -3,7 +3,6 @@ __metaclass__ = type
 
 # Manage init/shutdown scripts.
 
-# XXX
 DOCUMENTATION = '''
 ---
 module: initscript
@@ -60,15 +59,36 @@ options:
 version_added: 1.10.0
 '''
 
-# XXX
 EXAMPLES = '''
+- name: Run a command late once everything has started
+  initscript:
+    name: Start Foo
+    cmd: "service foo start"
+    when: postinit
+
+- name: Run a script at shutdown
+  initscript:
+    name: Cleaning up
+    script: |
+      #!/bin/sh
+      echo "Cleaning up before shutdown."
+      service foo stop
+      rm /var/some-lock-file
+    when: shutdown
+
+- name: Delete an init script
+  initscript:
+    name: Remove old cruft
+    name: Start Foo
+    state: absent
 '''
 
 # XXX
 RETURN = '''
-id:
+script:
   description:
-    - The ID of a newly-created script.
+    - A data structure describing a newly-created init script.
+    - Only returned when a script is created.
   type: int
 '''
 
