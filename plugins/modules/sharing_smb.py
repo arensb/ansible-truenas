@@ -354,6 +354,10 @@ def main():
             # be.
             arg = {}
 
+            if name is not None and \
+               share_info['name'] != name:
+                arg['name'] = name
+
             if purpose is not None:
                 if share_info['purpose'] != purpose:
                     arg['purpose'] = purpose
