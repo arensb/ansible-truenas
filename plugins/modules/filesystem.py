@@ -344,8 +344,8 @@ def build_update_args(params, existing_ds, module):
             )
 
         # force_size can be used if resizing
-        if params.get("force_size") is not None:
-            update_args["force_size"] = params["force_size"]
+        if params.get("force_size") is not None and params.get("force_size") == True:
+            update_args["force_size"] = True
 
     # For normal props (both filesystem + volume)
     updatable_props = [
@@ -400,6 +400,8 @@ def build_update_args(params, existing_ds, module):
             ups.append(up)
         if ups:
             update_args["user_properties_update"] = ups
+
+    module.warn(f"update_args={update_args}")
 
     return update_args
 
