@@ -25,12 +25,19 @@ def get_tn_version():
     mw = MW.client()
 
     try:
-        # product_name is a string like "TrueNAS".
-        # product_type is a string like "CORE".
-        # product_version is a string like "TrueNAS-13.0-U5", or "TrueNAS-SCALE-22.12.3.1"
-        product_name = mw.call("system.product_name", output='str')
+        # product_type is a string like "CORE", "SCALE", or
+        # "ENTERPRISE".
         product_type = mw.call("system.product_type", output='str')
-        sys_version = mw.call("system.version", output='str')
+
+        # product_version is a string like "TrueNAS-13.0-U5", or
+        # "TrueNAS-SCALE-22.12.3.1"
+        sys_version = mw.call("system.version", output='str').split("-", 1)
+
+        # product_name is a string like "TrueNAS".
+        #
+        # TrueNAS CORE has `system.product_name' but SCALE doesn't, at
+        # least not after some version.
+        product_name = mw.call("system.product_name", output='str')
     except Exception:
         raise
 
