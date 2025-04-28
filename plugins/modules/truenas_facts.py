@@ -208,12 +208,28 @@ def main():
             mw.call("system.boot_id", output='str')
         result['ansible_facts']['truenas_host_id'] = \
             mw.call("system.host_id", output='str')
-        result['ansible_facts']['truenas_product_name'] = \
-            mw.call("system.product_name", output='str')
+
+        # system.product_name doesn't exist on SCALE (anymore).
+        try:
+            result['ansible_facts']['truenas_product_name'] = \
+                mw.call("system.product_name", output='str')
+        except Exception as e:
+            # XXX - If this is "Couldn't find this command", don't
+            # print this warning: it's expected.
+            module.warn(f"Error looking up product_name: {e}")
+
         result['ansible_facts']['truenas_product_type'] = \
             mw.call("system.product_type", output='str')
-        result['ansible_facts']['truenas_environment'] = \
-            mw.call("system.environment", output='str')
+
+        # system.environment doesn't exist on SCALE (anymore).
+        try:
+            result['ansible_facts']['truenas_environment'] = \
+                mw.call("system.environment", output='str')
+        except Exception as e:
+            # XXX - If this is "Couldn't find this command", don't
+            # print this warning: it's expected.
+            module.warn(f"Error looking up environment: {e}")
+
         result['ansible_facts']['truenas_state'] = \
             mw.call("system.state", output='str')
         result['ansible_facts']['truenas_system_info'] = \
@@ -246,8 +262,11 @@ def main():
         # Get the set of features and whether they're enabled.
         result['truenas_features'] = {}
         for feat in ('DEDUP', 'FIBRECHANNEL', 'JAILS', 'VM'):
-            feat_set = mw.call("system.feature_enabled", feat, output='str')
-            result['truenas_features'][feat] = feat_set
+            try:
+                feat_set = mw.call("system.feature_enabled", feat, output='str')
+                result['truenas_features'][feat] = feat_set
+            except Exception as e:
+                module.warn(f"Error looking up feature {feat}: {e}")
     except Exception as e:
         result['skipped'] = True
         result['msg'] = f"Error looking up facts: {e}"
