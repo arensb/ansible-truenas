@@ -278,7 +278,11 @@ def main():
                 feat_set = mw.call("system.feature_enabled", feat, output='str')
                 result['truenas_features'][feat] = feat_set
             except Exception as e:
-                module.warn(f"Error looking up feature {feat}: {e}")
+                # SCALE doesn't have "JAILS". This is expected, so don't throw an error.
+                if "Invalid choice" in str(e):
+                    pass
+                else:
+                    module.warn(f"Error looking up feature {feat}: {e}")
     except Exception as e:
         result['skipped'] = True
         result['msg'] = f"Error looking up facts: {e}"
