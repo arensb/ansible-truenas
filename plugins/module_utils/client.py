@@ -8,6 +8,9 @@ natively.
 """
 
 import middlewared.client as client
+from middlewared.utils.service.call import MethodNotFoundError
+from ansible_collections.arensb.truenas.plugins.module_utils.exceptions \
+    import MethodNotFoundError as AnsibleMethodNotFoundError
 
 
 class MiddlewareClient:
@@ -32,7 +35,18 @@ class MiddlewareClient:
         Returns the returned value.
         """
         client = MiddlewareClient._client()
-        retval = client.call(func, *args)
+        try:
+            retval = client.call(func, *args)
+        except MethodNotFoundError as e:
+            # Note that we're catching
+            # middlewared.utils.service.call.MethodNotFoundError and
+            # replacing it with a different Exception, because the
+            # caller doesn't know whether it has access to the
+            # original exception, so it can't import it.
+            raise AnsibleMethodNotFoundError(func, str(e))
+        except Exception as e:
+            raise e
+
         return retval
 
     @staticmethod

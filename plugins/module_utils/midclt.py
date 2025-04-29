@@ -21,6 +21,9 @@ This module adds support for midclt on TrueNAS.
 import subprocess
 import json
 from json.decoder import JSONDecodeError
+import ansible_collections.arensb.truenas.plugins.module_utils.exceptions
+from ansible_collections.arensb.truenas.plugins.module_utils.exceptions \
+    import MethodNotFoundError as AnsibleMethodNotFoundError
 
 MIDCLT_CMD = "midclt"
 
@@ -105,7 +108,23 @@ class Midclt:
                                               stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
             # Exited with a non-zero code
-            raise Exception(f"{MIDCLT_CMD} exited with status {e.returncode}: \"{e.stdout}\"")
+
+            # e.stdout is a byte sequence. Convert it to a string.
+            # This string normally begins with an error code in brackets.
+            stdout = e.stdout.decode('utf8')
+
+            # Does output begin with "[ENOMETHOD]"? Then this is
+            # a MethodNotFoundError. But we can't raise that, because
+            # we're using the command-line client, and so assuming
+            # that we don't have access to the Python libraries.
+            if stdout.startswith("[ENOMETHOD]"):
+                # No such method.
+                raise AnsibleMethodNotFoundError(func, stdout)
+
+            # XXX - Check for other bracketed error codes, maybe.
+
+            # Some other error.
+            raise Exception(f"{MIDCLT_CMD} exited with status {e.returncode}: \"{stdout}\"")
 
         if output == "str":
             # I assume everyone's using UTF-8 by now.

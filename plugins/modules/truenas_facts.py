@@ -164,6 +164,8 @@ ansible_facts.truenas_build_time:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.arensb.truenas.plugins.module_utils.exceptions \
+    import MethodNotFoundError as AnsibleMethodNotFoundError
 from datetime import datetime
 
 
@@ -209,26 +211,36 @@ def main():
         result['ansible_facts']['truenas_host_id'] = \
             mw.call("system.host_id", output='str')
 
+        # Get the product type first, so that we can decide whether to
+        # print error messages or not.
+        result['ansible_facts']['truenas_product_type'] = \
+            mw.call("system.product_type", output='str')
+
         # system.product_name doesn't exist on SCALE (anymore).
         try:
             result['ansible_facts']['truenas_product_name'] = \
                 mw.call("system.product_name", output='str')
+        except AnsibleMethodNotFoundError:
+            # We expect this to fail on TrueNAS SCALE, but not CORE.
+            if result['ansible_facts']['truenas_product_type'] == "CORE":
+                module.warn("No method system.product_name.")
+            # Do nothing. Carry on.
         except Exception as e:
-            # XXX - If this is "Couldn't find this command", don't
-            # print this warning: it's expected.
             module.warn(f"Error looking up product_name: {e}")
-
-        result['ansible_facts']['truenas_product_type'] = \
-            mw.call("system.product_type", output='str')
+            raise
 
         # system.environment doesn't exist on SCALE (anymore).
         try:
             result['ansible_facts']['truenas_environment'] = \
                 mw.call("system.environment", output='str')
+        except AnsibleMethodNotFoundError:
+            # We expect this to fail on TrueNAS SCALE, but not CORE.
+            if result['ansible_facts']['truenas_product_type'] == "CORE":
+                module.warn("No method system.environment.")
+            # Do nothing. Carry on.
         except Exception as e:
-            # XXX - If this is "Couldn't find this command", don't
-            # print this warning: it's expected.
             module.warn(f"Error looking up environment: {e}")
+            raise
 
         result['ansible_facts']['truenas_state'] = \
             mw.call("system.state", output='str')
