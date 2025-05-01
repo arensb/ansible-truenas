@@ -43,7 +43,7 @@ class WebsocketClient:
 
             if api_key or (api_username and api_password):
                 try:
-                    cls._client = Client(uri=urljoin(uri, '/api/current')
+                    cls._client = Client(uri=urljoin(uri, '/api/current'))
                     if api_key:
                         cls._client.call("auth.login_with_api_key", api_key)
                     else:
@@ -51,7 +51,7 @@ class WebsocketClient:
                 except truenas_api_client.exc.ClientException as e:
                     # Fallback to another URI if the primary fails
                     try:
-                        cls._client = Client(uri=urljoin(uri, '/websocket')
+                        cls._client = Client(uri=urljoin(uri, '/websocket'))
                         if api_key:
                             cls._client.call("auth.login_with_api_key", api_key)
                         else:
