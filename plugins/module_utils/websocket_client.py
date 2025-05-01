@@ -67,7 +67,7 @@ class WebsocketClient:
             cls._client = None
 
     @classmethod
-    def call(cls, func, *args, output='json'):
+    def call(cls, func, *args, output='json', job=False):
         """Call the API function using the initialized client."""
         if cls._client is None:
             cls.initialize()
@@ -77,5 +77,5 @@ class WebsocketClient:
     def job(cls, func, *args, **kwargs):
         """Run a job using the initialized client."""
         if cls._client is None:
-            raise AnsibleError("WebSocket client is not initialized.")
-        return cls.call(func, *args, **kwargs)
+            cls.initialize()
+        return cls.call(func, *args, **kwargs, job=True)
