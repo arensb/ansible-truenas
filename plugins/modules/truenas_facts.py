@@ -1,6 +1,8 @@
 #!/usr/bin/python
 __metaclass__ = type
 
+import truenas_api_client.exc
+
 # XXX - This module adds to the execution time: at a first pass, about
 # 1 second using client api, and 7 seconds(!) using midclt. It might
 # be useful to profile the different calls, and see if there are any
@@ -244,14 +246,19 @@ def main():
             result['ansible_facts']['truenas_build_time'] = build_time
 
         # Get the set of features and whether they're enabled.
-        result['truenas_features'] = {}
+        result['ansible_facts']['truenas_features'] = {}
         for feat in ('DEDUP', 'FIBRECHANNEL', 'JAILS', 'VM'):
-            feat_set = mw.call("system.feature_enabled", feat, output='str')
-            result['truenas_features'][feat] = feat_set
+            try:
+                feat_set = mw.call("system.feature_enabled", feat, output='str')
+            except truenas_api_client.exc.ValidationErrors as e:
+                # The feature is not supported on this system.
+                # Just skip it. Seen for example on 24.04, 'JAILS' doesn't exist.
+                feat_set = 'NOT_SUPPORTED'
+            result['ansible_facts']['truenas_features'][feat] = feat_set
     except Exception as e:
         result['skipped'] = True
         result['msg'] = f"Error looking up facts: {e}"
-        module.exit_json(**result)
+        module.fail_json(**result)
 
     module.exit_json(**result)
 

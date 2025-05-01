@@ -56,6 +56,10 @@ class MiddleWare:
             from ansible_collections.arensb.truenas.plugins.module_utils.client \
                 import MiddlewareClient
             return MiddlewareClient
+        elif method == 'websocket':
+            from ansible_collections.arensb.truenas.plugins.module_utils.websocket_client \
+                import WebsocketClient
+            return WebsocketClient
         else:
             # Shouldn't use illegal methods. Bad caller!
             raise Exception(f"Unknown middleware method {method}")
