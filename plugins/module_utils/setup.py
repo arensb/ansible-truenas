@@ -34,7 +34,7 @@ def get_tn_version():
 
         # product_version is a string like "TrueNAS-13.0-U5", or
         # "TrueNAS-SCALE-22.12.3.1"
-        full_version = mw.call("system.version", output='str').split("-", 1)
+        full_version = mw.call("system.version", output='str')
 
         # product_name is a string like "TrueNAS".
         #
