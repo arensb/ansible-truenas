@@ -11,6 +11,19 @@ releases:
       name: initscript
       namespace: ''
     release_date: '2025-02-20'
+  1.10.1:
+    changes:
+      bugfixes:
+      - Better error-handling. Try to recognize when the caller has invoked a nonexistent
+        function, as opposed to some other error.
+      minor_changes:
+      - Better tolerance for error in setup. If some fact isn't defined, try to carry
+        on.
+      release_summary: Fix setup failing due to differences between TrueNAS CORE and
+        SCALE.
+    fragments:
+    - setup.yaml
+    release_date: '2025-05-06'
   1.4.5:
     changes:
       breaking_changes:
