@@ -164,6 +164,8 @@ ansible_facts.truenas_build_time:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.arensb.truenas.plugins.module_utils.exceptions \
+    import MethodNotFoundError as AnsibleMethodNotFoundError
 from datetime import datetime
 
 
@@ -208,12 +210,38 @@ def main():
             mw.call("system.boot_id", output='str')
         result['ansible_facts']['truenas_host_id'] = \
             mw.call("system.host_id", output='str')
-        result['ansible_facts']['truenas_product_name'] = \
-            mw.call("system.product_name", output='str')
+
+        # Get the product type first, so that we can decide whether to
+        # print error messages or not.
         result['ansible_facts']['truenas_product_type'] = \
             mw.call("system.product_type", output='str')
-        result['ansible_facts']['truenas_environment'] = \
-            mw.call("system.environment", output='str')
+
+        # system.product_name doesn't exist on SCALE (anymore).
+        try:
+            result['ansible_facts']['truenas_product_name'] = \
+                mw.call("system.product_name", output='str')
+        except AnsibleMethodNotFoundError:
+            # We expect this to fail on TrueNAS SCALE, but not CORE.
+            if result['ansible_facts']['truenas_product_type'] == "CORE":
+                module.warn("No method system.product_name.")
+            # Do nothing. Carry on.
+        except Exception as e:
+            module.warn(f"Error looking up product_name: {e}")
+            raise
+
+        # system.environment doesn't exist on SCALE (anymore).
+        try:
+            result['ansible_facts']['truenas_environment'] = \
+                mw.call("system.environment", output='str')
+        except AnsibleMethodNotFoundError:
+            # We expect this to fail on TrueNAS SCALE, but not CORE.
+            if result['ansible_facts']['truenas_product_type'] == "CORE":
+                module.warn("No method system.environment.")
+            # Do nothing. Carry on.
+        except Exception as e:
+            module.warn(f"Error looking up environment: {e}")
+            raise
+
         result['ansible_facts']['truenas_state'] = \
             mw.call("system.state", output='str')
         result['ansible_facts']['truenas_system_info'] = \
@@ -246,8 +274,16 @@ def main():
         # Get the set of features and whether they're enabled.
         result['truenas_features'] = {}
         for feat in ('DEDUP', 'FIBRECHANNEL', 'JAILS', 'VM'):
-            feat_set = mw.call("system.feature_enabled", feat, output='str')
-            result['truenas_features'][feat] = feat_set
+            try:
+                feat_set = mw.call("system.feature_enabled", feat, output='str')
+                result['truenas_features'][feat] = feat_set
+            except Exception as e:
+                # SCALE doesn't have "JAILS". This is expected, so
+                # don't throw an error.
+                if "Invalid choice" in str(e):
+                    pass
+                else:
+                    module.warn(f"Error looking up feature {feat}: {e}")
     except Exception as e:
         result['skipped'] = True
         result['msg'] = f"Error looking up facts: {e}"

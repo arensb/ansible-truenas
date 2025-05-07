@@ -1,6 +1,7 @@
 # Common utility functions.
 # Code that it'd be nice to have in Ansible's 'setup' module.
 
+import re
 from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
     import MiddleWare as MW
 # For parsing version numbers
@@ -24,25 +25,48 @@ def get_tn_version():
 
     mw = MW.client()
 
+    product_name = None
+    product_type = None
     try:
-        # product_name is a string like "TrueNAS".
-        # product_type is a string like "CORE".
-        # product_version is a string like "TrueNAS-13.0-U5", or "TrueNAS-SCALE-22.12.3.1"
-        product_name = mw.call("system.product_name", output='str')
+        # product_type is a string like "CORE", "SCALE", or
+        # "ENTERPRISE".
         product_type = mw.call("system.product_type", output='str')
-        sys_version = mw.call("system.version", output='str')
+
+        # product_version is a string like "TrueNAS-13.0-U5", or
+        # "TrueNAS-SCALE-22.12.3.1"
+        full_version = mw.call("system.version", output='str')
+
+        # product_name is a string like "TrueNAS".
+        #
+        # TrueNAS CORE has `system.product_name' but SCALE doesn't, at
+        # least not after some version.
+        if product_type in ("CORE"):
+            product_name = mw.call("system.product_name", output='str')
     except Exception:
+        # XXX - Maybe try to soldier on with what we've got?
         raise
 
-    # Strip "TrueNAS-" from the beginning of the version string,
-    # leaving just the version number.
-    if sys_version.startswith(f"{product_name}-"):
-        sys_version = sys_version[len(product_name)+1:]
+    # Extract additional information from 'full_version'.
+    # This is a string of the form
+    #
+    # <product_name>-<version>
+    # <product_name>-<product_type>-<version>
+    #
+    # Though you probably shouldn't rely on this too much
+    match = re.match(r'^(?:(\w+)-)(?:(\w+)-)?(\d.*)', full_version)
+    if match:
+        if product_name is None:
+            product_name = match[1]
+        if product_type is None and match[2] != "":
+            product_type = match[2]
+        sys_version = match[3]
+    else:
+        # Can't parse the version string, so just use what we were
+        # given.
+        sys_version = full_version
 
-    # Strip "SCALE-" from the beginning of the version string if it exists.
-    if sys_version.startswith(f"{product_type}-"):
-        sys_version = sys_version[len(product_type)+1:]
-
+    # Parsing it as a version gives us a version object that's easy to
+    # compare against another version of interest.
     sys_version = version.parse(sys_version)
 
     tn_version = {
