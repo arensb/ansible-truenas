@@ -58,6 +58,10 @@ options:
       - If True, create any missing parent datasets automatically when creating.
     type: bool
     default: false
+  comment:
+    description:
+      - Arbitrary comment or notes for the dataset.
+    type: str
 
   # (Other properties truncated for brevity, same as before)...
 
@@ -120,7 +124,7 @@ def main():
         force_size=dict(type="bool", default=False),
         create_ancestors=dict(type="bool", default=False),
         # The rest of the properties...
-        comments=dict(type="str"),
+        comment=dict(type="str"),
         sync=dict(type="str"),
         snapdev=dict(type="str"),
         compression=dict(type="str"),
@@ -269,7 +273,7 @@ def build_create_args(params, module):
 
     # The rest of the properties are optional
     create_props = [
-        "comments",
+        "comment",
         "sync",
         "snapdev",
         "compression",
@@ -349,7 +353,7 @@ def build_update_args(params, existing_ds, module):
 
     # For normal props (both filesystem + volume)
     updatable_props = [
-        "comments",
+        "comment",
         "sync",
         "snapdev",
         "compression",
