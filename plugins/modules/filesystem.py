@@ -28,7 +28,7 @@ options:
     default: present
   type:
     description:
-      - Dataset type: FILESYSTEM or VOLUME.
+      - "Dataset type: FILESYSTEM or VOLUME."
     type: str
     choices: [ FILESYSTEM, VOLUME ]
     default: FILESYSTEM
