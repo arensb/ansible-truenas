@@ -7,8 +7,6 @@
 # XXX - type: should accept both upper- and lower-case: filesystem,
 # FILESYSTEM, volume, VOLUME.
 
-# XXX - create_ancestors not supported under CORE.
-
 __metaclass__ = type
 
 DOCUMENTATION = """
@@ -103,9 +101,20 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.arensb.truenas.plugins.module_utils.middleware import (
     MiddleWare as MW,
 )
+import ansible_collections.arensb.truenas.plugins.module_utils.setup as setup
 
 
 def main():
+    # Figure out which version of TrueNAS we're running, since not all
+    # versions support all arguments.
+    global __tn_version
+    try:
+        __tn_version = setup.get_tn_version()
+    except Exception as e:
+        # Normally we'd module.exit_json(), but we don't have a module yet.
+        print(f'{{"failed":true, "msg": "Error getting TrueNAS version: {e}"}}')
+        sys.exit(1)
+
     argument_spec = dict(
         name=dict(type="str", required=True),
         state=dict(type="str", choices=["absent", "present"], default="present"),
@@ -259,10 +268,16 @@ def main():
 
 
 def build_create_args(params, module):
+    global __tn_version
+
     create_args = dict(name=params["name"], type=params["type"])
 
     if params.get("create_ancestors") is not None:
-        create_args["create_ancestors"] = params["create_ancestors"]
+        if __tn_version['type'] == "CORE":
+            # TrueNAS CORE doesn't support create_ancestors.
+            module.warn("TrueNAS CORE doesn't support create_ancestors option.")
+        else:
+            create_args["create_ancestors"] = params["create_ancestors"]
 
     if create_args["type"] == "VOLUME":
         volsize = params.get("volsize")
