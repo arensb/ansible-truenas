@@ -62,6 +62,7 @@ options:
   create_ancestors:
     description:
       - If True, create any missing parent datasets automatically when creating.
+      - Under TrueNAS CORE, this option is ignored. However, missing ancestors are not created.
     type: bool
     default: false
   comment:
