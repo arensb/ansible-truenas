@@ -1,6 +1,14 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# XXX - Would be nice to specify 'volsize' in units other than bytes:
+# accept suffixes: K, KB, KiB, M, MB, MiB, G, GB, GiB, T, TB, TiB.
+
+# XXX - type: should accept both upper- and lower-case: filesystem,
+# FILESYSTEM, volume, VOLUME.
+
+# XXX - create_ancestors not supported under CORE.
+
 __metaclass__ = type
 
 DOCUMENTATION = """
