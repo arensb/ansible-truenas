@@ -8,7 +8,7 @@ namespace: arensb
 name: truenas
 
 # The version of the collection. Must be compatible with semantic versioning
-version: 1.10.1
+version: 1.11.0
 
 # The path to the Markdown (.md) readme file. This path is relative to the root of the collection
 readme: README.md
@@ -19,6 +19,7 @@ authors:
 - "Andrew Arensburger (https://ooblick.com/)"
 - "Ed Hull (https://github.com/edhull)"
 - "Steven Ellis (https://github.com/steven-ellis)"
+- "Paul Heidenreich (https://github.com/Paulomart)"
 
 ### OPTIONAL but strongly recommended
 # A short summary description of the collection
