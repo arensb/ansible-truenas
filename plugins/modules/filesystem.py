@@ -4,9 +4,6 @@
 # XXX - Would be nice to specify 'volsize' in units other than bytes:
 # accept suffixes: K, KB, KiB, M, MB, MiB, G, GB, GiB, T, TB, TiB.
 
-# XXX - type: should accept both upper- and lower-case: filesystem,
-# FILESYSTEM, volume, VOLUME.
-
 __metaclass__ = type
 
 DOCUMENTATION = """
