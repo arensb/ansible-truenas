@@ -36,7 +36,11 @@ options:
     description:
       - "Dataset type: FILESYSTEM or VOLUME."
     type: str
-    choices: [ FILESYSTEM, VOLUME ]
+    choices:
+      - FILESYSTEM
+      - VOLUME
+      - filesystem
+      - volume
     default: FILESYSTEM
   volsize:
     description:
@@ -119,7 +123,9 @@ def main():
     argument_spec = dict(
         name=dict(type="str", required=True),
         state=dict(type="str", choices=["absent", "present"], default="present"),
-        type=dict(type="str", choices=["FILESYSTEM", "VOLUME"], default="FILESYSTEM"),
+        type=dict(type="str",
+                  choices=["FILESYSTEM", "VOLUME", "filesystem", "volume"],
+                  default="FILESYSTEM"),
         volsize=dict(type="int"),
         volblocksize=dict(
             type="str",
@@ -199,6 +205,14 @@ def main():
     p = module.params
     ds_name = p["name"]
     state = p["state"]
+
+    # Some of the arguments are synonyms. Normalize to a canonical
+    # value.
+    # This seems like the sort of thing that Ansible argument_spec
+    # would support, but apparently it doesn't.
+    if 'type' in module.params:
+        if module.params['type'] in ["filesystem", "volume"]:
+            module.params['type'] = module.params['type'].upper()
 
     # Query if it exists
     try:
