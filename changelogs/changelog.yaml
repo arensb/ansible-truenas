@@ -1,6 +1,7 @@
 ancestor: null
 releases:
   1.10.0:
+    release_summary:
     changes:
       minor_changes:
       - Added initscript module, to manage init/shutdown scripts.
@@ -24,6 +25,15 @@ releases:
     fragments:
     - setup.yaml
     release_date: '2025-05-06'
+  1.11.0:
+    release_summary: Much-improved filesystem module.
+    changes:
+      major_changes:
+      - 'filesystem: Fill in the missing options.'
+      - 'filesystem: Major rewrite.'
+    fragments:
+    - filesystem.yaml
+    release_date: '2025-05-16'
   1.4.5:
     changes:
       breaking_changes:
