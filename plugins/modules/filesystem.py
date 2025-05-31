@@ -41,7 +41,14 @@ options:
     default: FILESYSTEM
   volsize:
     description:
-      - Size of the volume in bytes if type=VOLUME.
+      - Size of the volume if type=VOLUME.
+      - This can be either an integer, or a string like '640K', '32MB', '10GiB', or '1TB'.
+      - |-
+        Allowable  suffixes are:
+        "K", "M", "G", "T" (powers of 2),
+        "KB", "MB", "GB", "TB" (powers of 10),
+        "KiB", "MiB", "GiB", "TiB" (powers of 2)
+      - This is required when creating a volume, but not when updating an existing one.
     type: int
   volblocksize:
     description:
@@ -99,6 +106,7 @@ filesystem:
   returned: on success
 """
 
+import re
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.arensb.truenas.plugins.module_utils.middleware import (
     MiddleWare as MW,
@@ -123,7 +131,7 @@ def main():
         type=dict(type="str",
                   choices=["FILESYSTEM", "VOLUME", "filesystem", "volume"],
                   default="FILESYSTEM"),
-        volsize=dict(type="int"),
+        volsize=dict(type="str"),
         volblocksize=dict(
             type="str",
             choices=[
@@ -295,7 +303,7 @@ def build_create_args(params, module):
         volsize = params.get("volsize")
         if not volsize:
             module.fail_json(msg="volsize is required when creating a volume.")
-        create_args["volsize"] = volsize
+        create_args["volsize"] = parse_volsize(volsize)
 
         if params.get("volblocksize") is not None:
             create_args["volblocksize"] = params["volblocksize"]
@@ -354,7 +362,7 @@ def build_update_args(params, existing_ds, module):
     if ds_type == "VOLUME":
         if params.get("volsize") is not None:
             current_volsize = prop_rawvalue(existing_ds, "volsize") or ""
-            desired_str = str(params["volsize"])
+            desired_str = str(parse_volsize(params["volsize"]))
             if desired_str != current_volsize:
                 update_args["volsize"] = params["volsize"]
 
@@ -471,6 +479,45 @@ def parse_volblocksize(value):
         return int(val)
     raise ValueError(f"Cannot parse volblocksize='{value}'")
 
+def parse_volsize(value):
+    """
+    Convert a string giving a volume size, like '25GB', into an
+    integer number of bytes. Plain integers are also acceptable.
+
+    Acceptable suffixes are:
+    "K", "M", "G", "T" (powers of 2),
+    "KB", "MB", "GB", "TB" (powers of 10),
+    "KiB", "MiB", "GiB", "TiB" (powers of 2)
+    """
+
+    # Split the value into an integer prefix and a suffix.
+    match = re.match('^\s*(\d+)\s*([KMGT]i?B?)?\s*$', value)
+
+    # the volume size is supposed to be a multiplier of the block
+    # size, which in turn is usually a power of 2. So if the caller
+    # just specifies K, M, G, or T, we'll use powers of 2.
+    unit_multiplier = {
+        "":       1,
+        "K":   1<<10,
+        "KB":  1000,
+        "KiB": 1<<10,
+        "M":   1<<20,
+        "MB":  1000**2,
+        "MiB": 1<<20,
+        "G":   1<<30,
+        "GB":  1000**3,
+        "GiB": 1<<30,
+        "T":   1<<40,
+        "TB":  1000**4,
+        "TiB": 1<<40,
+    }
+
+    if match:
+        n = int(match[1])
+        unit = match[2]
+        return n * unit_multiplier[unit]
+    else:
+        raise ValueError(f"Can't parse volsize={value}")
 
 def prop_rawvalue(dataset_entry, prop_name):
     """
