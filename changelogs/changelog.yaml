@@ -24,6 +24,30 @@ releases:
     fragments:
     - setup.yaml
     release_date: '2025-05-06'
+  1.11.0:
+    changes:
+      major_changes:
+      - 'filesystem: Fill in the missing options.'
+      - 'filesystem: Major rewrite.'
+    fragments:
+    - filesystem.yaml
+    release_date: '2025-05-16'
+  1.11.4:
+    changes:
+      release_summary: Small changes to make the filesystem module easier to work with.
+      bugfixes:
+      - 'filesystem: Fix docstring to parse as valid YAML.'
+      minor_changes:
+      - Accept lower-case versions of the 'type' argument.
+      - The 'volsize' parameter takes a human-friendly size string like '64MB'.
+      - 'filesystem: create_ancestors doesn''t work in TrueNAS CORE. Ignore it, for
+        compatibility.'
+    fragments:
+    - filesystem-core.yaml
+    - filesystem-doc.yaml
+    - filesystem-type.yaml
+    - volsize.yaml
+    release_date: '2025-05-30'
   1.4.5:
     changes:
       breaking_changes:

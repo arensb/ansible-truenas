@@ -98,3 +98,4 @@ or the latest [changelog.yaml](changelogs/changelog.yaml).
 - Ed Hull (https://github.com/edhull)
 - Mozzie (https://github.com/MozzieBytes)
 - bmarinov (https://github.com/bmarinov)
+- Paul Heidenreich (https://github.com/Paulomart)
