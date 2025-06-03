@@ -96,45 +96,59 @@ options:
         default: {}
         suboptions:
           READ_DATA:
+            description: XXX - fill me in
             type: bool
             default: false
           WRITE_DATA:
+            description: XXX - fill me in
             type: bool
             default: false
           APPEND_DATA:
+            description: XXX - fill me in
             type: bool
             default: false
           READ_NAMED_ATTRS:
+            description: XXX - fill me in
             type: bool
             default: false
           WRITE_NAMED_ATTRS:
+            description: XXX - fill me in
             type: bool
             default: false
           EXECUTE:
+            description: XXX - fill me in
             type: bool
             default: false
           DELETE_CHILD:
+            description: XXX - fill me in
             type: bool
             default: false
           READ_ATTRIBUTES:
+            description: XXX - fill me in
             type: bool
             default: false
           WRITE_ATTRIBUTES:
+            description: XXX - fill me in
             type: bool
             default: false
           DELETE:
+            description: XXX - fill me in
             type: bool
             default: false
           READ_ACL:
+            description: XXX - fill me in
             type: bool
             default: false
           WRITE_ACL:
+            description: XXX - fill me in
             type: bool
             default: false
           WRITE_OWNER:
+            description: XXX - fill me in
             type: bool
             default: false
           SYNCHRONIZE:
+            description: XXX - fill me in
             type: bool
             default: false
           BASIC:
@@ -154,18 +168,23 @@ options:
         default: {}
         suboptions:
           FILE_INHERIT:
+            description: XXX - fill me in
             type: bool
             default: false
           DIRECTORY_INHERIT:
+            description: XXX - fill me in
             type: bool
             default: false
           NO_PROPAGATE_INHERIT:
+            description: XXX - fill me in
             type: bool
             default: false
           INHERIT_ONLY:
+            description: XXX - fill me in
             type: bool
             default: false
           INHERITED:
+            description: XXX - fill me in
             type: bool
             default: false
           BASIC:
@@ -185,9 +204,11 @@ options:
     default: []
     suboptions:
       default:
+        description: XXX - fill me in
         type: bool
         default: false
       tag:
+        description: XXX - fill me in
         type: str
         choices:
           - USER_OBJ
@@ -209,6 +230,7 @@ options:
         type: str
         default: null
       id:
+        description: XXX - fill me in
         type: int
         default: -1
       perms:
@@ -218,12 +240,15 @@ options:
         default: {}
         suboptions:
           READ:
+            description: XXX - fill me in
             type: bool
             default: false
           WRITE:
+            description: XXX - fill me in
             type: bool
             default: false
           EXECUTE:
+            description: XXX - fill me in
             type: bool
             default: false
 
@@ -234,12 +259,15 @@ options:
     default: {}
     suboptions:
       autoinherit:
+        description: XXX - fill me in
         type: bool
         default: false
       protected:
+        description: XXX - fill me in
         type: bool
         default: false
       defaulted:
+        description: XXX - fill me in
         type: bool
         default: false
 
@@ -260,18 +288,23 @@ options:
     default: {}
     suboptions:
       stripacl:
+        description: XXX - fill me in
         type: bool
         default: false
       recursive:
+        description: XXX - fill me in
         type: bool
         default: false
       traverse:
+        description: XXX - fill me in
         type: bool
         default: false
       canonicalize:
+        description: XXX - fill me in
         type: bool
         default: true
       validate_effective_acl:
+        description: XXX - fill me in
         type: bool
         default: true
 
