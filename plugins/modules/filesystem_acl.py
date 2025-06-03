@@ -275,9 +275,9 @@ options:
         type: bool
         default: true
 
-version_added: "1.0.0"
+version_added: "1.12.0"
 author:
-  - Your Name (@your_github_handle)
+  - Paul Heidenreich (@Paulomart)
 """
 
 EXAMPLES = """
