@@ -96,59 +96,59 @@ options:
         default: {}
         suboptions:
           READ_DATA:
-            description: XXX - fill me in
+            description: Read the entry. Either read it, if it is a file, or list it, if it is a directory.
             type: bool
             default: false
           WRITE_DATA:
-            description: XXX - fill me in
+            description: Write the entry. Write its contents, If it is a file, or create files inside it, if it is a directory.
             type: bool
             default: false
           APPEND_DATA:
-            description: XXX - fill me in
+            description: Append to the entry. Append data if it is a file, or add a subdirectory if it is a directory.
             type: bool
             default: false
           READ_NAMED_ATTRS:
-            description: XXX - fill me in
+            description: Read the named attributes of the entry.
             type: bool
             default: false
           WRITE_NAMED_ATTRS:
-            description: XXX - fill me in
+            description: Write the named attributes of the entry.
             type: bool
             default: false
           EXECUTE:
-            description: XXX - fill me in
+            description: Execute the entry, if it is a file, or C(cd) to it, if it is a directory.
             type: bool
             default: false
           DELETE_CHILD:
-            description: XXX - fill me in
+            description: Delete a file or directory inside the entry.
             type: bool
             default: false
           READ_ATTRIBUTES:
-            description: XXX - fill me in
+            description: Read the attributes of the entry.
             type: bool
             default: false
           WRITE_ATTRIBUTES:
-            description: XXX - fill me in
+            description: Write the attributes of the entry.
             type: bool
             default: false
           DELETE:
-            description: XXX - fill me in
+            description: Delete the entry.
             type: bool
             default: false
           READ_ACL:
-            description: XXX - fill me in
+            description: Read the file/directory NFSv4 ACL.
             type: bool
             default: false
           WRITE_ACL:
-            description: XXX - fill me in
+            description: Write the file/directory NFSv4 ACL.
             type: bool
             default: false
           WRITE_OWNER:
-            description: XXX - fill me in
+            description: Change the owner of the entry.
             type: bool
             default: false
           SYNCHRONIZE:
-            description: XXX - fill me in
+            description: Allow clients to use synchronous I/O with the server.
             type: bool
             default: false
           BASIC:
@@ -168,23 +168,23 @@ options:
         default: {}
         suboptions:
           FILE_INHERIT:
-            description: XXX - fill me in
+            description: Newly-created files will inherit the ACE, except for inheritance options.
             type: bool
             default: false
           DIRECTORY_INHERIT:
-            description: XXX - fill me in
+            description: Newly-created subdirectories will inherit the ACE.
             type: bool
             default: false
           NO_PROPAGATE_INHERIT:
-            description: XXX - fill me in
+            description: Newly-created subdirectories will inherit the ACE, except for inheritance options.
             type: bool
             default: false
           INHERIT_ONLY:
-            description: XXX - fill me in
+            description: The ACE is only inherited, not used for permissions checks.
             type: bool
             default: false
           INHERITED:
-            description: XXX - fill me in
+            description: The ACE is inherited.
             type: bool
             default: false
           BASIC:
