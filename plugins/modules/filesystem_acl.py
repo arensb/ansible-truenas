@@ -204,11 +204,13 @@ options:
     default: []
     suboptions:
       default:
-        description: XXX - fill me in
+        description:
+          - Whether to set the default ACL, the one that will be used for new files and directories.
         type: bool
         default: false
       tag:
-        description: XXX - fill me in
+        description:
+          - The type of principal to which this ACL applies.
         type: str
         choices:
           - USER_OBJ
@@ -230,7 +232,8 @@ options:
         type: str
         default: null
       id:
-        description: XXX - fill me in
+        description:
+          - The numeric ID of the user or group to which this ACL applies.
         type: int
         default: -1
       perms:
@@ -240,15 +243,15 @@ options:
         default: {}
         suboptions:
           READ:
-            description: XXX - fill me in
+            description: True iff read permission is granted.
             type: bool
             default: false
           WRITE:
-            description: XXX - fill me in
+            description: True iff write permission is granted.
             type: bool
             default: false
           EXECUTE:
-            description: XXX - fill me in
+            description: True iff execution permission is granted.
             type: bool
             default: false
 
@@ -259,15 +262,15 @@ options:
     default: {}
     suboptions:
       autoinherit:
-        description: XXX - fill me in
+        description: NFS 4.1 autoinherit flag.
         type: bool
         default: false
       protected:
-        description: XXX - fill me in
+        description: NFS 4.1 protected flag.
         type: bool
         default: false
       defaulted:
-        description: XXX - fill me in
+        description: NFS 4.1 defaulted flag.
         type: bool
         default: false
 
@@ -288,23 +291,29 @@ options:
     default: {}
     suboptions:
       stripacl:
-        description: XXX - fill me in
+        description:
+          - When true, convert the ACL to 'trivial', i.e., a file mode.
         type: bool
         default: false
       recursive:
-        description: XXX - fill me in
+        description:
+          - When true, apply the ACL recursively.
         type: bool
         default: false
       traverse:
-        description: XXX - fill me in
+        description:
+          - When true, traverse filesystem boundaries.
         type: bool
         default: false
       canonicalize:
-        description: XXX - fill me in
+        description:
+          - When true, reorder entries so that they are in canonical form.
+          - See also Microsoft documentation MS-DTYP 2.4.5 (ACL).
         type: bool
         default: true
       validate_effective_acl:
-        description: XXX - fill me in
+        description:
+          - When true, run some tests on the ACL to make sure it is valid.
         type: bool
         default: true
 
