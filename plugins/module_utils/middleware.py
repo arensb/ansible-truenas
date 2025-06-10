@@ -42,19 +42,23 @@ class MiddleWare:
         #     ...
 
         # XXX - Be backward-compatible for a while. -- arensb, 2023-07-03
-        method = os.getenv('middleware_method', 'midclt')
+        method = os.getenv("middleware_method", "midclt")
         # method = os.getenv('middleware_method', 'client')
 
         # We import here, rather than at the top of the code, because
         # at least in theory, the desired module might not exist on
         # the remote host.
-        if method == 'midclt':
-            from ansible_collections.arensb.truenas.plugins.module_utils.midclt \
-                import Midclt
+        if method == "midclt":
+            from ansible_collections.arensb.truenas.plugins.module_utils.midclt import (
+                Midclt,
+            )
+
             return Midclt
-        elif method == 'client':
-            from ansible_collections.arensb.truenas.plugins.module_utils.client \
-                import MiddlewareClient
+        elif method == "client":
+            from ansible_collections.arensb.truenas.plugins.module_utils.client import (
+                MiddlewareClient,
+            )
+
             return MiddlewareClient
         else:
             # Shouldn't use illegal methods. Bad caller!

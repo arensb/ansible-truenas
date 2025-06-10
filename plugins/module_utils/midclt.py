@@ -18,12 +18,13 @@ __metaclass__ = type
 This module adds support for midclt on TrueNAS.
 """
 
-import subprocess
 import json
+import subprocess
 from json.decoder import JSONDecodeError
-import ansible_collections.arensb.truenas.plugins.module_utils.exceptions
-from ansible_collections.arensb.truenas.plugins.module_utils.exceptions \
-    import MethodNotFoundError as AnsibleMethodNotFoundError
+
+from ansible_collections.arensb.truenas.plugins.module_utils.exceptions import (
+    MethodNotFoundError as AnsibleMethodNotFoundError,
+)
 
 MIDCLT_CMD = "midclt"
 
@@ -44,15 +45,15 @@ class MidcltError(Exception):
         self.exception = exception
 
     def __str__(self):
-        return f'{self.error}: {repr(self.value)}'
+        return f"{self.error}: {repr(self.value)}"
 
 
 class Midclt:
-
     # See whether 'midclt' exists, so we can abort early on if the
     # rest isn't going to work.
     try:
         import shutil
+
         if shutil.which(MIDCLT_CMD) is None:
             raise FileNotFoundError(f"Can't find command {MIDCLT_CMD}.")
     except ModuleNotFoundError:
@@ -64,7 +65,7 @@ class Midclt:
 
         # Convert from bytes to string, if necessary.
         if isinstance(msg, bytes):
-            msg = str(msg, 'utf-8')
+            msg = str(msg, "utf-8")
 
         # Trim whitespace if necessary.
         msg = msg.strip()
@@ -79,7 +80,7 @@ class Midclt:
         return json.loads(msg)
 
     @staticmethod
-    def call(func, *args, opts=[], output='json'):
+    def call(func, *args, opts=[], output="json"):
         """Call the API function 'func', with arguments 'args'.
 
         'opts' are additional options passed to 'midclt call', not to
@@ -104,14 +105,13 @@ class Midclt:
 
         # Run 'midclt' and get its output.
         try:
-            mid_out = subprocess.check_output(mid_args,
-                                              stderr=subprocess.STDOUT)
+            mid_out = subprocess.check_output(mid_args, stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
             # Exited with a non-zero code
 
             # e.stdout is a byte sequence. Convert it to a string.
             # This string normally begins with an error code in brackets.
-            stdout = e.stdout.decode('utf8')
+            stdout = e.stdout.decode("utf8")
 
             # Does output begin with "[ENOMETHOD]"? Then this is
             # a MethodNotFoundError. But we can't raise that, because
@@ -124,11 +124,13 @@ class Midclt:
             # XXX - Check for other bracketed error codes, maybe.
 
             # Some other error.
-            raise Exception(f"{MIDCLT_CMD} exited with status {e.returncode}: \"{stdout}\"")
+            raise Exception(
+                f'{MIDCLT_CMD} exited with status {e.returncode}: "{stdout}"'
+            )
 
         if output == "str":
             # I assume everyone's using UTF-8 by now.
-            retval = str(mid_out, 'utf-8').rstrip()
+            retval = str(mid_out, "utf-8").rstrip()
         elif output == "json":
             # Parse stdout as JSON
             try:
@@ -152,10 +154,13 @@ class Midclt:
         """
 
         try:
-            err = Midclt.call(func,
-                              opts=["--job", "-jp", "description"],
-                              output='str',
-                              *args, **kwargs)
+            err = Midclt.call(
+                func,
+                opts=["--job", "-jp", "description"],
+                output="str",
+                *args,
+                **kwargs,
+            )
 
             # We've asked for 'str' output, so 'err' should be a bunch of
             # lines: first a bunch of progress messages, and then a
