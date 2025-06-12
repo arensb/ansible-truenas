@@ -25,7 +25,7 @@ about. [Format documentation](https://ansible.readthedocs.io/projects/antsibull-
 
 1. If you added a module, add `version_added` to its `DOCUMENTATION` string.
 
-1. Update `README.md` and add any new contributors.
+1. Update `README.md` and `galaxy.xml` to add any new contributors.
 
 1. Run `antsibull-changelog lint` and `antsibull-changelog release`.
 
