@@ -153,7 +153,7 @@ class Midclt:
 
         try:
             err = Midclt.call(func,
-                              opts=["-job", "-jp", "description"],
+                              opts=["--job", "-jp", "description"],
                               output='str',
                               *args, **kwargs)
 
