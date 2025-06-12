@@ -34,7 +34,6 @@ releases:
     release_date: '2025-05-16'
   1.11.4:
     changes:
-      release_summary: Small changes to make the filesystem module easier to work with.
       bugfixes:
       - 'filesystem: Fix docstring to parse as valid YAML.'
       minor_changes:
@@ -42,12 +41,23 @@ releases:
       - The 'volsize' parameter takes a human-friendly size string like '64MB'.
       - 'filesystem: create_ancestors doesn''t work in TrueNAS CORE. Ignore it, for
         compatibility.'
+      release_summary: Small changes to make the filesystem module easier to work
+        with.
     fragments:
     - filesystem-core.yaml
     - filesystem-doc.yaml
     - filesystem-type.yaml
     - volsize.yaml
     release_date: '2025-05-30'
+  1.11.5:
+    changes:
+      bugfixes:
+      - Typo in command-line option for 'midclt', which prevented it from launching
+        jobs.
+      release_summary: Bug fix.
+    fragments:
+    - midclt.yaml
+    release_date: '2025-06-11'
   1.4.5:
     changes:
       breaking_changes:
