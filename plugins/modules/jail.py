@@ -42,7 +42,7 @@ __metaclass__ = type
 # - Mount directory
 
 # XXX
-DOCUMENTATION = '''
+DOCUMENTATION = """
 ---
 module: jail
 short_description: Manage a jail
@@ -82,25 +82,27 @@ options:
     choices: [ absent, present, restarted, running, stopped ]
     default: present
 version_added: 1.1.0
-'''
+"""
 
 # XXX
-EXAMPLES = '''
-'''
+EXAMPLES = """
+"""
 
 # XXX
-RETURN = '''
+RETURN = """
 jail:
   description:
     - An object containing a description of a newly-created jail.
       The format is the same as that returned by the C(jail.query)
       middleware call.
   type: dict
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
-    import MiddleWare as MW
+
+from ansible_collections.arensb.truenas.plugins.module_utils.middleware import (
+    MiddleWare as MW,
+)
 
 
 def main():
@@ -148,28 +150,27 @@ def main():
 
     module = AnsibleModule(
         argument_spec=dict(
-            name=dict(type='str'),
-            state=dict(type='str', default='present',
-                       choices=['absent', 'present', 'restarted',
-                                'running', 'stopped']),
-            release=dict(type='str'),
-            packages=dict(type='list', elements='str', aliases=['pkglist']),
+            name=dict(type="str"),
+            state=dict(
+                type="str",
+                default="present",
+                choices=["absent", "present", "restarted", "running", "stopped"],
             ),
+            release=dict(type="str"),
+            packages=dict(type="list", elements="str", aliases=["pkglist"]),
+        ),
         supports_check_mode=True,
     )
 
-    result = dict(
-        changed=False,
-        msg=''
-    )
+    result = dict(changed=False, msg="")
 
     mw = MW.client()
 
     # Assign variables from properties, for convenience
-    name = module.params['name']
-    state = module.params['state']
-    release = module.params['release']
-    packages = module.params['packages']
+    name = module.params["name"]
+    state = module.params["state"]
+    release = module.params["release"]
+    packages = module.params["packages"]
 
     # Look up the jail
 
@@ -178,8 +179,7 @@ def main():
     # Maybe add a 'pool' argument to specify whcih pool to check?
 
     try:
-        jail_info = mw.call("jail.query",
-                            [["id", "=", name]])
+        jail_info = mw.call("jail.query", [["id", "=", name]])
         if len(jail_info) == 0:
             # No such jail
             jail_info = None
@@ -193,11 +193,11 @@ def main():
     if jail_info is None:
         # Jail doesn't exist
 
-        if state in ('present', 'restarted', 'running', 'stopped'):
+        if state in ("present", "restarted", "running", "stopped"):
             # Jail is supposed to exist, so create it.
 
             # A release is required when creating a jail.
-            module.fail_on_missing_params(['release'])
+            module.fail_on_missing_params(["release"])
 
             # Collect arguments to pass to jail.create()
             arg = {
@@ -209,10 +209,10 @@ def main():
             #     arg['feature'] = feature
 
             if packages is not None:
-                arg['pkglist'] = packages
+                arg["pkglist"] = packages
 
             if module.check_mode:
-                result['msg'] = f"Would have created jail {name} with {arg}"
+                result["msg"] = f"Would have created jail {name} with {arg}"
             else:
                 #
                 # Create new jail
@@ -220,10 +220,10 @@ def main():
                 try:
                     err = mw.job("jail.create", arg)
                 except Exception as e:
-                    result['failed_invocation'] = arg
+                    result["failed_invocation"] = arg
                     module.fail_json(msg=f"Error creating jail {name}: {e}")
 
-                result['jail'] = err
+                result["jail"] = err
 
                 # XXX - err['state'] can be "up", "down", and apparently
                 # that's it.
@@ -233,7 +233,7 @@ def main():
 
                 # At this point, normally the jail is down. Check
                 # whether that's what the caller wanted.
-                if state in ('present', 'stopped'):
+                if state in ("present", "stopped"):
                     # This is fine.
                     # I'm okay with the events that are unfolding currently.
                     pass
@@ -242,34 +242,34 @@ def main():
                         err = mw.job("jail.start", name)
                     except Exception as e:
                         module.fail_json(msg=f"Error starting jail {name}: {e}")
-                result['status'] = err
+                result["status"] = err
 
-            result['changed'] = True
+            result["changed"] = True
         else:
             # Jail is not supposed to exist.
             # All is well
-            result['changed'] = False
+            result["changed"] = False
 
     else:
         # Jail exists
-        if state == 'absent':
+        if state == "absent":
             # Jail is not supposed to exist
 
-            if jail_info['state'] == "up":
+            if jail_info["state"] == "up":
                 #
                 # Stop the jail.
                 #
                 if module.check_mode:
-                    result['msg'] += f"Would have stopped jail {name}."
+                    result["msg"] += f"Would have stopped jail {name}."
                 else:
                     try:
                         err = mw.job("jail.stop", name)
                     except Exception as e:
                         module.fail_json(msg=f"Error stopping jail {name}: {e}")
-                    result['status_stop'] = err
+                    result["status_stop"] = err
 
             if module.check_mode:
-                result['msg'] += f"Would have deleted jail {name}."
+                result["msg"] += f"Would have deleted jail {name}."
             else:
                 try:
                     #
@@ -278,14 +278,14 @@ def main():
                     err = mw.call("jail.delete", name)
                 except Exception as e:
                     module.fail_json(msg=f"Error deleting jail {name}: {e}")
-            result['changed'] = True
+            result["changed"] = True
             module.exit_json(**result)
 
         # The jail exists. Check whether its configuration needs to be
         # updated.
 
         # Start out by assuming that nothing is changing.
-        result['changed'] = False
+        result["changed"] = False
 
         # XXX
         # Make list of differences between what is and what should
@@ -304,21 +304,20 @@ def main():
             # Update jail.
             #
             if module.check_mode:
-                result['msg'] += f"Would have updated jail {name}: {arg}"
+                result["msg"] += f"Would have updated jail {name}: {arg}"
             else:
                 try:
-                    err = mw.call("jail.update", name,
-                                  arg)
+                    err = mw.call("jail.update", name, arg)
                 except Exception as e:
                     module.fail_json(msg=f"Error updating jail {name} with {arg}: {e}")
                     # Return any interesting bits from err
-                    result['status'] = err
-            result['changed'] = True
+                    result["status"] = err
+            result["changed"] = True
 
         # Now see whether it needs to be brought up or down, or
         # restarted.
-        if 'state' == 'running':
-            if jail_info['state'] == 'up':
+        if "state" == "running":
+            if jail_info["state"] == "up":
                 # We want it to be running, and it's up.
                 # All is well.
                 pass
@@ -326,44 +325,44 @@ def main():
                 # We want it to be running, but it's not.
                 # Start it.
                 if module.check_mode:
-                    result['msg'] += f"Would have started jail {name}"
+                    result["msg"] += f"Would have started jail {name}"
                 else:
                     try:
                         err = mw.job("jail.start", name)
                     except Exception as e:
                         module.fail_json(msg=f"Error starting jail {name}: {e}")
-                result['changed'] = True
+                result["changed"] = True
 
-        elif state == 'stopped':
-            if jail_info['state'] == 'up':
+        elif state == "stopped":
+            if jail_info["state"] == "up":
                 # We want it to be stopped, but it's up.
                 # Stop it.
                 if module.check_mode:
-                    result['msg'] += f"Would have stopped jail {name}"
+                    result["msg"] += f"Would have stopped jail {name}"
                 else:
                     try:
                         err = mw.job("jail.stop", name)
                     except Exception as e:
                         module.fail_json(msg=f"Error stopping jail {name}: {e}")
-                    result['status'] = err
-                result['changed'] = True
+                    result["status"] = err
+                result["changed"] = True
             else:
                 # We want it to be stopped, and it's down.
                 # all is well
                 pass
 
-        elif state == 'restarted':
+        elif state == "restarted":
             # The jail exists, but may be either up or down.
             # Either way, restart it.
             if module.check_mode:
-                result['msg'] += f"Would have restarted jail {name}"
+                result["msg"] += f"Would have restarted jail {name}"
             else:
                 try:
                     err = mw.job("jail.restart", name)
                 except Exception as e:
                     module.fail_json(msg=f"Error restarting jail {name}: {e}")
-                result['status'] = err
-            result['changed'] = True
+                result["status"] = err
+            result["changed"] = True
 
     module.exit_json(**result)
 
