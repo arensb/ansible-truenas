@@ -441,7 +441,7 @@ class NFS1:
                 # Check whether the new set of networks is the same as the
                 # old set.
                 if networks is not None and \
-                   set(networks) != set(export_info.get('networks', [])):
+                   set(networks) != set(export_info['networks']):
                     arg['networks'] = networks
 
                 # Check whether the new set of hosts is the same as the
