@@ -58,6 +58,16 @@ releases:
     fragments:
     - midclt.yaml
     release_date: '2025-06-11'
+  1.11.6:
+    changes:
+      bugfixes:
+      - paths is no longer present in sharing.nfs.query results for 
+        TrueNAS Scale versions newer than 25.04. A check has been added to omit
+        it from the payload in this scenario to maintain compatibility.
+      release_summary: Bug fix.
+    fragments:
+    - sharing_nfs.yaml
+    release_date: '2025-06-26'
   1.4.5:
     changes:
       breaking_changes:

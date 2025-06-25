@@ -435,13 +435,13 @@ class NFS1:
 
                 # Check whether the path is the same as the old.
                 # We use set comparison because the order doesn't matter.
-                if set(paths) != set(export_info['paths']):
+                if 'paths' in export_info and set(paths) != set(export_info['paths']):
                     arg['paths'] = paths
 
                 # Check whether the new set of networks is the same as the
                 # old set.
                 if networks is not None and \
-                   set(networks) != set(export_info['networks']):
+                   set(networks) != set(export_info.get('networks', [])):
                     arg['networks'] = networks
 
                 # Check whether the new set of hosts is the same as the
