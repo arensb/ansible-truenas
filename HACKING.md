@@ -1,5 +1,18 @@
 # Notes on hacking this collection
 
+## General notes for contributors
+
+Tips for writing good contributions:
+
+1. Write documentation.
+    1. If you write a module, make sure there are `DOCUMENTATION`,`EXAMPLES`, and `RETURN` docstrings.
+       Make sure that they parse correctly as YAML.
+    1. Make sure that all options are documented.
+    1. In the `EXAMPLES` docstring, include examples of all common use cases.
+    1. In the `RETURN` docstring, make sure all return fields are documented.
+1. Include tests.
+    1. If you're adding or updating a module, a playbook that exercises your new functionality is useful, especially if it includes edge cases.
+
 ## Creating a new module
 
 If you want to create a new module `foo`, start by copying the file
