@@ -58,6 +58,14 @@ releases:
     fragments:
     - midclt.yaml
     release_date: '2025-06-11'
+  1.11.6:
+    release_summary: Allow renaming SMB shares.
+    changes:
+      minor_changes:
+      - Can now change the name of an SMB share.
+    fragments:
+    - pr27.yaml
+    release_date: '2025-07-02'
   1.4.5:
     changes:
       breaking_changes:
