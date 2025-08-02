@@ -117,12 +117,12 @@ def main():
     group = module.params['name']
     state = module.params['state']
     non_unique = module.params['non_unique']
-    # TrueNAS scale versions starting with 24.10 throws an error if allow_duplicate_gid
+    # TrueNAS scale versions starting with 25.04 throws an error if allow_duplicate_gid
     # is passed in
-    TC_24_10 = version.parse("24.10")
+    TC_25_04 = version.parse("25.04")
     if tn_version['name'] == "TrueNAS" and \
-        tn_version['type'] == "SCALE" and \
-        tn_version['version'] >= TC_24_10:
+        tn_version['type'] in {"SCALE", "COMMMUNITY_EDITION"} and \
+        tn_version['version'] >= TC_25_04:
         non_unique = None
 
     # Look up the group.
