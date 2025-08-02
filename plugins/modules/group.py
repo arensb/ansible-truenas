@@ -33,7 +33,7 @@ options:
     description:
       - Allow a non-unique I(GID) for the group.
       - If I(non_unique) is true, a I(GID) must be specified.
-      - This is ignored starting with I(SCALE 24.10)
+      - This is ignored starting with I(SCALE 25.04)
     type: bool
     default: no
 seealso:
