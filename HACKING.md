@@ -44,6 +44,8 @@ about. [Format documentation](https://ansible.readthedocs.io/projects/antsibull-
 
 1. Commit changes. Merge to `main` branch if necessary.
 
+1. Close bug report or pull request if appropriate.
+
 1. Tag the git commit with the new release version, in the format
 `v1.2.3`.
 
