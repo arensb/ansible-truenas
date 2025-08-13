@@ -131,9 +131,12 @@ def main():
             ),
         supports_check_mode=True,
 
-        # Give either the CA cert, or a path to it, but not both.
-        required_one_of=[('src', 'content')],
-        mutually_exclusive=[('src', 'content')]
+        # If we're creating/uploading a CA, need to give either the CA
+        # cert, or a path to it, but not both.
+        required_if=[
+            ('state', 'present', ('src', 'content'), True),
+        ],
+        mutually_exclusive=[('src', 'content')],
     )
 
     result = dict(
@@ -190,9 +193,6 @@ def main():
                     module.fail_json(msg=f"Error getting certificate: {e}")
 
             arg['certificate'] = content
-
-            # if feature is not None:
-            #     arg['feature'] = feature
 
             if module.check_mode:
                 result['msg'] = f"Would have created CA certificate {name} with {arg}"
