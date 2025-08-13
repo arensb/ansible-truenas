@@ -6,14 +6,20 @@ __metaclass__ = type
 # XXX - Methods
 # - certificateauthority.ca_sign_csr
 # - certificateauthority.create
-#   Used for multiple operations: create new CA, import existing CA cert, create intermediate CA.
+#   Used for multiple operations: create new CA, import existing CA
+#   cert, create intermediate CA.
 # - certificateauthority.delete
 # - certificateauthority.query
 # - certificateauthority.update
-#   As with certificate.update, this is only for changing the name of a CA, or to revoke it.
+#   As with certificate.update, this is only for changing the name of
+#   a CA, or to revoke it.
 
 # XXX - As with the 'copy' module, use either 'src: <path>' or
 # 'content: <string>' to specify the cert.
+
+# XXX - This API allows you to create CA certs, but I don't want to
+# implement that just yet. It seems fraught with peril. It might even
+# be better to write a different module for this.
 
 # XXX
 DOCUMENTATION = '''
@@ -30,22 +36,81 @@ options:
       - Name of the CA.
     type: str
     required: true
+  src:
+    description:
+      - Pathname of the file containing the certificate.
+      - See also O(content).
+    type: path
+  content:
+    description:
+      - Used instead of O(src) to specify a certificate inline.
+    type: str
   state:
     description:
-      - 'absent': Revoke the CA.
-      - Whether the resource should exist or not.
+      - "'present': Ensure that the CA cert is installed."
+      - "'absent': Ensure that the CA cert is absent. Revoke it if necessary."
     type: str
     choices: [ absent, present ]
     default: present
+  revoked:
+    description:
+      - Whether this CA cert has been revoked.
+    type: bool
+    default: false
 version_added: XXX
 '''
 
 # XXX
 EXAMPLES = '''
+- name: Install a CA cert from a file
+  arensb.truenas.certificate_authority:
+    name: my_ca_cert
+    src: /etc/pki/my-ca.cert
+
+- name: Install a CA cert from a string
+  arensb.truenas.certificate_authority:
+    name: my_ca_cert
+    content: |-
+      -----BEGIN CERTIFICATE-----
+      MIIFdTCCA12gAwIBAgIUQZLjifloJRGBwalKcoODV20BmhUwDQYJKoZIhvcNAQEL
+      ...
+      B5A/Sn7DTfQz
+      -----END CERTIFICATE-----
+
+- name: Remove and revoke a CA cert
+  arensb.truenas.certificate_authority:
+    name: my_ca_cert
+    state: absent
+
+- name: Remove a CA cert, even if it can't be revoked
+  arensb.truenas.certificate_authority:
+    name: my_ca_cert
+    state: absent
+    force: yes
+
+- name: Revoke a CA cert, but keep it in the list.
+  arensb.truenas.certificate_authority:
+    name: my_ca_cert
+    state: present
+    revoked: yes
 '''
 
 # XXX
 RETURN = '''
+ca_cert:
+  description:
+    - A data structure describing a newly-created or -installed CA certificate.
+    - Only returned when a certificate is created.
+  type: dict
+  sample:
+    id: "6841f242-840a-11e6-a437-00e04d680384"
+    msg: "method"
+    method: "certificateauthority.create"
+    params:
+      - name: "imported_ca"
+        certificate: "Certificate string"
+        privatekey: "Private key string"
+        create_type: "CA_CREATE_IMPORTED"
 '''
 
 from ansible.module_utils.basic import AnsibleModule
