@@ -122,11 +122,18 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             # XXX
-            name=dict(type='str'),
+            name=dict(type='str', required=True),
             state=dict(type='str', default='present',
                        choices=['absent', 'present']),
+            src=dict(type='path'),	# XXX - Optional
+            content=dict(type='str'),   # XXX - Optional
+            # XXX- revoked
             ),
         supports_check_mode=True,
+
+        # Give either the CA cert, or a path to it, but not both.
+        required_one_of=[('src', 'content')],
+        mutually_exclusive=[('src', 'content')]
     )
 
     result = dict(
@@ -138,56 +145,75 @@ def main():
 
     # Assign variables from properties, for convenience
     name = module.params['name']
+    state = module.params['state']
+    src = module.params['src']
+    content = module.params['content']
     # XXX
 
-    # XXX - Look up the resource
+    # XXX - Look up the CA cert
     try:
-        resource_info = mw.call("resource.query",
+        ca_cert_info = mw.call("certificateauthority.query",
                                 [["name", "=", name]])
-        if len(resource_info) == 0:
-            # No such resource
-            resource_info = None
+        if len(ca_cert_info) == 0:
+            # No such CA cert
+            ca_cert_info = None
         else:
-            # Resource exists
-            resource_info = resource_info[0]
+            # CA cert exists
+            ca_cert_info = ca_cert_info[0]
     except Exception as e:
-        module.fail_json(msg=f"Error looking up resource {name}: {e}")
+        module.fail_json(msg=f"Error looking up CA cert {name}: {e}")
 
-    # First, check whether the resource even exists.
-    if resource_info is None:
-        # Resource doesn't exist
+    # First, check whether the CA cert even exists.
+    if ca_cert_info is None:
+        # CA cert doesn't exist
 
         if state == 'present':
-            # Resource is supposed to exist, so create it.
+            # CA cert is supposed to exist, so create it.
 
-            # Collect arguments to pass to resource.create()
+            # Collect arguments to pass to certificateauthority.create()
             arg = {
-                "resourcename": name,
+                "name": name,
+                "create_type": "CA_CREATE_IMPORTED",
             }
 
-            if feature is not None:
-                arg['feature'] = feature
+            # XXX - revoked
+
+            # Either 'content' is set to the certificate, or 'src' is
+            # a path to it. So we can just read that file into
+            # 'content', so either way, at the end, 'content' will be
+            # the cert as a string.
+            if src is not None:
+                try:
+                    with open(src, 'rt') as f:
+                        content = f.read()
+                except Exception as e:
+                    module.fail_json(msg=f"Error getting certificate: {e}")
+
+            arg['certificate'] = content
+
+            # if feature is not None:
+            #     arg['feature'] = feature
 
             if module.check_mode:
-                result['msg'] = f"Would have created resource {name} with {arg}"
+                result['msg'] = f"Would have created CA certificate {name} with {arg}"
             else:
                 #
-                # Create new resource
+                # Install new CA cert
                 #
                 try:
-                    err = mw.call("resource.create", arg)
+                    err = mw.call("certificateauthority.create", arg)
                     result['msg'] = err
                 except Exception as e:
                     result['failed_invocation'] = arg
-                    module.fail_json(msg=f"Error creating resource {name}: {e}")
+                    module.fail_json(msg=f"Error creating CA certificate {name}: {e}")
 
-                # Return whichever interesting bits resource.create()
+                # Return whichever interesting bits certificateauthority.create()
                 # returned.
-                result['resource_id'] = err
+                result['ca_cert'] = err
 
             result['changed'] = True
         else:
-            # Resource is not supposed to exist.
+            # The CA cert is not supposed to exist.
             # All is well
             result['changed'] = False
 
@@ -200,10 +226,10 @@ def main():
             # be.
             arg = {}
 
-            if feature is not None and resource_info['feature'] != feature:
+            if feature is not None and ca_cert_info['feature'] != feature:
                 arg['feature'] = feature
 
-            # If there are any changes, resource.update()
+            # If there are any changes, certificateauthority.update()
             if len(arg) == 0:
                 # No changes
                 result['changed'] = False
@@ -215,8 +241,8 @@ def main():
                     result['msg'] = f"Would have updated resource {name}: {arg}"
                 else:
                     try:
-                        err = mw.call("resource.update",
-                                      resource_info['id'],
+                        err = mw.call("certificateauthority.update",
+                                      ca_cert_info['id'],
                                       arg)
                     except Exception as e:
                         module.fail_json(msg=f"Error updating resource {name} with {arg}: {e}")
@@ -233,8 +259,8 @@ def main():
                     #
                     # Delete resource.
                     #
-                    err = mw.call("resource.delete",
-                                  resource_info['id'])
+                    err = mw.call("certificateauthority.delete",
+                                  ca_cert_info['id'])
                 except Exception as e:
                     module.fail_json(msg=f"Error deleting resource {name}: {e}")
             result['changed'] = True
