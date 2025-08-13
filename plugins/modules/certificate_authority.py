@@ -250,19 +250,19 @@ def main():
                         result['status'] = err['status']
                 result['changed'] = True
         else:
-            # Resource is not supposed to exist
+            # CA is not supposed to exist
 
             if module.check_mode:
-                result['msg'] = f"Would have deleted resource {name}"
+                result['msg'] = f"Would have deleted CA {name}"
             else:
                 try:
                     #
-                    # Delete resource.
+                    # Delete CA.
                     #
                     err = mw.call("certificateauthority.delete",
                                   ca_cert_info['id'])
                 except Exception as e:
-                    module.fail_json(msg=f"Error deleting resource {name}: {e}")
+                    module.fail_json(msg=f"Error deleting CA cert {name}: {e}")
             result['changed'] = True
 
     module.exit_json(**result)
