@@ -128,6 +128,7 @@ def main():
             src=dict(type='path'),	# XXX - Optional
             content=dict(type='str'),   # XXX - Optional
             # XXX- revoked
+            revoked=dict(type='bool', default=False),
             ),
         supports_check_mode=True,
 
@@ -151,6 +152,7 @@ def main():
     state = module.params['state']
     src = module.params['src']
     content = module.params['content']
+    revoked = module.params['revoked']
 
     # XXX - Look up the CA cert
     try:
@@ -233,8 +235,8 @@ def main():
             # be.
             arg = {}
 
-            if feature is not None and ca_cert_info['feature'] != feature:
-                arg['feature'] = feature
+            if revoked is not None and ca_cert_info['revoked'] != revoked:
+                arg['revoked'] = revoked
 
             # If there are any changes, certificateauthority.update()
             if len(arg) == 0:
