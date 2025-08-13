@@ -151,12 +151,11 @@ def main():
     state = module.params['state']
     src = module.params['src']
     content = module.params['content']
-    # XXX
 
     # XXX - Look up the CA cert
     try:
         ca_cert_info = mw.call("certificateauthority.query",
-                                [["name", "=", name]])
+                               [["name", "=", name]])
         if len(ca_cert_info) == 0:
             # No such CA cert
             ca_cert_info = None
@@ -181,12 +180,20 @@ def main():
 
             # XXX - revoked
 
+            # AFAIK you can't create (or upload) a new cert that's
+            # already revoked. I don't know why you'd want to do that,
+            # but if it turns out to be useful, we may need to call
+            # certificateauthority.create() followed by
+            # certificateauthority.update(revoked=true)
+
             # Either 'content' is set to the certificate, or 'src' is
             # a path to it. So we can just read that file into
             # 'content', so either way, at the end, 'content' will be
             # the cert as a string.
             if src is not None:
                 try:
+                    # XXX - 'src' needs to be opened on localhost, not
+                    # on the client.
                     with open(src, 'rt') as f:
                         content = f.read()
                 except Exception as e:
@@ -218,9 +225,9 @@ def main():
             result['changed'] = False
 
     else:
-        # Resource exists
+        # CA exists
         if state == 'present':
-            # Resource is supposed to exist
+            # This CA is supposed to exist
 
             # Make list of differences between what is and what should
             # be.
@@ -235,17 +242,17 @@ def main():
                 result['changed'] = False
             else:
                 #
-                # Update resource.
+                # Update the CA.
                 #
                 if module.check_mode:
-                    result['msg'] = f"Would have updated resource {name}: {arg}"
+                    result['msg'] = f"Would have updated CA cert {name}: {arg}"
                 else:
                     try:
                         err = mw.call("certificateauthority.update",
                                       ca_cert_info['id'],
                                       arg)
                     except Exception as e:
-                        module.fail_json(msg=f"Error updating resource {name} with {arg}: {e}")
+                        module.fail_json(msg=f"Error updating CA cert {name} with {arg}: {e}")
                         # Return any interesting bits from err
                         result['status'] = err['status']
                 result['changed'] = True
