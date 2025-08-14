@@ -41,7 +41,7 @@ DOCUMENTATION = '''
 module: certificate
 short_description: Manage host certificates.
 description:
-  - Upload and revoke host certificates.
+  - Allows uploading and revoking host certificates.
 options:
   name:
     description:
@@ -60,10 +60,20 @@ options:
     type: str
   state:
     description:
-      - Whether the resource should exist or not.
+      - Whether the certificate should exist or not.
     type: str
     choices: [ absent, present ]
     default: present
+  revoked:
+    description:
+      - Set to true to revoke a certificater. It is possible to upload
+        a certificate and immediately revoke it, though it is not
+        clear why this might be useful.
+      # - Only CAs with private key can be revoked.
+      # - Note that once revoked, a CA cannot be restored. This module
+      #   can try to un-revoke a CA, but it will fail.
+    type: bool
+    default: false
 version_added: XXX
 '''
 
@@ -101,15 +111,23 @@ argument_spec=dict(
                choices=['absent', 'present']),
     src=dict(type='path'),
     certificate=dict(type='str'),
-    # XXX - revoked
+    revoked=dict(type='bool', default=False),
 )
-
+required_if = [
+    ('state', 'present', ('src', 'certificate', 'revoked'), True),
+]
+mutually_exclusive = [
+    ('src', 'certificate'),
+    # ('private_keyfile', 'private_key'),
+]
 def main():
     global argument_spec
 
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
+        required_if=required_if,
+        mutually_exclusive=mutually_exclusive,
     )
 
     result = dict(
@@ -121,106 +139,131 @@ def main():
 
     # Assign variables from properties, for convenience
     name = module.params['name']
-    # XXX
+    state = module.params['state']
+    certificate = module.params['certificate']
+    revoked = module.params['revoked']
 
-    # XXX - Look up the resource
+    # Look up the certificate
     try:
-        resource_info = mw.call("resource.query",
+        cert_info = mw.call("certificate.query",
                                 [["name", "=", name]])
-        if len(resource_info) == 0:
-            # No such resource
-            resource_info = None
+        if len(cert_info) == 0:
+            # No such cert
+            cert_info = None
         else:
-            # Resource exists
-            resource_info = resource_info[0]
+            # Cert exists
+            cert_info = cert_info[0]
     except Exception as e:
-        module.fail_json(msg=f"Error looking up resource {name}: {e}")
+        module.fail_json(msg=f"Error looking up certificate {name}: {e}")
 
-    # First, check whether the resource even exists.
-    if resource_info is None:
-        # Resource doesn't exist
+    # First, check whether the certificate even exists.
+    if cert_info is None:
+        # Cert doesn't exist
 
         if state == 'present':
-            # Resource is supposed to exist, so create it.
+            # Cert is supposed to exist, so create it.
 
-            # Collect arguments to pass to resource.create()
+            # Collect arguments to pass to certificate.create()
             arg = {
-                "resourcename": name,
+                "name": name,
+                "create_type": "CERTIFICATE_CREATE_IMPORTED",
             }
 
-            if feature is not None:
-                arg['feature'] = feature
+            if certificate is not None:
+                arg['certificate'] = certificate
 
             if module.check_mode:
-                result['msg'] = f"Would have created resource {name} with {arg}"
+                result['msg'] = f"Would have created certificate {name} with {arg}"
             else:
                 #
-                # Create new resource
+                # Create new cert
                 #
                 try:
-                    # XXX - This is a job, not a regular call.
-                    err = mw.call("resource.create", arg)
+                    # Note that this is a job, not a regular call.
+                    err = mw.job("certificate.create", arg)
                     result['msg'] = err
                 except Exception as e:
                     result['failed_invocation'] = arg
-                    module.fail_json(msg=f"Error creating resource {name}: {e}")
+                    module.fail_json(msg=f"Error creating certificate {name}: {e}")
 
-                # Return whichever interesting bits resource.create()
+                # Return whichever interesting bits certificate.create()
                 # returned.
-                result['resource_id'] = err
+                result['certificate'] = err
+
+            if revoked is not None and revoked:
+                # XXX - To revoke a cert, need its private key. Add
+                # this to requirements.
+                if module.check_mode:
+                    result['msg'] += f"Would mark certificate {name} as revoked."
+                else:
+                    arg2 = {
+                        "revoked": revoked,
+                    }
+
+                    try:
+                        err2 = mw.call("certificate.update", err['id'], arg2)
+                    except Exception as e:
+                        module.fail_json(msg=f"Error revoking certificate {name}: {e}")
+                        # XXX - Do we need to roll back the cert creation? Can we?
 
             result['changed'] = True
         else:
-            # Resource is not supposed to exist.
+            # Cert is not supposed to exist.
             # All is well
             result['changed'] = False
 
     else:
-        # Resource exists
+        # Cert exists
         if state == 'present':
-            # Resource is supposed to exist
+            # Cert is supposed to exist
 
             # Make list of differences between what is and what should
             # be.
+            #
+            # Note that certificate.update() can only change 'name'
+            # and 'revoked'. And since we use 'name' as an identifier
             arg = {}
 
-            if feature is not None and resource_info['feature'] != feature:
-                arg['feature'] = feature
+            if revoked is not None and cert_info['revoked'] != revoked:
+                # XXX - You can revoke a cert, but you can't un-revoke it.
+                arg['revoked'] = revoked
 
-            # If there are any changes, resource.update()
+            # If there are any changes, certificate.update()
             if len(arg) == 0:
                 # No changes
                 result['changed'] = False
             else:
                 #
-                # Update resource.
+                # Update certificate.
                 #
                 if module.check_mode:
-                    result['msg'] = f"Would have updated resource {name}: {arg}"
+                    result['msg'] = f"Would have updated certificate {name}: {arg}"
                 else:
                     try:
-                        err = mw.call("resource.update",
-                                      resource_info['id'],
+                        err = mw.call("certificate.update",
+                                      cert_info['id'],
                                       arg)
                     except Exception as e:
-                        module.fail_json(msg=f"Error updating resource {name} with {arg}: {e}")
+                        module.fail_json(msg=f"Error updating certificate {name} with {arg}: {e}")
                         # Return any interesting bits from err
                         result['status'] = err['status']
                 result['changed'] = True
         else:
-            # Resource is not supposed to exist
+            # Cert is not supposed to exist
+
+            # XXX - "force" option?
 
             if module.check_mode:
-                result['msg'] = f"Would have deleted resource {name}"
+                result['msg'] = f"Would have deleted certificate {name}"
             else:
                 try:
                     #
-                    # Delete resource.
+                    # Delete certificate.
                     #
-                    err = mw.call("resource.delete",
-                                  resource_info['id'])
+                    err = mw.call("certificate.delete",
+                                  cert_info['id'])
                 except Exception as e:
-                    module.fail_json(msg=f"Error deleting resource {name}: {e}")
+                    module.fail_json(msg=f"Error deleting certificate {name}: {e}")
             result['changed'] = True
 
     module.exit_json(**result)

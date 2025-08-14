@@ -178,7 +178,7 @@ def main():
     passphrase = module.params['passphrase']
     revoked = module.params['revoked']
 
-    # XXX - Look up the CA cert
+    # Look up the CA cert
     try:
         ca_cert_info = mw.call("certificateauthority.query",
                                [["name", "=", name]])
@@ -203,8 +203,6 @@ def main():
                 "name": name,
                 "create_type": "CA_CREATE_IMPORTED",
             }
-
-            # XXX - revoked
 
             # AFAIK you can't create (or upload) a new cert that's
             # already revoked. I don't know why you'd want to do that,
