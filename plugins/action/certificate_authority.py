@@ -26,16 +26,16 @@ class ActionModule(ActionBase):
 
         if 'src' in subtask.args and subtask.args['src'] is not None:
             # We were given a 'src' argument. Replace it with a
-            # 'content' argument.
+            # 'certificate' argument.
             try:
                 with open(subtask.args['src'], 'rt') as f:
-                    content = f.read()
+                    certificate = f.read()
             except Exception as e:
                 raise AnsibleActionFail(f"Error opening 'src: {subtask.args['src']}': {e}")
 
-            # Replace 'src' with 'content'.
+            # Replace 'src' with 'certificate'.
             del subtask.args['src']
-            subtask.args['content'] = content
+            subtask.args['certificate'] = certificate
 
         if 'private_keyfile' in subtask.args and subtask.args['private_keyfile'] is not None:
             # We were given a 'private_keyfile' argument. Replace it

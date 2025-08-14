@@ -39,12 +39,13 @@ options:
   src:
     description:
       - Pathname of the file containing the certificate.
-      - See also O(content).
+      - See also O(certificate).
     type: path
-  content:
+  certificate:
     description:
       - Used instead of O(src) to specify a certificate inline.
     type: str
+    aliases: [ ca, cert, ca_cert ]
   private_keyfile:
     description:
       - Pathname of the file containing the CA's private key.
@@ -90,7 +91,7 @@ EXAMPLES = '''
 - name: Install a CA cert from a string
   arensb.truenas.certificate_authority:
     name: my_ca_cert
-    content: |-
+    certificate: |-
       -----BEGIN CERTIFICATE-----
       MIIFdTCCA12gAwIBAgIUQZLjifloJRGBwalKcoODV20BmhUwDQYJKoZIhvcNAQEL
       ...
@@ -144,17 +145,18 @@ argument_spec = dict(
     state=dict(type='str', default='present',
                choices=['absent', 'present']),
     src=dict(type='path'),
-    content=dict(type='str'),
+    certificate=dict(type='str',
+                     aliases=['ca', 'cert', 'ca_cert']),
     private_keyfile=dict(type='path'),
     private_key=dict(type='str'),
     passphrase=dict(type='str', no_log=True),
     revoked=dict(type='bool', default=False),
 )
 required_if = [
-    ('state', 'present', ('src', 'content', 'revoked'), True),
+    ('state', 'present', ('src', 'certificate', 'revoked'), True),
 ]
 mutually_exclusive = [
-    ('src', 'content'),
+    ('src', 'certificate'),
     ('private_keyfile', 'private_key'),
 ]
 
@@ -183,7 +185,7 @@ def main():
     name = module.params['name']
     state = module.params['state']
     # src = module.params['src']
-    content = module.params['content']
+    certificate = module.params['certificate']
     # private_keyfile = module.params['private_keyfile']
     private_key = module.params['private_key']
     passphrase = module.params['passphrase']
@@ -223,8 +225,8 @@ def main():
             # certificateauthority.create() followed by
             # certificateauthority.update(revoked=true)
 
-            if content is not None:
-                arg['certificate'] = content
+            if certificate is not None:
+                arg['certificate'] = certificate
 
             if private_key is not None:
                 arg['privatekey'] = private_key
