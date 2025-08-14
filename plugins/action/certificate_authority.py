@@ -14,7 +14,6 @@ from ..modules.certificate_authority import \
 class ActionModule(ActionBase):
     def run(self, tmp=None, task_vars=None):
         result = super(ActionModule, self).run(tmp, task_vars)
-        result['action_msg'] = "Hello from action module.\n"	# XXX - debugging
 
         # This will raise an exception if the arguments are invalid.
         validation_result, new_module_args = self.validate_argument_spec(
@@ -55,7 +54,4 @@ class ActionModule(ActionBase):
         result = self._execute_module(module_name="certificate_authority",
                                       module_args=subtask.args,
                                       task_vars=task_vars)
-        result['action_args'] = self._task.args
-
         return result
-

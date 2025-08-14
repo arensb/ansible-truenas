@@ -65,13 +65,22 @@ options:
     default: present
   revoked:
     description:
-      - Whether this CA cert has been revoked.
+      - Set to true to revoke a CA. It is possible to upload a CA and
+        immediately revoke it, though it is not clear why this might
+        be useful.
+      - Only CAs with private key can be revoked.
+      - Note that once revoked, a CA cannot be restored. This module
+        can try to un-revoke a CA, but it will fail.
     type: bool
     default: false
 version_added: XXX
 '''
 
 # XXX
+
+# XXX - Include an example of uploading a CA with a key. Must include
+# passphrase if key is signed.
+
 EXAMPLES = '''
 - name: Install a CA cert from a file
   arensb.truenas.certificate_authority:
@@ -173,7 +182,7 @@ def main():
     # Assign variables from properties, for convenience
     name = module.params['name']
     state = module.params['state']
-    src = module.params['src']
+    # src = module.params['src']
     content = module.params['content']
     # private_keyfile = module.params['private_keyfile']
     private_key = module.params['private_key']
@@ -214,20 +223,9 @@ def main():
             # certificateauthority.create() followed by
             # certificateauthority.update(revoked=true)
 
-            # Either 'content' is set to the certificate, or 'src' is
-            # a path to it. So we can just read that file into
-            # 'content', so either way, at the end, 'content' will be
-            # the cert as a string.
-            if src is not None:
-                try:
-                    # XXX - 'src' needs to be opened on localhost, not
-                    # on the client.
-                    with open(src, 'rt') as f:
-                        content = f.read()
-                except Exception as e:
-                    module.fail_json(msg=f"Error getting certificate: {e}")
+            if content is not None:
+                arg['certificate'] = content
 
-            arg['certificate'] = content
             if private_key is not None:
                 arg['privatekey'] = private_key
 
@@ -280,9 +278,14 @@ def main():
 
             # Make list of differences between what is and what should
             # be.
+
+            # Only the name and 'revoked' can be changed. And since
+            # this module uses 'name' as an identifier, the name can't
+            # be changed, either.
             arg = {}
 
             if revoked is not None and ca_cert_info['revoked'] != revoked:
+                # You can revoke a cert, but you can't un-revoke it.
                 arg['revoked'] = revoked
 
             # If there are any changes, certificateauthority.update()
@@ -301,7 +304,7 @@ def main():
                                       ca_cert_info['id'],
                                       arg)
                     except Exception as e:
-                        module.fail_json(msg=f"Error updating CA cert {name} with {arg}: {e}")
+                        module.fail_json(msg=f"Error updating CA cert {name} ({ca_cert_info['id']}) with {arg}: {e}")
                         # Return any interesting bits from err
                         result['status'] = err['status']
                 result['changed'] = True
