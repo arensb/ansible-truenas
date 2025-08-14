@@ -3,25 +3,12 @@ __metaclass__ = type
 
 # Manage certificate authorities.
 
-# XXX - Methods
-# - certificateauthority.ca_sign_csr
-# - certificateauthority.create
-#   Used for multiple operations: create new CA, import existing CA
-#   cert, create intermediate CA.
-# - certificateauthority.delete
-# - certificateauthority.query
-# - certificateauthority.update
-#   As with certificate.update, this is only for changing the name of
-#   a CA, or to revoke it.
-
-# XXX - As with the 'copy' module, use either 'src: <path>' or
-# 'content: <string>' to specify the cert.
+# This module has an associated action module, which is a wrapper around this module.
 
 # XXX - This API allows you to create CA certs, but I don't want to
 # implement that just yet. It seems fraught with peril. It might even
 # be better to write a different module for this.
 
-# XXX
 DOCUMENTATION = '''
 ---
 module: certificate_authority

@@ -31,6 +31,10 @@ __metaclass__ = type
 # - create_type: CERTIFICATE_CREATE_IMPORTED
 # - privatekey
 
+# XXX - There might be a chicken-and-egg problem: how do we update the
+# host's https cert while also using https to talk to the API
+# endpoint?
+
 # XXX
 DOCUMENTATION = '''
 ---
@@ -48,21 +52,34 @@ options:
   src:
     description:
       - Pathname of the file containing the certificate.
-      - See also O(content).
+      - See also O(certificate).
     type: path
-  content:
+  certificate:
     description:
       - Used instead of O(src) to specify a certificate inline.
+    type: str
   state:
     description:
       - Whether the resource should exist or not.
     type: str
     choices: [ absent, present ]
     default: present
-version_added: 
+version_added: XXX
 '''
 
 # XXX
+
+# XXX - Add an existing cert from string
+#     - certificate
+#     - type: CERTIFICATE_CREATE_IMPORTED
+# XXX - Add an existing cert from a file
+#     - src
+#     - type: CERTIFICATE_CREATE_IMPORTED
+# XXX - Add unsigned cert, if possible.
+# XXX - Add cert signed by an existing CA.
+# XXX - Delete a cert.
+# XXX - Revoke a cert.
+
 EXAMPLES = '''
 - name: Install an existing cert from a file.
   arensb.truenas.certificate:
@@ -136,6 +153,7 @@ def main():
                 # Create new resource
                 #
                 try:
+                    # XXX - This is a job, not a regular call.
                     err = mw.call("resource.create", arg)
                     result['msg'] = err
                 except Exception as e:
