@@ -24,8 +24,9 @@ class ActionModule(ActionBase):
         )
 
         subtask = self._task.copy()
-        if 'src' in subtask.args:
-            # XXX - We were given a 'src' argument. Replace it with a
+
+        if 'src' in subtask.args and subtask.args['src'] is not None:
+            # We were given a 'src' argument. Replace it with a
             # 'content' argument.
             try:
                 with open(subtask.args['src'], 'rt') as f:
