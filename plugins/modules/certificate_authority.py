@@ -117,27 +117,39 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
     import MiddleWare as MW
 
+# Put this at file scope so that the action module can slurp this in
+# and validate arguments.
+argument_spec = dict(
+    name=dict(type='str', required=True),
+    state=dict(type='str', default='present',
+               choices=['absent', 'present']),
+    src=dict(type='path'),
+    content=dict(type='str'),
+    private_keyfile=dict(type='path'),
+    private_key=dict(type='str'),
+    passphrase=dict(type='str', no_log=True),
+    revoked=dict(type='bool', default=False),
+)
+required_if = [
+    ('state', 'present', ('src', 'content', 'revoked'), True),
+]
+mutually_exclusive = [
+    ('src', 'content'),
+    ('private_keyfile', 'private_key'),
+]
+
 
 def main():
+    global argument_spec, required_if, mutually_exclusive
+
     module = AnsibleModule(
-        argument_spec=dict(
-            # XXX
-            name=dict(type='str', required=True),
-            state=dict(type='str', default='present',
-                       choices=['absent', 'present']),
-            src=dict(type='path'),	# XXX - Optional
-            content=dict(type='str'),   # XXX - Optional
-            # XXX- revoked
-            revoked=dict(type='bool', default=False),
-            ),
+        argument_spec=argument_spec,
         supports_check_mode=True,
 
         # If we're creating/uploading a CA, need to give either the CA
         # cert, or a path to it, but not both.
-        required_if=[
-            ('state', 'present', ('src', 'content'), True),
-        ],
-        mutually_exclusive=[('src', 'content')],
+        required_if=required_if,
+        mutually_exclusive=mutually_exclusive,
     )
 
     result = dict(
