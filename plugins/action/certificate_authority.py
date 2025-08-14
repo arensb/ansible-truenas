@@ -38,6 +38,19 @@ class ActionModule(ActionBase):
             del subtask.args['src']
             subtask.args['content'] = content
 
+        if 'private_keyfile' in subtask.args and subtask.args['private_keyfile'] is not None:
+            # We were given a 'private_keyfile' argument. Replace it
+            # with a 'private_key' argument.
+            try:
+                with open(subtask.args['private_keyfile'], 'rt') as f:
+                    private_key = f.read()
+            except Exception as e:
+                raise AnsibleActionFail(f"Error opening 'src: {subtask.args['private_keyfile']}': {e}")
+
+            # Replace 'private_keyfile' with 'private_key'.
+            del subtask.args['private_keyfile']
+            subtask.args['private_key'] = private_key
+
         # Now run the actual module.
         result = self._execute_module(module_name="certificate_authority",
                                       module_args=subtask.args,

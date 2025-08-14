@@ -45,6 +45,14 @@ options:
     description:
       - Used instead of O(src) to specify a certificate inline.
     type: str
+  private_keyfile:
+    description:
+      - Pathname of the file containing the CA's private key.
+    type: path
+  private_key:
+    description:
+      - Used instead of O(private_keyfile) to specify a CA private key inline.
+    type: str
   state:
     description:
       - "'present': Ensure that the CA cert is installed."
@@ -164,6 +172,8 @@ def main():
     state = module.params['state']
     src = module.params['src']
     content = module.params['content']
+    # private_keyfile = module.params['private_keyfile']
+    private_key = module.params['private_key']
     revoked = module.params['revoked']
 
     # XXX - Look up the CA cert
@@ -214,6 +224,9 @@ def main():
                     module.fail_json(msg=f"Error getting certificate: {e}")
 
             arg['certificate'] = content
+            if private_key is not None:
+                arg['privatekey'] = private_key
+
 
             if module.check_mode:
                 result['msg'] = f"Would have created CA certificate {name} with {arg}"
