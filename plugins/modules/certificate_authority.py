@@ -251,6 +251,22 @@ def main():
                 # returned.
                 result['ca_cert'] = err
 
+            if revoked is not None and revoked:
+                # XXX - To revoke a CA, need its private key. Add this
+                # to requirements.
+                if module.check_mode:
+                    result['msg'] += f"Would mark CA {name} as revoked."
+                else:
+                    arg2 = {
+                        "revoked": revoked,
+                    }
+
+                    try:
+                        err2 = mw.call("certificateauthority.update", err['id'], arg2)
+                    except Exception as e:
+                        module.fail_json(msg=f"Error revoking CA certificate {name}: {e}")
+                        # XXX - Do we need to roll back the CA creation? Can we?
+
             result['changed'] = True
         else:
             # The CA cert is not supposed to exist.
