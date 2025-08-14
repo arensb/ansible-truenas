@@ -53,6 +53,9 @@ options:
     description:
       - Used instead of O(private_keyfile) to specify a CA private key inline.
     type: str
+  passphrase:
+    # description:
+    #   - Passphrase fo t
   state:
     description:
       - "'present': Ensure that the CA cert is installed."
@@ -174,6 +177,7 @@ def main():
     content = module.params['content']
     # private_keyfile = module.params['private_keyfile']
     private_key = module.params['private_key']
+    passphrase = module.params['passphrase']
     revoked = module.params['revoked']
 
     # XXX - Look up the CA cert
@@ -227,6 +231,8 @@ def main():
             if private_key is not None:
                 arg['privatekey'] = private_key
 
+            if passphrase is not None:
+                arg['passphrase'] = passphrase
 
             if module.check_mode:
                 result['msg'] = f"Would have created CA certificate {name} with {arg}"
