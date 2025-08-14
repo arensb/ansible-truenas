@@ -8,11 +8,20 @@
 
 from ansible.errors import AnsibleActionFail
 from ansible.plugins.action import ActionBase
+from ..modules.certificate_authority import \
+    argument_spec, required_if, mutually_exclusive
 
 class ActionModule(ActionBase):
     def run(self, tmp=None, task_vars=None):
         result = super(ActionModule, self).run(tmp, task_vars)
         result['action_msg'] = "Hello from action module.\n"	# XXX - debugging
+
+        # This will raise an exception if the arguments are invalid.
+        validation_result, new_module_args = self.validate_argument_spec(
+            argument_spec=argument_spec,
+            required_if=required_if,
+            mutually_exclusive=mutually_exclusive,
+        )
 
         subtask = self._task.copy()
         if 'src' in subtask.args:
