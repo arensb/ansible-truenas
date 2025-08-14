@@ -95,15 +95,20 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
     import MiddleWare as MW
 
+argument_spec=dict(
+    name=dict(type='str', required=True),
+    state=dict(type='str', default='present',
+               choices=['absent', 'present']),
+    src=dict(type='path'),
+    certificate=dict(type='str'),
+    # XXX - revoked
+)
 
 def main():
+    global argument_spec
+
     module = AnsibleModule(
-        argument_spec=dict(
-            # XXX
-            name=dict(type='str'),
-            state=dict(type='str', default='present',
-                       choices=['absent', 'present']),
-            ),
+        argument_spec=argument_spec,
         supports_check_mode=True,
     )
 
