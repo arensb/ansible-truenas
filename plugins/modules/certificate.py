@@ -276,8 +276,8 @@ def main():
                     #
                     # Delete certificate.
                     #
-                    err = mw.call("certificate.delete",
-                                  cert_info['id'])
+                    err = mw.job("certificate.delete",
+                                 cert_info['id'])
                 except Exception as e:
                     module.fail_json(msg=f"Error deleting certificate {name}: {e}")
             result['changed'] = True
