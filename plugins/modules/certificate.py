@@ -58,6 +58,14 @@ options:
     description:
       - Used instead of O(src) to specify a certificate inline.
     type: str
+  private_keyfile:
+    description:
+      - Pathname of the file containing the CA's private key.
+    type: path
+  private_key:
+    description:
+      - Used instead of O(private_keyfile) to specify a CA private key inline.
+    type: str
   state:
     description:
       - Whether the certificate should exist or not.
@@ -111,6 +119,8 @@ argument_spec=dict(
                choices=['absent', 'present']),
     src=dict(type='path'),
     certificate=dict(type='str'),
+    private_keyfile=dict(type='path'),
+    private_key=dict(type='str'),
     revoked=dict(type='bool', default=False),
 )
 required_if = [
@@ -118,7 +128,7 @@ required_if = [
 ]
 mutually_exclusive = [
     ('src', 'certificate'),
-    # ('private_keyfile', 'private_key'),
+    ('private_keyfile', 'private_key'),
 ]
 def main():
     global argument_spec
@@ -141,6 +151,7 @@ def main():
     name = module.params['name']
     state = module.params['state']
     certificate = module.params['certificate']
+    private_key = module.params['private_key']
     revoked = module.params['revoked']
 
     # Look up the certificate
@@ -169,8 +180,13 @@ def main():
                 "create_type": "CERTIFICATE_CREATE_IMPORTED",
             }
 
+            # When importing a key, 'certificate' and 'private_key'
+            # are required.
             if certificate is not None:
                 arg['certificate'] = certificate
+
+            if private_key is not None:
+                arg['privatekey'] = private_key
 
             if module.check_mode:
                 result['msg'] = f"Would have created certificate {name} with {arg}"
