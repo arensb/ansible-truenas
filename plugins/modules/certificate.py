@@ -3,33 +3,18 @@ __metaclass__ = type
 
 # XXX - One-line description of module
 
-# XXX - Things to do:
-# - certificate.acme_server_choices
-#   Might only be useful when generating a cert or CSR.
-# - certificate.country_choices
-#   Might only be useful when generating a cert or CSR.
-# - certificate.create
-#   Used for both generating certs and importing existing ones.
-#   Also for generating let's encrypt certs.
-# - certificate.delete
-#   Save for later.
-# - certificate.ec_curve_choices
-#   Might only be useful when generating a cert or CSR.
-# - certificate.extended_key_usage_choices
-#   Might only be useful when generating a cert or CSR.
-# - certificate.key_type_choices
-# - certificate.profiles
-#   Could be useful for generating a specific type of cert.
-# - certificate.query
-#   Look up existing certs.
-# - certificate.update (Job)
-#   Can only update ID and whether it's revoked. So it's not useful for updating a cert.
-
-# XXX - To upload existing cert:
-# - name
-# - certificate
-# - create_type: CERTIFICATE_CREATE_IMPORTED
-# - privatekey
+# XXX - What should happen with
+# certificate:
+#   name: my_cert
+#   revoked: yes
+# when the cert doesn't exist?
+#
+# Right now, it tries to install the cert, and immediately revoke it.
+# And that's what it should do: if the caller wanted the cert to not
+# exist, they'd have used "state: absent", not "revoked: yes".
+# So the cert needs to be installed for it to be revoked.
+#
+# Maybe add "state: revoked_or_absent"? Or "revoke: if_present"?
 
 # XXX - There might be a chicken-and-egg problem: how do we update the
 # host's https cert while also using https to talk to the API
@@ -74,25 +59,17 @@ options:
     default: present
   revoked:
     description:
-      - Set to true to revoke a certificater. It is possible to upload
+      - Set to true to revoke a certificate. It is possible to upload
         a certificate and immediately revoke it, though it is not
         clear why this might be useful.
-      # - Only CAs with private key can be revoked.
-      # - Note that once revoked, a CA cannot be restored. This module
-      #   can try to un-revoke a CA, but it will fail.
+      - "Perhaps counterintuitively, only specifying O(name) and
+        O(revoked=yes) will cause an error when the cert does not exist.
+        This is because the cert needs to be uploaded before it can be
+        revoked."
     type: bool
     default: false
 version_added: XXX
 '''
-
-# XXX
-
-# XXX - Add an existing cert from string
-#     - certificate
-#     - type: CERTIFICATE_CREATE_IMPORTED
-# XXX - Add an existing cert from a file
-#     - src
-#     - type: CERTIFICATE_CREATE_IMPORTED
 # XXX - Add unsigned cert, if possible.
 # XXX - Add cert signed by an existing CA.
 # XXX - Delete a cert.
@@ -210,7 +187,7 @@ def main():
                 # XXX - To revoke a cert, need its private key. Add
                 # this to requirements.
                 if module.check_mode:
-                    result['msg'] += f"Would mark certificate {name} as revoked."
+                    result['msg'] += f"\nWould mark certificate {name} as revoked."
                 else:
                     arg2 = {
                         "revoked": revoked,
