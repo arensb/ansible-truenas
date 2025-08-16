@@ -174,7 +174,7 @@ def main():
                 try:
                     # Note that this is a job, not a regular call.
                     err = mw.job("certificate.create", arg)
-                    result['msg'] = err
+                    result['certificate'] = err
                 except Exception as e:
                     result['failed_invocation'] = arg
                     module.fail_json(msg=f"Error creating certificate {name}: {e}")
@@ -195,6 +195,8 @@ def main():
 
                     try:
                         err2 = mw.call("certificate.update", err['id'], arg2)
+                        # This overwrites the earlier result[certificate].
+                        result['certificate'] = err2
                     except Exception as e:
                         module.fail_json(msg=f"Error revoking certificate {name}: {e}")
                         # XXX - Do we need to roll back the cert creation? Can we?
@@ -236,6 +238,8 @@ def main():
                         err = mw.call("certificate.update",
                                       cert_info['id'],
                                       arg)
+                        # certificate.update
+                        result['status'] = err
                     except Exception as e:
                         module.fail_json(msg=f"Error updating certificate {name} with {arg}: {e}")
                         # Return any interesting bits from err
