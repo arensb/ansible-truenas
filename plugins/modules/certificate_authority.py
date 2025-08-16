@@ -9,6 +9,9 @@ __metaclass__ = type
 # implement that just yet. It seems fraught with peril. It might even
 # be better to write a different module for this.
 
+# XXX - Can't delete a CA while it's in use by a cert. Make sure this
+# is indicated in an error message if it happens.
+
 DOCUMENTATION = '''
 ---
 module: certificate_authority
