@@ -152,8 +152,11 @@ class Midclt:
         """
 
         try:
+            # XXX - In CORE, this is a job; in SCALE, it's a regular
+            # call. Though that doesn't seem to make a difference.
+            # Specifying "--job" works on both.
             err = Midclt.call(func,
-                              opts=["--job", "JOBID", "-jp", "description"],
+                              opts=["--job", "-jp", "description"],
                               output='str',
                               *args, **kwargs)
 
