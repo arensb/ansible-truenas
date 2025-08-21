@@ -1,7 +1,7 @@
 #!/usr/bin/python
 __metaclass__ = type
 
-# XXX - One-line description of module
+# Manage certificates.
 
 # XXX - What should happen with
 # certificate:
@@ -20,7 +20,6 @@ __metaclass__ = type
 # host's https cert while also using https to talk to the API
 # endpoint?
 
-# XXX
 DOCUMENTATION = '''
 ---
 module: certificate
@@ -38,6 +37,7 @@ options:
     description:
       - Pathname of the file containing the certificate.
       - See also O(certificate).
+      - This file must only contain the certificate, not any signing certificates.
     type: path
   certificate:
     description:
@@ -51,6 +51,9 @@ options:
     description:
       - Used instead of O(private_keyfile) to specify a CA private key inline.
     type: str
+  passphrase:
+    description:
+      - Passphrase for the certificate.
   state:
     description:
       - Whether the certificate should exist or not.
@@ -68,22 +71,61 @@ options:
         revoked."
     type: bool
     default: false
-version_added: XXX
+notes:
+  - There appears to be a bug in TrueNAS 25.04.0 that prevents installing
+    certificates with keys greater than 2048 bits long. In fact, 2048 seems
+    to be the only usable key size for certificates.
+  - Although TrueNAS supports creating certificates in the console,
+    this module does not. It is not immediately clear how this should work
+    in an idempotent Ansible module. At least for now, it is recommended
+    that you generate certificates as part of your PKI system, and upload
+    them to TrueNAS devices. Failing that, you can manually generate a cert
+    in the TrueNAS console, and download it to your Ansible server.
+version_added: 1.12.0
 '''
-# XXX - Add unsigned cert, if possible.
-# XXX - Add cert signed by an existing CA.
-# XXX - Delete a cert.
-# XXX - Revoke a cert.
 
 EXAMPLES = '''
 - name: Install an existing cert from a file.
   arensb.truenas.certificate:
     name: my_cert
     src: /etc/pki/truenas-host.cert
+
+- name: Same, but include a private key and passphrase.
+  arensb.truenas.certificate:
+    name: my_cert
+    src: /etc/pki/truenas-host.cert
+    private_key: |-
+      -----BEGIN PRIVATE KEY-----
+      MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC9QCpnXKNXoOdx
+      ...
+    passphrase: "squeamish ossifrage"
+
+- name: Revoke a cert
+  arensb.truenas.certificate:
+    name: my_cert
+    revoked: true
+
+- name: Remove a cert
+  arensb.truenas.certificate:
+    name: my_cert
+    state: absent
 '''
 
-# XXX
 RETURN = '''
+certificate:
+  description:
+    - A data structure describing a newly-created or -installed certificate.
+    - Only returned when a certificate is created.
+  type: dict
+  sample:
+    id: "6841f242-840a-11e6-a437-00e04d680384"
+    msg: "method"
+    method: "certificate.create"
+    params:
+      - name: "imported_cert"
+        certificate: "Certificate string"
+        privatekey: "Private key string"
+        create_type: "CERTIFICATE_CREATE_IMPORTED"
 '''
 
 from ansible.module_utils.basic import AnsibleModule

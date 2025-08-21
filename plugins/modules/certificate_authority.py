@@ -43,10 +43,12 @@ options:
   private_key:
     description:
       - Used instead of O(private_keyfile) to specify a CA private key inline.
+      - When uploading a CA certificate, the private key must be supplied, if there is one.
     type: str
   passphrase:
-    # description:
-    #   - Passphrase fo t
+    description:
+      - Passphrase for the CA cert.
+      - When uploading a CA certificate, the passphrase for the private key must be supplied, if there is one.
   state:
     description:
       - "'present': Ensure that the CA cert is installed."
@@ -59,24 +61,36 @@ options:
       - Set to true to revoke a CA. It is possible to upload a CA and
         immediately revoke it, though it is not clear why this might
         be useful.
-      - Only CAs with private key can be revoked.
+      - Only CAs with a private key can be revoked.
       - Note that once revoked, a CA cannot be restored. This module
         can try to un-revoke a CA, but it will fail.
     type: bool
     default: false
-version_added: XXX
+notes:
+  - There appears to be a bug in TrueNAS 25.04.0 that prevents installing
+    certificates with keys greater than 2048 bits long. In fact, 2048 seems
+    to be the only usable key size for CAs.
+  - Although TrueNAS supports creating CAs in the console,
+    this module does not. It is not immediately clear how this should work
+    in an idempotent Ansible module. At least for now, it is recommended
+    that you generate CAs as part of your PKI system, and upload them to
+    TrueNAS devices. Failing that, you can manually generate a CA in the
+    TrueNAS console, and download it to your Ansible server.
+version_added: 1.12.0
 '''
-
-# XXX
-
-# XXX - Include an example of uploading a CA with a key. Must include
-# passphrase if key is signed.
 
 EXAMPLES = '''
 - name: Install a CA cert from a file
   arensb.truenas.certificate_authority:
     name: my_ca_cert
     src: /etc/pki/my-ca.cert
+
+- name: Install a CA cert and its key
+  arensb.truenas.certificate_authority:
+    name: my_ca_cert
+    src: /etc/pki/my-ca.cert
+    private_keyfile: /etc/pki/my-ca.key
+    passphrase: "Open, sesame!"
 
 - name: Install a CA cert from a string
   arensb.truenas.certificate_authority:
@@ -106,7 +120,6 @@ EXAMPLES = '''
     revoked: yes
 '''
 
-# XXX
 RETURN = '''
 ca_cert:
   description:
@@ -229,6 +242,17 @@ def main():
                 # Install new CA cert
                 #
                 try:
+                    # XXX - For some reason, on TrueNAS SCALE, this
+                    # fails if 'privatekey' is passed in. I'm pretty
+                    # sure that somewhere, there's a limit of 4096 as
+                    # the max length of a 'midclt' request.
+                    #
+                    # I thought of getting around this by calling
+                    # certificateauthority.create to submit the cert,
+                    # followed by certificateauthority.update to add
+                    # the private key and any other arguments, but
+                    # .update only allows us to change the name and
+                    # revokedness, not update a key.
                     err = mw.call("certificateauthority.create", arg)
                     result['msg'] = err
                 except Exception as e:
@@ -276,6 +300,10 @@ def main():
 
             if revoked is not None and ca_cert_info['revoked'] != revoked:
                 # You can revoke a cert, but you can't un-revoke it.
+                #
+                # As of this writing, SCALE 25.04 will fail if you try
+                # to un-revoke a cert, while CORE 13.0 will silently
+                # do nothing.
                 arg['revoked'] = revoked
 
             # If there are any changes, certificateauthority.update()
