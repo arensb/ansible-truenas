@@ -91,5 +91,4 @@ update-doc-site:	documentation
 # Check for errors.
 lint::
 	$(PYTHON) -m py_compile \
-		plugins/modules/*.py \
-		plugins/module_utils/*.py
+		plugins/*/*.py
