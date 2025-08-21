@@ -79,6 +79,16 @@ releases:
       name: certificate_authority
       namespace: ''
     release_date: '2025-08-20'
+  1.12.1:
+    changes:
+      bugfixes:
+      - In the ``group`` module, the ``non_unique`` option is ignored in versions
+        of TrueNAS where it is not supported (SCALE 24.10 and above). ``non_unique``
+        is still used in CORE. (https://github.com/arensb/ansible-truenas/pull/38/)
+      release_summary: 'Bug fix: deal with unsupported option.'
+    fragments:
+    - dup-gid.yaml
+    release_date: '2025-08-21'
   1.4.5:
     changes:
       breaking_changes:
