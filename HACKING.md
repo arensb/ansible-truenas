@@ -34,7 +34,9 @@ using `make documentation`.
 1. Update `galaxy.yml` and update `version`.
 
 1. Update `changelogs/changelog.yaml` and list changes the users care
-about. [Format documentation](https://ansible.readthedocs.io/projects/antsibull-changelog/changelog.yaml-format/).
+about.
+  - [Format documentation](https://ansible.readthedocs.io/projects/antsibull-changelog/changelog.yaml-format/).
+  - [Changelog fields](https://ansible.readthedocs.io/projects/antsibull-changelog/changelogs/#changelog-fragment-categories).
 
 1. If you added a module, add `version_added` to its `DOCUMENTATION` string.
 

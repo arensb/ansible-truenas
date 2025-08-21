@@ -33,6 +33,7 @@ options:
     description:
       - Allow a non-unique I(GID) for the group.
       - If I(non_unique) is true, a I(GID) must be specified.
+      - This is ignored starting with I(SCALE 25.04)
     type: bool
     default: no
 seealso:
@@ -58,6 +59,9 @@ EXAMPLES = '''
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
     import MiddleWare as MW
+from ansible_collections.arensb.truenas.plugins.module_utils.setup \
+    import get_tn_version
+from packaging import version
 
 
 def main():
@@ -103,11 +107,23 @@ def main():
 
     mw = MW.client()
 
+    try:
+        tn_version = get_tn_version()
+    except Exception as e:
+        module.fail_json(msg=f"Error getting TrueNAS version: {e}")
+
     # Assign variables from properties, for convenience
     gid = module.params['gid']
     group = module.params['name']
     state = module.params['state']
     non_unique = module.params['non_unique']
+    # TrueNAS scale versions starting with 25.04 throws an error if allow_duplicate_gid
+    # is passed in
+    TC_25_04 = version.parse("25.04")
+    if tn_version['name'] == "TrueNAS" and \
+        tn_version['type'] in {"SCALE", "COMMMUNITY_EDITION"} and \
+        tn_version['version'] >= TC_25_04:
+        non_unique = None
 
     # Look up the group.
     # group.query returns an array of objects like:

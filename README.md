@@ -100,3 +100,4 @@ or the latest [changelog.yaml](changelogs/changelog.yaml).
 - bmarinov (https://github.com/bmarinov)
 - Paul Heidenreich (https://github.com/Paulomart)
 - Gustavo Campos (https://github.com/guhcampos)
+- kamransaeed (https://github.com/kamransaeed)
