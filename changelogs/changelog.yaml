@@ -59,13 +59,26 @@ releases:
     - midclt.yaml
     release_date: '2025-06-11'
   1.11.6:
-    release_summary: Allow renaming SMB shares.
     changes:
       minor_changes:
       - Can now change the name of an SMB share.
     fragments:
     - pr27.yaml
     release_date: '2025-07-02'
+  1.12.0:
+    changes:
+      major_changes:
+      - Added the ``certificate_authority`` and ``certificate`` modules.
+    fragments:
+    - certs.yaml
+    modules:
+    - description: Manage host certificates.
+      name: certificate
+      namespace: ''
+    - description: Manage Certificate Authorities.
+      name: certificate_authority
+      namespace: ''
+    release_date: '2025-08-20'
   1.4.5:
     changes:
       breaking_changes:
