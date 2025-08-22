@@ -58,10 +58,8 @@ EXAMPLES = '''
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
-    import MiddleWare as MW
-from ansible_collections.arensb.truenas.plugins.module_utils.setup \
-    import get_tn_version
+from ..module_utils.middleware import MiddleWare as MW
+from ..module_utils.setup import get_tn_version
 from packaging import version
 
 

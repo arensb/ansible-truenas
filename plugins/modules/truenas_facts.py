@@ -165,7 +165,7 @@ ansible_facts.truenas_build_time:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.arensb.truenas.plugins.module_utils.exceptions \
+from ..module_utils.exceptions \
     import MethodNotFoundError as AnsibleMethodNotFoundError
 from datetime import datetime
 
@@ -186,8 +186,7 @@ def main():
         # We don't actually expect this to fail, since the MiddleWare
         # module comes with this module, and should therefore be
         # available everywhere.
-        from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
-            import MiddleWare as MW
+        from ..module_utils.middleware import MiddleWare as MW
     except ImportError as e:
         result['msg'] = f"Can't load required module: {e}"
         result['skipped'] = True

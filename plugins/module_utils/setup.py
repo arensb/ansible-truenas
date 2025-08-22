@@ -2,8 +2,7 @@
 # Code that it'd be nice to have in Ansible's 'setup' module.
 
 import re
-from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
-    import MiddleWare as MW
+from ..module_utils.middleware import MiddleWare as MW
 # For parsing version numbers
 from packaging import version
 

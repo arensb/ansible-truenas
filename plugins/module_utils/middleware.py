@@ -49,11 +49,11 @@ class MiddleWare:
         # at least in theory, the desired module might not exist on
         # the remote host.
         if method == 'midclt':
-            from ansible_collections.arensb.truenas.plugins.module_utils.midclt \
+            from ..module_utils.midclt \
                 import Midclt
             return Midclt
         elif method == 'client':
-            from ansible_collections.arensb.truenas.plugins.module_utils.client \
+            from ..module_utils.client \
                 import MiddlewareClient
             return MiddlewareClient
         else:

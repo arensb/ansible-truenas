@@ -21,8 +21,8 @@ This module adds support for midclt on TrueNAS.
 import subprocess
 import json
 from json.decoder import JSONDecodeError
-import ansible_collections.arensb.truenas.plugins.module_utils.exceptions
-from ansible_collections.arensb.truenas.plugins.module_utils.exceptions \
+from ..module_utils import exceptions
+from ..module_utils.exceptions \
     import MethodNotFoundError as AnsibleMethodNotFoundError
 
 MIDCLT_CMD = "midclt"

@@ -9,7 +9,7 @@ natively.
 
 import middlewared.client as client
 from middlewared.utils.service.call import MethodNotFoundError
-from ansible_collections.arensb.truenas.plugins.module_utils.exceptions \
+from ..module_utils.exceptions \
     import MethodNotFoundError as AnsibleMethodNotFoundError
 
 
