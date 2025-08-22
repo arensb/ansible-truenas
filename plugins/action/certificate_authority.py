@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # certificate_authority action plugin.
 #
 # The 'src' option to 'certificate_authority' involves a file on the

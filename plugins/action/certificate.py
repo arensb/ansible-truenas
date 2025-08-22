@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # certificate action plugin.
 #
 # Several options to the 'certificate' module involve reading a file
