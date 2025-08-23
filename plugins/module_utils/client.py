@@ -7,7 +7,14 @@ This module interfaces with middlewared on TrueNAS, and tries to do so
 natively.
 """
 
-import middlewared.client as client
+# Import the classes we want, to be a TrueNAS API client.
+try:
+    # TrueNAS SCALE
+    import truenas_api_client as MWClient
+except ImportError:
+    # TrueNAS CORE
+    import middlewared.client as MWClient
+
 from middlewared.utils.service.call import MethodNotFoundError
 from ..module_utils.exceptions \
     import MethodNotFoundError as AnsibleMethodNotFoundError
@@ -23,7 +30,7 @@ class MiddlewareClient:
         necessary.
         """
         if MiddlewareClient.client is None:
-            MiddlewareClient.client = client.Client()
+            MiddlewareClient.client = MWClient.Client()
         return MiddlewareClient.client
 
     @staticmethod
