@@ -213,8 +213,9 @@ def main():
 
         # Get the product type first, so that we can decide whether to
         # print error messages or not.
+        product_type = mw.call("system.product_type", output='str')
         result['ansible_facts']['truenas_product_type'] = \
-            mw.call("system.product_type", output='str')
+            product_type
 
         # system.product_name doesn't exist on SCALE (anymore).
         try:
@@ -222,7 +223,7 @@ def main():
                 mw.call("system.product_name", output='str')
         except AnsibleMethodNotFoundError:
             # We expect this to fail on TrueNAS SCALE, but not CORE.
-            if result['ansible_facts']['truenas_product_type'] == "CORE":
+            if product_type == "CORE":
                 module.warn("No method system.product_name.")
             # Do nothing. Carry on.
         except Exception as e:
@@ -235,7 +236,7 @@ def main():
                 mw.call("system.environment", output='str')
         except AnsibleMethodNotFoundError:
             # We expect this to fail on TrueNAS SCALE, but not CORE.
-            if result['ansible_facts']['truenas_product_type'] == "CORE":
+            if product_type == "CORE":
                 module.warn("No method system.environment.")
             # Do nothing. Carry on.
         except Exception as e:
