@@ -1,5 +1,6 @@
 # Class to interface with the middleware daemon through the
-# middlewared.client Python class, rather than by executing 'midclt'.
+# appropriate API client Python class, rather than by executing
+# 'midclt'.
 
 __metaclass__ = type
 """

@@ -10,8 +10,8 @@
 
 import os
 
-# XXX - Ought to define an exception type for things that can go wrong
-# with middleware calls.
+# XXX - 'exceptions.py' has exceptions to use when thing fail. Use
+# that instead of generic Exceptions.
 
 
 class MiddleWare:
