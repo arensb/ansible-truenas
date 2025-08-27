@@ -89,6 +89,15 @@ releases:
     fragments:
     - dup-gid.yaml
     release_date: '2025-08-21'
+  1.13.0:
+    changes:
+      major_changes:
+      - '``middleware_method: client`` now works in TrueNAS SCALE.'
+      release_summary: Client access method works on SCALE. Some behind-the-scenes changes.
+    fragments:
+    - client.yaml
+    - import.yaml
+    release_date: '2025-08-26'
   1.4.5:
     changes:
       breaking_changes:
