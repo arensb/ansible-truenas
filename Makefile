@@ -23,6 +23,9 @@ endif
 
 all::
 
+clean::
+	${RM} -r plugins/*/__pycache__
+
 # Build a tarball that can be uploaded as an Ansible collection.
 tarball:	docs
 	ansible-galaxy collection build --force

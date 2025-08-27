@@ -1,5 +1,6 @@
 # Class to interface with the middleware daemon through the
-# middlewared.client Python class, rather than by executing 'midclt'.
+# appropriate API client Python class, rather than by executing
+# 'midclt'.
 
 __metaclass__ = type
 """
@@ -7,7 +8,14 @@ This module interfaces with middlewared on TrueNAS, and tries to do so
 natively.
 """
 
-import middlewared.client as client
+# Import the classes we want, to be a TrueNAS API client.
+try:
+    # TrueNAS SCALE
+    import truenas_api_client as MWClient
+except ImportError:
+    # TrueNAS CORE
+    import middlewared.client as MWClient
+
 from middlewared.utils.service.call import MethodNotFoundError
 from ..module_utils.exceptions \
     import MethodNotFoundError as AnsibleMethodNotFoundError
@@ -23,7 +31,7 @@ class MiddlewareClient:
         necessary.
         """
         if MiddlewareClient.client is None:
-            MiddlewareClient.client = client.Client()
+            MiddlewareClient.client = MWClient.Client()
         return MiddlewareClient.client
 
     @staticmethod
@@ -44,6 +52,13 @@ class MiddlewareClient:
             # caller doesn't know whether it has access to the
             # original exception, so it can't import it.
             raise AnsibleMethodNotFoundError(func, str(e))
+        except MWClient.ClientException as e:
+            if e.errno == 201:
+                # errno 201, error [ENOMETHOD] Service 'bogus' not found, extra None
+                raise AnsibleMethodNotFoundError(func, e.error)
+
+            # Some other reason for raising a ClientException
+            raise e
         except Exception as e:
             raise e
 
