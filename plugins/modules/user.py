@@ -265,7 +265,7 @@ def main():
     # this code when the world has upgraded.
     old_sudo_api = True
     if tn_version['name'] == "TrueNAS" and \
-       tn_version['type'] == "SCALE" and \
+       tn_version['type'] in {"SCALE", "COMMUNITY_EDITION"} and \
        \
        (tn_version['version'] >= version.parse("12.12") and
         tn_version['version'] < version.parse("13")) \
