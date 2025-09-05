@@ -763,7 +763,7 @@ def main():
     # parameter from 'paths' to 'path'.
     TC_22_12_2 = version.parse("22.12.2")
     if tn_version['name'] == "TrueNAS" and \
-       tn_version['type'] == "SCALE" and \
+       tn_version['type'] in {"SCALE", "COMMUNITY_EDITION"} and \
        tn_version['version'] >= TC_22_12_2:
         return nfs2()
     else:
