@@ -93,11 +93,19 @@ releases:
     changes:
       major_changes:
       - '``middleware_method: client`` now works in TrueNAS SCALE.'
-      release_summary: Client access method works on SCALE. Some behind-the-scenes changes.
+      release_summary: Client access method works on SCALE. Some behind-the-scenes
+        changes.
     fragments:
     - client.yaml
     - import.yaml
     release_date: '2025-08-26'
+  1.13.1:
+    changes:
+      bugfixes:
+      - '``sharing_nfs`` module wouldn''t run under SCALE 25.04.'
+    fragments:
+    - pr39-nfs.yaml
+    release_date: '2025-09-05'
   1.4.5:
     changes:
       breaking_changes:
