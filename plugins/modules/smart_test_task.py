@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 __metaclass__ = type
 
 # XXX - Comparing schedules is harder than it looks: hour, day of the
@@ -147,8 +148,7 @@ task:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
-    import MiddleWare as MW
+from ..module_utils.middleware import MiddleWare as MW
 
 
 def main():

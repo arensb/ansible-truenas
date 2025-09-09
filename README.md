@@ -151,3 +151,6 @@ or the latest [changelog.yaml](changelogs/changelog.yaml).
 - Ed Hull (https://github.com/edhull)
 - Mozzie (https://github.com/MozzieBytes)
 - bmarinov (https://github.com/bmarinov)
+- Paul Heidenreich (https://github.com/Paulomart)
+- Gustavo Campos (https://github.com/guhcampos)
+- kamransaeed (https://github.com/kamransaeed)

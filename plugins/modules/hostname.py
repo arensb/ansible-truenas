@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 __metaclass__ = type
 
 # Set the hostname.
@@ -40,8 +41,7 @@ msg:
 # result.
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
-    import MiddleWare as MW
+from ..module_utils.middleware import MiddleWare as MW
 
 # XXX - network.configuration.update includes three hostnames:
 # hostname, hostname_b, hostname_virtual. From

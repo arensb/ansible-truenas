@@ -21,6 +21,9 @@ This module adds support for midclt on TrueNAS.
 import subprocess
 import json
 from json.decoder import JSONDecodeError
+from ..module_utils import exceptions
+from ..module_utils.exceptions \
+    import MethodNotFoundError as AnsibleMethodNotFoundError
 
 MIDCLT_CMD = "midclt"
 
@@ -105,7 +108,26 @@ class Midclt:
                                               stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
             # Exited with a non-zero code
-            raise Exception(f"{MIDCLT_CMD} exited with status {e.returncode}: \"{e.stdout}\"")
+
+            # e.stdout is a byte sequence. Convert it to a string.
+            # This string normally begins with an error code in brackets.
+            stdout = e.stdout.decode('utf8')
+
+            # Does output begin with "[ENOMETHOD]"? Then this is
+            # a MethodNotFoundError. But we can't raise that, because
+            # we're using the command-line client, and so assuming
+            # that we don't have access to the Python libraries.
+            if stdout.startswith("[ENOMETHOD]"):
+                # No such method.
+                raise AnsibleMethodNotFoundError(func, stdout)
+
+            # XXX - Check for other bracketed error codes, maybe.
+            # However, this method doesn't know a whole lot about the
+            # API call, so for the most part, all it can do is pass
+            # along the error it was given.
+
+            # Some other error.
+            raise Exception(f"{MIDCLT_CMD} exited with status {e.returncode}: \"{stdout}\"")
 
         if output == "str":
             # I assume everyone's using UTF-8 by now.
@@ -133,8 +155,11 @@ class Midclt:
         """
 
         try:
+            # XXX - In CORE, this is a job; in SCALE, it's a regular
+            # call. Though that doesn't seem to make a difference.
+            # Specifying "--job" works on both.
             err = Midclt.call(func,
-                              opts=["-job", "-jp", "description"],
+                              opts=["--job", "-jp", "description"],
                               output='str',
                               *args, **kwargs)
 

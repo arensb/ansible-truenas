@@ -10,8 +10,8 @@
 
 import os
 
-# XXX - Ought to define an exception type for things that can go wrong
-# with middleware calls.
+# XXX - 'exceptions.py' has exceptions to use when thing fail. Use
+# that instead of generic Exceptions.
 
 
 class MiddleWare:
@@ -49,11 +49,11 @@ class MiddleWare:
         # at least in theory, the desired module might not exist on
         # the remote host.
         if method == 'midclt':
-            from ansible_collections.arensb.truenas.plugins.module_utils.midclt \
+            from ..module_utils.midclt \
                 import Midclt
             return Midclt
         elif method == 'client':
-            from ansible_collections.arensb.truenas.plugins.module_utils.client \
+            from ..module_utils.client \
                 import MiddlewareClient
             return MiddlewareClient
         elif method == 'websocket':

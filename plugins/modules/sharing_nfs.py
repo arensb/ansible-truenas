@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 __metaclass__ = type
 
 # Create and manage NFS shares.
@@ -137,9 +138,8 @@ RETURN = '''
 
 import sys
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
-    import MiddleWare as MW
-import ansible_collections.arensb.truenas.plugins.module_utils.setup as setup
+from ..module_utils.middleware import MiddleWare as MW
+from ..module_utils import setup
 from packaging import version
 
 
@@ -763,7 +763,7 @@ def main():
     # parameter from 'paths' to 'path'.
     TC_22_12_2 = version.parse("22.12.2")
     if tn_version['name'] == "TrueNAS" and \
-       tn_version['type'] == "SCALE" and \
+       tn_version['type'] in {"SCALE", "COMMUNITY_EDITION"} and \
        tn_version['version'] >= TC_22_12_2:
         return nfs2()
     else:

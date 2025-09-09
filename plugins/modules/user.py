@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 __metaclass__ = type
 
 # Create and manage users.
@@ -234,9 +235,8 @@ user_id:
 
 import sys
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
-    import MiddleWare as MW
-import ansible_collections.arensb.truenas.plugins.module_utils.setup as setup
+from ..module_utils.middleware import MiddleWare as MW
+from ..module_utils import setup
 # For parsing version numbers
 from packaging import version
 
@@ -265,7 +265,7 @@ def main():
     # this code when the world has upgraded.
     old_sudo_api = True
     if tn_version['name'] == "TrueNAS" and \
-       tn_version['type'] == "SCALE" and \
+       tn_version['type'] in {"SCALE", "COMMUNITY_EDITION"} and \
        \
        (tn_version['version'] >= version.parse("12.12") and
         tn_version['version'] < version.parse("13")) \

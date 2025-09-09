@@ -23,6 +23,9 @@ endif
 
 all::
 
+clean::
+	${RM} -r plugins/*/__pycache__
+
 # Build a tarball that can be uploaded as an Ansible collection.
 tarball:	docs
 	ansible-galaxy collection build --force
@@ -91,5 +94,4 @@ update-doc-site:	documentation
 # Check for errors.
 lint::
 	$(PYTHON) -m py_compile \
-		plugins/modules/*.py \
-		plugins/module_utils/*.py
+		plugins/*/*.py

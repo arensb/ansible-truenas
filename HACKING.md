@@ -1,5 +1,18 @@
 # Notes on hacking this collection
 
+## General notes for contributors
+
+Tips for writing good contributions:
+
+1. Write documentation.
+    1. If you write a module, make sure there are `DOCUMENTATION`,`EXAMPLES`, and `RETURN` docstrings.
+       Make sure that they parse correctly as YAML.
+    1. Make sure that all options are documented.
+    1. In the `EXAMPLES` docstring, include examples of all common use cases.
+    1. In the `RETURN` docstring, make sure all return fields are documented.
+1. Include tests.
+    1. If you're adding or updating a module, a playbook that exercises your new functionality is useful, especially if it includes edge cases.
+
 ## Creating a new module
 
 If you want to create a new module `foo`, start by copying the file
@@ -21,15 +34,19 @@ using `make documentation`.
 1. Update `galaxy.yml` and update `version`.
 
 1. Update `changelogs/changelog.yaml` and list changes the users care
-about. [Format documentation](https://ansible.readthedocs.io/projects/antsibull-changelog/changelog.yaml-format/).
+about.
+  - [Format documentation](https://ansible.readthedocs.io/projects/antsibull-changelog/changelog.yaml-format/).
+  - [Changelog fields](https://ansible.readthedocs.io/projects/antsibull-changelog/changelogs/#changelog-fragment-categories).
 
 1. If you added a module, add `version_added` to its `DOCUMENTATION` string.
 
-1. Update `README.md` and add any new contributors.
+1. Update `README.md` and `galaxy.xml` to add any new contributors.
 
 1. Run `antsibull-changelog lint` and `antsibull-changelog release`.
 
 1. Commit changes. Merge to `main` branch if necessary.
+
+1. Close bug report or pull request if appropriate.
 
 1. Tag the git commit with the new release version, in the format
 `v1.2.3`.

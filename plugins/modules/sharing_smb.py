@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 __metaclass__ = type
 
 # Create and manage SMB shares.
@@ -165,13 +166,19 @@ status:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.arensb.truenas.plugins.module_utils.middleware \
-    import MiddleWare as MW
+from ..module_utils.middleware import MiddleWare as MW
 
 
 def main():
     module = AnsibleModule(
         argument_spec=dict(
+            # XXX - 'path' and 'name' are required to create a share, but
+            # not for operating on existing shares. For altering or
+            # deleting, we can take one of 'path' and 'name', and just
+            # query on whichever one was supplied.
+            #
+            # Maybe it's simplest to use 'path' as the invariant, and
+            # try to require 'name' only when it's really necessary.
             path=dict(type='str', required=True),
             name=dict(type='str', required=True),
             state=dict(type='str', default='present',
@@ -353,6 +360,10 @@ def main():
             # Make list of differences between what is and what should
             # be.
             arg = {}
+
+            if name is not None and \
+               share_info['name'] != name:
+                arg['name'] = name
 
             if purpose is not None:
                 if share_info['purpose'] != purpose:
