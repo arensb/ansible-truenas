@@ -13,4 +13,4 @@ class MethodNotFoundError(Exception):
         self.errmsg = errmsg
 
     def __str__(self):
-        return f"Method {self.method} Not Found. Error: {self.errmsg}"
+        return f"Method {self.method} not found. Error: {self.errmsg}"
