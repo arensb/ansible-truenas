@@ -6,3 +6,4 @@
 ansible-core >= 2.13.0
 antsibull-docs
 antsibull-changelog
+git+https://github.com/truenas/api_client.git#egg=truenas-api-client
