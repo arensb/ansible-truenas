@@ -56,9 +56,27 @@ options:
 version_added: 1.14.0
 '''
 
-# XXX
 # XXX - Show an example of bootstrapping to get the initial key.
 EXAMPLES = '''
+- name: Create a key
+  api_key:
+    name: "my new key"
+  register: my_new_key
+- name: "Save the new key"
+  debug:
+    msg: "Generated a key: {{ my_new_key.api_key.key }}"
+  when: my_new_key is changed
+
+- name: Reset a key
+  api_key:
+    name: "my stale key"
+    state: reset
+  register: my_key
+- name: "Save the new key value"
+  debug:
+    msg: "Key has been reset and is now {{ my_key.api_key.key }}"
+  when: my_key is changed
+
 - name: Delete a key
   api_key:
     name: "my old key"
@@ -86,7 +104,6 @@ from ..module_utils.middleware import MiddleWare as MW
 def main():
     module = AnsibleModule(
         argument_spec=dict(
-            # XXX
             name=dict(type='str'),
             state=dict(type='str', default='present',
                        choices=['absent', 'present', 'reset']),
