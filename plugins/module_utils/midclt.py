@@ -122,6 +122,9 @@ class Midclt:
                 raise AnsibleMethodNotFoundError(func, stdout)
 
             # XXX - Check for other bracketed error codes, maybe.
+            # However, this method doesn't know a whole lot about the
+            # API call, so for the most part, all it can do is pass
+            # along the error it was given.
 
             # Some other error.
             raise Exception(f"{MIDCLT_CMD} exited with status {e.returncode}: \"{stdout}\"")
