@@ -120,7 +120,7 @@ def main():
     # is passed in
     TC_25_04 = version.parse("25.04")
     if tn_version['name'] == "TrueNAS" and \
-        tn_version['type'] in {"SCALE", "COMMMUNITY_EDITION"} and \
+        tn_version['type'] in {"SCALE", "COMMUNITY_EDITION"} and \
         tn_version['version'] >= TC_25_04:
         non_unique = None
 
