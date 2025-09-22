@@ -489,7 +489,7 @@ def parse_volsize(value):
     """
 
     # Split the value into an integer prefix and a suffix.
-    match = re.match('^\s*(\d+)\s*([KMGT]i?B?)?\s*$', value)
+    match = re.match(r'^\s*(\d+)\s*([KMGT]i?B?)?\s*$', value)
 
     # the volume size is supposed to be a multiplier of the block
     # size, which in turn is usually a power of 2. So if the caller
