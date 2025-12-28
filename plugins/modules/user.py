@@ -521,7 +521,7 @@ def main():
                 # specified. So let's make sure that a password is
                 # wanted, first.
                 if not password_disabled:
-                    arg['password']: password
+                    arg['password'] = password
 
             if comment is None:
                 arg['full_name'] = ""
