@@ -430,6 +430,63 @@ def build_update_args(params, existing_ds, module):
             continue
         desired_val = params[prop]
         current_val = prop_rawvalue(existing_ds, prop)
+
+        # --- SPECIAL CASE: recordsize (FILESYSTEM) ---
+        # TrueNAS may report recordsize as "1M" while user supplies "1048576" (or vice versa).
+        # Normalize both to bytes so we don't detect phantom diffs.
+        if prop == "recordsize" and ds_type == "FILESYSTEM":
+            # TrueNAS gives: recordsize: { parsed: <int bytes>, rawvalue: "<bytes>", value: "256K" }
+            rs_obj = existing_ds.get("recordsize") or {}
+            current_bytes = rs_obj.get("parsed")
+
+            # Fallbacks if parsed is missing for some reason
+            if current_bytes is None:
+                # try rawvalue (numeric) -> int
+                raw = rs_obj.get("rawvalue")
+                if raw is not None and str(raw).isdigit():
+                    current_bytes = int(raw)
+                else:
+                    # last resort: parse the humanized value like "256K"
+                    try:
+                        current_bytes = parse_volsize(rs_obj.get("value", ""))
+                    except Exception:
+                        current_bytes = None
+
+            # Desired -> bytes
+            desired_val = params[prop]
+            try:
+                desired_bytes = parse_volsize(desired_val)
+            except Exception:
+                # if user passed "262144" as a string or int, accept it
+                try:
+                    desired_bytes = int(desired_val)
+                except Exception:
+                    desired_bytes = None
+
+            module.warn(
+                f"[DEBUG recordsize FIX] ds={existing_ds.get('name')} "
+                f"desired={desired_val!r} -> {desired_bytes!r} "
+                f"current(parsed/raw) -> {current_bytes!r} "
+                f"(rs_obj={rs_obj!r})"
+            )
+
+            # If we can compare normalized bytes, do it
+            if desired_bytes is not None and current_bytes is not None:
+                if int(desired_bytes) != int(current_bytes):
+                    update_args[prop] = desired_val
+                    module.warn(f"[DEBUG recordsize FIX] UPDATE needed")
+                else:
+                    module.warn(
+                        f"[DEBUG recordsize FIX] NO update (bytes equal)")
+                continue
+
+            # Otherwise fall back to original compare
+            if not compare_prop(prop, desired_val, prop_rawvalue(existing_ds, prop)):
+                update_args[prop] = desired_val
+            continue
+        # --- END SPECIAL CASE ---
+
+        # Default comparison for everything else
         if not compare_prop(prop, desired_val, current_val):
             update_args[prop] = desired_val
 
