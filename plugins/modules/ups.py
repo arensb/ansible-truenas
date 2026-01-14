@@ -220,7 +220,10 @@ def format_dict(dict, glue):
         return res
 
     for key in dict:
-        res += f"{key}{glue}{dict[key]}\n"
+        if dict[key] is not None:
+            res += f"{key}{glue}{dict[key]}\n"
+        else:
+            res += f"{key}\n"
 
     return res
 
