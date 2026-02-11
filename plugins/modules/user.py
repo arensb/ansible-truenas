@@ -734,13 +734,22 @@ def main():
             if uid is not None and user_info['uid'] != uid:
                 arg['uid'] = uid
 
-            # Compare the given password to the existing hash.
-            if password is not None and user_info['unixhash'] != password:
-                arg['password'] = password
+            # Handle password and password_disabled together,
+            if password_disabled is not None:
+                if user_info['password_disabled'] != password_disabled:
+                    arg['password_disabled'] = password_disabled
 
-            if password_disabled is not None and \
-               user_info['password_disabled'] != password_disabled:
-                arg['password_disabled'] = password_disabled
+                # Only update the password if passwords are enabled.
+                # An empty or unset password should not be sent to
+                # the middleware when password_disabled is true.
+                if not password_disabled:
+                    if password and user_info['unixhash'] != password:
+                        arg['password'] = password
+            else:
+                # password_disabled was not specified; handle password
+                # on its own.
+                if password and user_info['unixhash'] != password:
+                    arg['password'] = password
 
             if comment is not None and user_info['full_name'] != comment:
                 arg['full_name'] = comment
