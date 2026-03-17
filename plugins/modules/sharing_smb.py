@@ -391,9 +391,13 @@ def main():
                share_info['comment'] != comment:
                 arg['comment'] = comment
 
-            if auxsmbconf is not None and \
-               share_info['auxsmbconf'] != auxsmbconf:
-                arg['auxsmbconf'] = auxsmbconf
+            if auxsmbconf is not None:
+                # Evidently `sharing.smb.query' doesn't always return a data structure with 'auxsmbconf'.
+                if 'auxsmbconf' in share_info:
+                    if share_info['auxsmbconf'] != auxsmbconf:
+                        arg['auxsmbconf'] = auxsmbconf
+                else:
+                    arg['auxsmbconf'] = auxsmbconf
 
             if is_home is not None and \
                share_info['home'] != is_home:
