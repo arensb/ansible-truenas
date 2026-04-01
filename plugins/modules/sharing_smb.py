@@ -462,6 +462,7 @@ def main():
                         err = mw.call("sharing.smb.update",
                                       share_info['id'],
                                       arg)
+                        result['share'] = err
                     except Exception as e:
                         module.fail_json(msg=f"Error updating share {name} with {arg}: {e}")
                         # Return any interesting bits from err
