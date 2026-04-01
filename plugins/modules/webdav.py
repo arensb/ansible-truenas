@@ -2,8 +2,11 @@
 __metaclass__ = type
 
 # Configure the WebDAV service.
+#
+# This only exists under CORE. Under SCALE, need to install a separate
+# application:
+# https://www.truenas.com/docs/scale/22.12/scaletutorials/apps/communityapps/webdav/
 
-# XXX
 DOCUMENTATION = '''
 ---
 module: webdav
@@ -49,14 +52,32 @@ options:
       - Use the C(certificate) module to install a certificate.
     type: str
     required: false
-version_added: 1.15.1
+version_added: 1.15.0
 '''
 
-# XXX
 EXAMPLES = '''
+# Turn on WebDAV, configure it, and create a share.
+- name: Configure WebDAV
+  hosts: myhosts
+  become: yes
+  tasks:
+    - name: Create SMS backup directory
+      arensb.truenas.sharing_webdav:
+        name: myshare
+        path: "/mnt/tank/myfilesystem/myshare"
+    - name: Configure WebDAV service
+      arensb.truenas.webdav:
+        protocol: HTTP
+        port: 9100
+        password: "{{ webdav_password }"
+        auth_type: BASIC
+    - name: Enable WebDAV service
+      arensb.truenas.service:
+        name: webdav
+        state: started
+        enabled: yes
 '''
 
-# XXX
 RETURN = '''
 webdav:
   description:
@@ -70,8 +91,6 @@ webdav:
     password: "Password123"
     htauth: "DIGEST"
     certssl: null
-}
-
 '''
 
 from ansible.module_utils.basic import AnsibleModule

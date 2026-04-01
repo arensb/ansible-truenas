@@ -2,14 +2,19 @@
 __metaclass__ = type
 
 # Create and manage WebDAV shares.
+#
+# This only exists under CORE. Under SCALE, need to install a separate
+# application:
+# https://www.truenas.com/docs/scale/22.12/scaletutorials/apps/communityapps/webdav/
 
-# XXX
 DOCUMENTATION = '''
 ---
 module: sharing_webdav
 short_description: Manage WebDAV shares
 description:
   - Create, manage, and delete WebDAV shares.
+  - This only works on TrueNAS CORE. For SCALE, there is
+    a separate WebDAV application.
 options:
   name:
     description:
@@ -54,12 +59,43 @@ options:
 version_added: 1.15.0
 '''
 
-# XXX
 EXAMPLES = '''
+# Turn on WebDAV, configure it, and create a share.
+- name: Configure WebDAV
+  hosts: myhosts
+  become: yes
+  tasks:
+    - name: Create SMS backup directory
+      arensb.truenas.sharing_webdav:
+        name: myshare
+        path: "/mnt/tank/myfilesystem/myshare"
+    - name: Configure WebDAV service
+      arensb.truenas.webdav:
+        protocol: HTTP
+        port: 9100
+        password: "{{ webdav_password }"
+        auth_type: BASIC
+    - name: Enable WebDAV service
+      arensb.truenas.service:
+        name: webdav
+        state: started
+        enabled: yes
 '''
 
-# XXX
 RETURN = '''
+share:
+  description:
+    - A data structure describing a created or modified share.
+  type: dict
+  sample:
+    comment: WebDAV share for test data
+    enabled: true
+    id: 16
+    locked: false
+    name: test1
+    path: /mnt/tank/data/test1
+    perm: true
+    ro: false
 '''
 
 from ansible.module_utils.basic import AnsibleModule
@@ -67,18 +103,8 @@ from ..module_utils.middleware import MiddleWare as MW
 
 
 def main():
-    # XXX - perm: bool -> chown
-    # XXX - ro: bool
-    # XXX - comment: str -> description
-    # XXX - name: str
-    # XXX - path: str
-    # XXX - enabled: bool
     module = AnsibleModule(
         argument_spec=dict(
-            # XXX - As in sharing_smb, both 'path' and 'name' are
-            # required to create a share. When operating on existing
-            # shares, we can look up by name or path, and find the
-            # other one.
             path=dict(type='str'),
             name=dict(type='str'),
             description=dict(type='str'),       # comment
@@ -106,9 +132,8 @@ def main():
     chown = module.params['chown']
     state = module.params['state']
     enabled = module.params['enabled']
-    # XXX
 
-    # XXX - Look up the share
+    # Look up the share
     try:
         share_info = mw.call("sharing.webdav.query",
                                 [["name", "=", name]])
