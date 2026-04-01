@@ -97,8 +97,10 @@ options:
     aliases: [ user ]
   password:
     description:
-      - User's password, as a crypted string.
+      - User's password, as a plaintext string.
       - Required unless C(password_disabled) is true.
+      - This should be kept encrypted, in a secure location, e.g., Ansible
+        Vault, or as appropriate for your situation.
     type: str
   password_disabled:
     description:
@@ -321,6 +323,11 @@ def main():
             # We set no_log explicitly to False, because otherwise
             # module_utils.basic sees "password" in the name and gets
             # worried.
+            #
+            # We also don't default to False because we want to
+            # distinguish between "user says the password shouldn't be
+            # disabled" and "user doesn't care whether the password is
+            # disabled". None is the latter.
             password_disabled=dict(type='bool', no_log=False),
 
             # XXX - There should probably be an option saying whether
@@ -518,9 +525,13 @@ def main():
                 # specified. So let's make sure that a password is
                 # wanted, first.
                 if not password_disabled:
+                    # We've said earlier that if 'password_disabled'
+                    # is false, the caller must specify 'password'.
                     arg['password'] = password
             else:
                 # password_disabled is not set.
+                # XXX - Can we ever get here? password_disabled has a
+                # default of False.
                 arg['password'] = password
 
             if comment is None:
