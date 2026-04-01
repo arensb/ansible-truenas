@@ -747,10 +747,12 @@ def main():
 
             # Compare the given password to the existing hash.
             if password is not None and user_info['unixhash'] != password:
+                result['msg'] += f"\ntrace 0, password {password}, info {user_info['unixhash']}"
                 arg['password'] = password
 
             if password_disabled is not None and \
                user_info['password_disabled'] != password_disabled:
+                result['msg'] += f"\ntrace 1, password {password_disabled}, info {user_info['password_disabled']}"
                 arg['password_disabled'] = password_disabled
 
             if comment is not None and user_info['full_name'] != comment:
@@ -1018,7 +1020,7 @@ def main():
                 # Update user.
                 #
                 if module.check_mode:
-                    result['msg'] = f"Would have updated user {username}: {arg}"
+                    result['msg'] += f"Would have updated user {username}: {arg}"
                 else:
                     try:
                         err = mw.call("user.update",
