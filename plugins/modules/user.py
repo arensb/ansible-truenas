@@ -318,7 +318,7 @@ def main():
             # and something sensible will happen.
             create_group=dict(type='bool', default=True),
 
-            password=dict(type='str', default='', no_log=True),
+            password=dict(type='str', default=None, no_log=True),
 
             # We set no_log explicitly to False, because otherwise
             # module_utils.basic sees "password" in the name and gets
