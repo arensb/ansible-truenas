@@ -239,6 +239,7 @@ from ..module_utils.middleware import MiddleWare as MW
 from ..module_utils import setup
 # For parsing version numbers
 from packaging import version
+import passlib.hash             # To check passwords.
 
 def main():
     # Figure out which version of TrueNAS we're running, and thus how
