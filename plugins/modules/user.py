@@ -239,7 +239,23 @@ from ..module_utils.middleware import MiddleWare as MW
 from ..module_utils import setup
 # For parsing version numbers
 from packaging import version
-import passlib.hash             # To check passwords.
+try:
+    import passlib.hash             # To check passwords.
+except Exception as e:
+    # TrueNAS SCALE doesn't have passlib.
+    # XXX - maybe use bcrypt.hashpw()? Or hashlib. Both of these exist
+    # in both CORE and SCALE.
+    # https://www.geeksforgeeks.org/python/how-to-hash-passwords-in-python/
+    #
+    # CORE uses crypt.crypt() to generate hashed password.
+    # But that's deprecated in Python 3.13. hashlib is one replacement.
+    #   password_hash = hashlib.sha256(salt + password.encode())
+    #   # (from https://www.askpython.com/python/examples/storing-retrieving-passwords-securely)
+    # SCALE uses
+    # from middlewared.utils.crypto import sha512_crypt
+    # which in turn uses cryptit.cryptit(), which doesn't exist in CORE.
+    # Need a wrapper function, I guess.
+    pass
 
 def main():
     # Figure out which version of TrueNAS we're running, and thus how
