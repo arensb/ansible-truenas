@@ -163,187 +163,418 @@ mutually_exclusive = [
     ('private_keyfile', 'private_key'),
 ]
 
+class CA1:
+    """Class to implement version 1 of the certificate_authority module,
+    on TrueNAS CORE and SCALE <= 25.04."""
+
+    # XXX - Refactor
+    def run():
+        global argument_spec, required_if, mutually_exclusive
+
+        module = AnsibleModule(
+            argument_spec=argument_spec,
+            supports_check_mode=True,
+
+            # If we're creating/uploading a CA, need to give either the CA
+            # cert, or a path to it, but not both.
+            required_if=required_if,
+            mutually_exclusive=mutually_exclusive,
+        )
+
+        result = dict(
+            changed=False,
+            msg=''
+        )
+
+        mw = MW.client()
+
+        # Assign variables from properties, for convenience
+        name = module.params['name']
+        state = module.params['state']
+        # src = module.params['src']
+        certificate = module.params['certificate']
+        # private_keyfile = module.params['private_keyfile']
+        private_key = module.params['private_key']
+        passphrase = module.params['passphrase']
+        revoked = module.params['revoked']
+
+        # Look up the CA cert
+        try:
+            # XXX - midclt call certificateauthority.query
+            # does not exist in SCALE 25.10
+            #
+            # It looks as though in SCALE 25.10, CAs are just a type of
+            # cert. certificate.create() takes a parameter,
+            # cert_extensions.BasicConstraints.ca == true
+            # to indicate that this is a CA.
+            # certificate.query() includes 'cert_type_CA = <bool>'.
+            # I don't see anything in certificate.update() that suggests
+            # that CA-ness can be changed after the fact.
+            ca_cert_info = mw.call("certificateauthority.query",
+                                   [["name", "=", name],
+                                    ["cert_type_CA","=", True]])
+            if len(ca_cert_info) == 0:
+                # No such CA cert
+                ca_cert_info = None
+            else:
+                # CA cert exists
+                ca_cert_info = ca_cert_info[0]
+        except Exception as e:
+            module.fail_json(msg=f"Error looking up CA cert {name}: {e}")
+
+        # First, check whether the CA cert even exists.
+        if ca_cert_info is None:
+            # CA cert doesn't exist
+
+            if state == 'present':
+                # CA cert is supposed to exist, so create it.
+
+                # Collect arguments to pass to certificateauthority.create()
+                arg = {
+                    "name": name,
+                    "create_type": "CA_CREATE_IMPORTED",
+                }
+
+                # AFAIK you can't create (or upload) a new cert that's
+                # already revoked. I don't know why you'd want to do that,
+                # but if it turns out to be useful, we may need to call
+                # certificateauthority.create() followed by
+                # certificateauthority.update(revoked=true)
+
+                if certificate is not None:
+                    arg['certificate'] = certificate
+
+                if private_key is not None:
+                    arg['privatekey'] = private_key
+
+                if passphrase is not None:
+                    arg['passphrase'] = passphrase
+
+                if module.check_mode:
+                    result['msg'] = f"Would have created CA certificate {name} with {arg}"
+                else:
+                    #
+                    # Install new CA cert
+                    #
+                    try:
+                        # XXX - For some reason, on TrueNAS SCALE, this
+                        # fails if 'privatekey' is passed in. I'm pretty
+                        # sure that somewhere, there's a limit of 4096 as
+                        # the max length of a 'midclt' request.
+                        #
+                        # I thought of getting around this by calling
+                        # certificateauthority.create to submit the cert,
+                        # followed by certificateauthority.update to add
+                        # the private key and any other arguments, but
+                        # .update only allows us to change the name and
+                        # revokedness, not update a key.
+                        err = mw.call("certificateauthority.create", arg)
+                        result['msg'] = err
+                    except Exception as e:
+                        result['failed_invocation'] = arg
+                        module.fail_json(msg=f"Error creating CA certificate {name}: {e}")
+
+                    # Return whichever interesting bits certificateauthority.create()
+                    # returned.
+                    result['ca_cert'] = err
+
+                if revoked is not None and revoked:
+                    # XXX - To revoke a CA, need its private key. Add this
+                    # to requirements.
+                    if module.check_mode:
+                        result['msg'] += f"Would mark CA {name} as revoked."
+                    else:
+                        arg2 = {
+                            "revoked": revoked,
+                        }
+
+                        try:
+                            err2 = mw.call("certificateauthority.update", err['id'], arg2)
+                        except Exception as e:
+                            module.fail_json(msg=f"Error revoking CA certificate {name}: {e}")
+                            # XXX - Do we need to roll back the CA creation? Can we?
+
+                result['changed'] = True
+            else:
+                # The CA cert is not supposed to exist.
+                # All is well
+                result['changed'] = False
+
+        else:
+            # CA exists
+            if state == 'present':
+                # This CA is supposed to exist
+
+                # Make list of differences between what is and what should
+                # be.
+
+                # Only the name and 'revoked' can be changed. And since
+                # this module uses 'name' as an identifier, the name can't
+                # be changed, either.
+                arg = {}
+
+                if revoked is not None and ca_cert_info['revoked'] != revoked:
+                    # You can revoke a cert, but you can't un-revoke it.
+                    #
+                    # As of this writing, SCALE 25.04 will fail if you try
+                    # to un-revoke a cert, while CORE 13.0 will silently
+                    # do nothing.
+                    arg['revoked'] = revoked
+
+                # If there are any changes, certificateauthority.update()
+                if len(arg) == 0:
+                    # No changes
+                    result['changed'] = False
+                else:
+                    #
+                    # Update the CA.
+                    #
+                    if module.check_mode:
+                        result['msg'] = f"Would have updated CA cert {name}: {arg}"
+                    else:
+                        try:
+                            err = mw.call("certificateauthority.update",
+                                          ca_cert_info['id'],
+                                          arg)
+                        except Exception as e:
+                            module.fail_json(msg=f"Error updating CA cert {name} ({ca_cert_info['id']}) with {arg}: {e}")
+                            # Return any interesting bits from err
+                            result['status'] = err['status']
+                    result['changed'] = True
+            else:
+                # CA is not supposed to exist
+
+                if module.check_mode:
+                    result['msg'] = f"Would have deleted CA {name}"
+                else:
+                    try:
+                        #
+                        # Delete CA.
+                        #
+                        err = mw.call("certificateauthority.delete",
+                                      ca_cert_info['id'])
+                    except Exception as e:
+                        module.fail_json(msg=f"Error deleting CA cert {name}: {e}")
+                result['changed'] = True
+
+        module.exit_json(**result)
+
+class CA2:
+    """Class to implement version 1 of the certificate_authority module,
+    on TrueNAS SCALE >= 25.10."""
+
+    # XXX - Refactor
+    def run():
+        global argument_spec, required_if, mutually_exclusive
+
+        module = AnsibleModule(
+            argument_spec=argument_spec,
+            supports_check_mode=True,
+
+            # If we're creating/uploading a CA, need to give either the CA
+            # cert, or a path to it, but not both.
+            required_if=required_if,
+            mutually_exclusive=mutually_exclusive,
+        )
+
+        result = dict(
+            changed=False,
+            msg=''
+        )
+
+        mw = MW.client()
+
+        # Assign variables from properties, for convenience
+        name = module.params['name']
+        state = module.params['state']
+        # src = module.params['src']
+        certificate = module.params['certificate']
+        # private_keyfile = module.params['private_keyfile']
+        private_key = module.params['private_key']
+        passphrase = module.params['passphrase']
+        revoked = module.params['revoked']
+
+        # Look up the CA cert
+        try:
+            # XXX - midclt call certificateauthority.query
+            # does not exist in SCALE 25.10
+            #
+            # It looks as though in SCALE 25.10, CAs are just a type of
+            # cert. certificate.create() takes a parameter,
+            # cert_extensions.BasicConstraints.ca == true
+            # to indicate that this is a CA.
+            # certificate.query() includes 'cert_type_CA = <bool>'.
+            # I don't see anything in certificate.update() that suggests
+            # that CA-ness can be changed after the fact.
+            ca_cert_info = mw.call("certificateauthority.query",
+                                   [["name", "=", name]])
+            if len(ca_cert_info) == 0:
+                # No such CA cert
+                ca_cert_info = None
+            else:
+                # CA cert exists
+                ca_cert_info = ca_cert_info[0]
+        except Exception as e:
+            module.fail_json(msg=f"Error looking up CA cert {name}: {e}")
+
+        # First, check whether the CA cert even exists.
+        if ca_cert_info is None:
+            # CA cert doesn't exist
+
+            if state == 'present':
+                # CA cert is supposed to exist, so create it.
+
+                # Collect arguments to pass to certificateauthority.create()
+                arg = {
+                    "name": name,
+                    "create_type": "CA_CREATE_IMPORTED",
+                }
+
+                # AFAIK you can't create (or upload) a new cert that's
+                # already revoked. I don't know why you'd want to do that,
+                # but if it turns out to be useful, we may need to call
+                # certificateauthority.create() followed by
+                # certificateauthority.update(revoked=true)
+
+                if certificate is not None:
+                    arg['certificate'] = certificate
+
+                if private_key is not None:
+                    arg['privatekey'] = private_key
+
+                if passphrase is not None:
+                    arg['passphrase'] = passphrase
+
+                if module.check_mode:
+                    result['msg'] = f"Would have created CA certificate {name} with {arg}"
+                else:
+                    #
+                    # Install new CA cert
+                    #
+                    try:
+                        # XXX - For some reason, on TrueNAS SCALE, this
+                        # fails if 'privatekey' is passed in. I'm pretty
+                        # sure that somewhere, there's a limit of 4096 as
+                        # the max length of a 'midclt' request.
+                        #
+                        # I thought of getting around this by calling
+                        # certificateauthority.create to submit the cert,
+                        # followed by certificateauthority.update to add
+                        # the private key and any other arguments, but
+                        # .update only allows us to change the name and
+                        # revokedness, not update a key.
+                        err = mw.call("certificateauthority.create", arg)
+                        result['msg'] = err
+                    except Exception as e:
+                        result['failed_invocation'] = arg
+                        module.fail_json(msg=f"Error creating CA certificate {name}: {e}")
+
+                    # Return whichever interesting bits certificateauthority.create()
+                    # returned.
+                    result['ca_cert'] = err
+
+                if revoked is not None and revoked:
+                    # XXX - To revoke a CA, need its private key. Add this
+                    # to requirements.
+                    if module.check_mode:
+                        result['msg'] += f"Would mark CA {name} as revoked."
+                    else:
+                        arg2 = {
+                            "revoked": revoked,
+                        }
+
+                        try:
+                            err2 = mw.call("certificateauthority.update", err['id'], arg2)
+                        except Exception as e:
+                            module.fail_json(msg=f"Error revoking CA certificate {name}: {e}")
+                            # XXX - Do we need to roll back the CA creation? Can we?
+
+                result['changed'] = True
+            else:
+                # The CA cert is not supposed to exist.
+                # All is well
+                result['changed'] = False
+
+        else:
+            # CA exists
+            if state == 'present':
+                # This CA is supposed to exist
+
+                # Make list of differences between what is and what should
+                # be.
+
+                # Only the name and 'revoked' can be changed. And since
+                # this module uses 'name' as an identifier, the name can't
+                # be changed, either.
+                arg = {}
+
+                if revoked is not None and ca_cert_info['revoked'] != revoked:
+                    # You can revoke a cert, but you can't un-revoke it.
+                    #
+                    # As of this writing, SCALE 25.04 will fail if you try
+                    # to un-revoke a cert, while CORE 13.0 will silently
+                    # do nothing.
+                    arg['revoked'] = revoked
+
+                # If there are any changes, certificateauthority.update()
+                if len(arg) == 0:
+                    # No changes
+                    result['changed'] = False
+                else:
+                    #
+                    # Update the CA.
+                    #
+                    if module.check_mode:
+                        result['msg'] = f"Would have updated CA cert {name}: {arg}"
+                    else:
+                        try:
+                            err = mw.call("certificateauthority.update",
+                                          ca_cert_info['id'],
+                                          arg)
+                        except Exception as e:
+                            module.fail_json(msg=f"Error updating CA cert {name} ({ca_cert_info['id']}) with {arg}: {e}")
+                            # Return any interesting bits from err
+                            result['status'] = err['status']
+                    result['changed'] = True
+            else:
+                # CA is not supposed to exist
+
+                if module.check_mode:
+                    result['msg'] = f"Would have deleted CA {name}"
+                else:
+                    try:
+                        #
+                        # Delete CA.
+                        #
+                        err = mw.call("certificateauthority.delete",
+                                      ca_cert_info['id'])
+                    except Exception as e:
+                        module.fail_json(msg=f"Error deleting CA cert {name}: {e}")
+                result['changed'] = True
+
+        module.exit_json(**result)
 
 def main():
-    global argument_spec, required_if, mutually_exclusive
-
-    module = AnsibleModule(
-        argument_spec=argument_spec,
-        supports_check_mode=True,
-
-        # If we're creating/uploading a CA, need to give either the CA
-        # cert, or a path to it, but not both.
-        required_if=required_if,
-        mutually_exclusive=mutually_exclusive,
-    )
-
-    result = dict(
-        changed=False,
-        msg=''
-    )
-
-    mw = MW.client()
-
-    # Assign variables from properties, for convenience
-    name = module.params['name']
-    state = module.params['state']
-    # src = module.params['src']
-    certificate = module.params['certificate']
-    # private_keyfile = module.params['private_keyfile']
-    private_key = module.params['private_key']
-    passphrase = module.params['passphrase']
-    revoked = module.params['revoked']
-
-    # Look up the CA cert
+    # Figure out which version of TrueNAS we're running, and thus how
+    # to call middlewared.
     try:
-        ca_cert_info = mw.call("certificateauthority.query",
-                               [["name", "=", name]])
-        if len(ca_cert_info) == 0:
-            # No such CA cert
-            ca_cert_info = None
-        else:
-            # CA cert exists
-            ca_cert_info = ca_cert_info[0]
+        tn_version = setup.get_tn_version()
     except Exception as e:
-        module.fail_json(msg=f"Error looking up CA cert {name}: {e}")
+        # Normally we'd module.exit_json(), but we don't have a module yet.
+        print(f'{{"failed":true, "msg": "Error getting TrueNAS version: {e}"}}')
+        sys.exit(1)
 
-    # First, check whether the CA cert even exists.
-    if ca_cert_info is None:
-        # CA cert doesn't exist
+    # Call the appropriate function to handle this.
 
-        if state == 'present':
-            # CA cert is supposed to exist, so create it.
-
-            # Collect arguments to pass to certificateauthority.create()
-            arg = {
-                "name": name,
-                "create_type": "CA_CREATE_IMPORTED",
-            }
-
-            # AFAIK you can't create (or upload) a new cert that's
-            # already revoked. I don't know why you'd want to do that,
-            # but if it turns out to be useful, we may need to call
-            # certificateauthority.create() followed by
-            # certificateauthority.update(revoked=true)
-
-            if certificate is not None:
-                arg['certificate'] = certificate
-
-            if private_key is not None:
-                arg['privatekey'] = private_key
-
-            if passphrase is not None:
-                arg['passphrase'] = passphrase
-
-            if module.check_mode:
-                result['msg'] = f"Would have created CA certificate {name} with {arg}"
-            else:
-                #
-                # Install new CA cert
-                #
-                try:
-                    # XXX - For some reason, on TrueNAS SCALE, this
-                    # fails if 'privatekey' is passed in. I'm pretty
-                    # sure that somewhere, there's a limit of 4096 as
-                    # the max length of a 'midclt' request.
-                    #
-                    # I thought of getting around this by calling
-                    # certificateauthority.create to submit the cert,
-                    # followed by certificateauthority.update to add
-                    # the private key and any other arguments, but
-                    # .update only allows us to change the name and
-                    # revokedness, not update a key.
-                    err = mw.call("certificateauthority.create", arg)
-                    result['msg'] = err
-                except Exception as e:
-                    result['failed_invocation'] = arg
-                    module.fail_json(msg=f"Error creating CA certificate {name}: {e}")
-
-                # Return whichever interesting bits certificateauthority.create()
-                # returned.
-                result['ca_cert'] = err
-
-            if revoked is not None and revoked:
-                # XXX - To revoke a CA, need its private key. Add this
-                # to requirements.
-                if module.check_mode:
-                    result['msg'] += f"Would mark CA {name} as revoked."
-                else:
-                    arg2 = {
-                        "revoked": revoked,
-                    }
-
-                    try:
-                        err2 = mw.call("certificateauthority.update", err['id'], arg2)
-                    except Exception as e:
-                        module.fail_json(msg=f"Error revoking CA certificate {name}: {e}")
-                        # XXX - Do we need to roll back the CA creation? Can we?
-
-            result['changed'] = True
-        else:
-            # The CA cert is not supposed to exist.
-            # All is well
-            result['changed'] = False
-
+    # In TrueNAS SCALE 25.10, 'certificateauthority' was rolled into
+    # 'certificate'.
+    TC_25_10 = version.parse("25.10")
+    if tn_version['name'] == "TrueNAS" and \
+       tn_version['type'] in {"SCALE", "COMMUNITY_EDITION"} and \
+       tn_version['version'] >= TC_25_10:
+        return CA2.run()
     else:
-        # CA exists
-        if state == 'present':
-            # This CA is supposed to exist
-
-            # Make list of differences between what is and what should
-            # be.
-
-            # Only the name and 'revoked' can be changed. And since
-            # this module uses 'name' as an identifier, the name can't
-            # be changed, either.
-            arg = {}
-
-            if revoked is not None and ca_cert_info['revoked'] != revoked:
-                # You can revoke a cert, but you can't un-revoke it.
-                #
-                # As of this writing, SCALE 25.04 will fail if you try
-                # to un-revoke a cert, while CORE 13.0 will silently
-                # do nothing.
-                arg['revoked'] = revoked
-
-            # If there are any changes, certificateauthority.update()
-            if len(arg) == 0:
-                # No changes
-                result['changed'] = False
-            else:
-                #
-                # Update the CA.
-                #
-                if module.check_mode:
-                    result['msg'] = f"Would have updated CA cert {name}: {arg}"
-                else:
-                    try:
-                        err = mw.call("certificateauthority.update",
-                                      ca_cert_info['id'],
-                                      arg)
-                    except Exception as e:
-                        module.fail_json(msg=f"Error updating CA cert {name} ({ca_cert_info['id']}) with {arg}: {e}")
-                        # Return any interesting bits from err
-                        result['status'] = err['status']
-                result['changed'] = True
-        else:
-            # CA is not supposed to exist
-
-            if module.check_mode:
-                result['msg'] = f"Would have deleted CA {name}"
-            else:
-                try:
-                    #
-                    # Delete CA.
-                    #
-                    err = mw.call("certificateauthority.delete",
-                                  ca_cert_info['id'])
-                except Exception as e:
-                    module.fail_json(msg=f"Error deleting CA cert {name}: {e}")
-            result['changed'] = True
-
-    module.exit_json(**result)
-
+        return CA1.run()
 
 # Main
 if __name__ == "__main__":
