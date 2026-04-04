@@ -140,6 +140,8 @@ ca_cert:
 
 from ansible.module_utils.basic import AnsibleModule
 from ..module_utils.middleware import MiddleWare as MW
+from ..module_utils import setup
+from packaging import version
 
 # Put this at file scope so that the action module can slurp this in
 # and validate arguments.
@@ -167,7 +169,7 @@ class CA:
     """Class to implement version 1 of the certificate_authority module,
     on TrueNAS CORE and SCALE <= 25.04."""
 
-    def __init__():
+    def __init__(self):
         """Common initialization: handle module arguments before
         control gets handed to one of the run*() methods."""
         global argument_spec, required_if, mutually_exclusive
@@ -189,7 +191,7 @@ class CA:
 
         self.mw = MW.client()
 
-    def run1():
+    def run1(self):
         # Assign variables from properties, for convenience
         name = self.module.params['name']
         state = self.module.params['state']
@@ -269,7 +271,7 @@ class CA:
                         # the private key and any other arguments, but
                         # .update only allows us to change the name and
                         # revokedness, not update a key.
-                        err = mw.call("certificateauthority.create", arg)
+                        err = self.mw.call("certificateauthority.create", arg)
                         self.result['msg'] = err
                     except Exception as e:
                         self.result['failed_invocation'] = arg
@@ -290,7 +292,7 @@ class CA:
                         }
 
                         try:
-                            err2 = mw.call("certificateauthority.update", err['id'], arg2)
+                            err2 = self.mw.call("certificateauthority.update", err['id'], arg2)
                         except Exception as e:
                             self.module.fail_json(msg=f"Error revoking CA certificate {name}: {e}")
                             # XXX - Do we need to roll back the CA creation? Can we?
@@ -334,7 +336,7 @@ class CA:
                         self.result['msg'] = f"Would have updated CA cert {name}: {arg}"
                     else:
                         try:
-                            err = mw.call("certificateauthority.update",
+                            err = self.mw.call("certificateauthority.update",
                                           ca_cert_info['id'],
                                           arg)
                         except Exception as e:
@@ -352,7 +354,7 @@ class CA:
                         #
                         # Delete CA.
                         #
-                        err = mw.call("certificateauthority.delete",
+                        err = self.mw.call("certificateauthority.delete",
                                       ca_cert_info['id'])
                     except Exception as e:
                         self.module.fail_json(msg=f"Error deleting CA cert {name}: {e}")
@@ -360,7 +362,7 @@ class CA:
 
         self.module.exit_json(**self.result)
 
-    def run_25_10():
+    def run_25_10(self):
         """Run on SCALE 25.10 or above: certificateauthority has been
         rolled into certificate."""
 
@@ -385,7 +387,7 @@ class CA:
             # certificate.query() includes 'cert_type_CA = <bool>'.
             # I don't see anything in certificate.update() that suggests
             # that CA-ness can be changed after the fact.
-            ca_cert_info = mw.call("certificateauthority.query",
+            ca_cert_info = self.mw.call("certificate.query",
                                    [["name", "=", name],
                                     ["cert_type_CA", "=", True]])
             if len(ca_cert_info) == 0:
@@ -404,7 +406,7 @@ class CA:
             if state == 'present':
                 # CA cert is supposed to exist, so create it.
 
-                # Collect arguments to pass to certificateauthority.create()
+                # Collect arguments to pass to certificate.create()
                 arg = {
                     "name": name,
                     "create_type": "CA_CREATE_IMPORTED",
@@ -413,8 +415,8 @@ class CA:
                 # AFAIK you can't create (or upload) a new cert that's
                 # already revoked. I don't know why you'd want to do that,
                 # but if it turns out to be useful, we may need to call
-                # certificateauthority.create() followed by
-                # certificateauthority.update(revoked=true)
+                # certificate.create() followed by
+                # certificate.update(revoked=true)
 
                 if certificate is not None:
                     arg['certificate'] = certificate
@@ -438,18 +440,18 @@ class CA:
                         # the max length of a 'midclt' request.
                         #
                         # I thought of getting around this by calling
-                        # certificateauthority.create to submit the cert,
-                        # followed by certificateauthority.update to add
+                        # certificate.create to submit the cert,
+                        # followed by certificate.update to add
                         # the private key and any other arguments, but
                         # .update only allows us to change the name and
                         # revokedness, not update a key.
-                        err = mw.call("certificateauthority.create", arg)
+                        err = self.mw.call("certificate.create", arg)
                         self.result['msg'] = err
                     except Exception as e:
                         self.result['failed_invocation'] = arg
                         self.module.fail_json(msg=f"Error creating CA certificate {name}: {e}")
 
-                    # Return whichever interesting bits certificateauthority.create()
+                    # Return whichever interesting bits certificate.create()
                     # returned.
                     self.result['ca_cert'] = err
 
@@ -464,7 +466,7 @@ class CA:
                         }
 
                         try:
-                            err2 = mw.call("certificateauthority.update", err['id'], arg2)
+                            err2 = self.mw.call("certificate.update", err['id'], arg2)
                         except Exception as e:
                             self.module.fail_json(msg=f"Error revoking CA certificate {name}: {e}")
                             # XXX - Do we need to roll back the CA creation? Can we?
@@ -496,7 +498,7 @@ class CA:
                     # do nothing.
                     arg['revoked'] = revoked
 
-                # If there are any changes, certificateauthority.update()
+                # If there are any changes, certificate.update()
                 if len(arg) == 0:
                     # No changes
                     self.result['changed'] = False
@@ -508,7 +510,7 @@ class CA:
                         self.result['msg'] = f"Would have updated CA cert {name}: {arg}"
                     else:
                         try:
-                            err = mw.call("certificateauthority.update",
+                            err = self.mw.call("certificate.update",
                                           ca_cert_info['id'],
                                           arg)
                         except Exception as e:
@@ -526,7 +528,7 @@ class CA:
                         #
                         # Delete CA.
                         #
-                        err = mw.call("certificateauthority.delete",
+                        err = self.mw.call("certificate.delete",
                                       ca_cert_info['id'])
                     except Exception as e:
                         self.module.fail_json(msg=f"Error deleting CA cert {name}: {e}")
@@ -534,27 +536,27 @@ class CA:
 
         self.module.exit_json(**self.result)
 
-        def run():
-            # Figure out which version of TrueNAS we're running, and thus how
-            # to call middlewared.
-            try:
-                tn_version = setup.get_tn_version()
-            except Exception as e:
-                # Normally we'd module.exit_json(), but we don't have a module yet.
-                print(f'{{"failed":true, "msg": "Error getting TrueNAS version: {e}"}}')
-                sys.exit(1)
+    def run(self):
+        # Figure out which version of TrueNAS we're running, and thus how
+        # to call middlewared.
+        try:
+            tn_version = setup.get_tn_version()
+        except Exception as e:
+            # Normally we'd module.exit_json(), but we don't have a module yet.
+            print(f'{{"failed":true, "msg": "Error getting TrueNAS version: {e}"}}')
+            sys.exit(1)
 
-            # Call the appropriate function to handle this.
+        # Call the appropriate function to handle this.
 
-            # In TrueNAS SCALE 25.10, 'certificateauthority' was rolled into
-            # 'certificate'.
-            TC_25_10 = version.parse("25.10")
-            if tn_version['name'] == "TrueNAS" and \
-               tn_version['type'] in {"SCALE", "COMMUNITY_EDITION"} and \
-               tn_version['version'] >= TC_25_10:
-                return self.run_25_10()
-            else:
-                return self.run1()
+        # In TrueNAS SCALE 25.10, 'certificateauthority' was rolled into
+        # 'certificate'.
+        TC_25_10 = version.parse("25.10")
+        if tn_version['name'] == "TrueNAS" and \
+           tn_version['type'] in {"SCALE", "COMMUNITY_EDITION"} and \
+           tn_version['version'] >= TC_25_10:
+            return self.run_25_10()
+        else:
+            return self.run1()
 
 
 def main():
