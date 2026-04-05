@@ -87,3 +87,9 @@ So to update the online documentation:
 1. `make update-doc-site`
 2. `cd docs-site`
 3. `git add .; git checkin -m "Documentation update"; git push`
+
+## References
+
+- [TrueNAS API reference](https://api.truenas.com/)
+  - [v25.10](https://api.truenas.com/v25.10/)
+  - [v25.04](https://api.truenas.com/v25.04/)
