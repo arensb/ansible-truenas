@@ -344,8 +344,8 @@ class CA:
                                           arg)
                         except Exception as e:
                             self.module.fail_json(msg=f"Error updating CA cert {name} ({ca_cert_info['id']}) with {arg}: {e}")
-                            # Return any interesting bits from err
-                            self.result['status'] = err['status']
+                        # Return any interesting bits from err
+                        self.result['status'] = err
                     self.result['changed'] = True
             else:
                 # CA is not supposed to exist
@@ -361,6 +361,8 @@ class CA:
                                       ca_cert_info['id'])
                     except Exception as e:
                         self.module.fail_json(msg=f"Error deleting CA cert {name}: {e}")
+                    # Return any interesting bits from err
+                    self.result['status'] = err
                 self.result['changed'] = True
 
         self.module.exit_json(**self.result)
@@ -495,6 +497,8 @@ class CA:
                                       ca_cert_info['id'])
                     except Exception as e:
                         self.module.fail_json(msg=f"Error deleting CA cert {name}: {e}")
+                    # Return any interesting bits from err
+                    self.result['status'] = err
                 self.result['changed'] = True
 
         self.module.exit_json(**self.result)
