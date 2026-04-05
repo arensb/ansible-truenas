@@ -54,6 +54,7 @@ options:
     description:
       - "'present': Ensure that the CA cert is installed."
       - "'absent': Ensure that the CA cert is absent. Revoke it if necessary."
+      - "On SCALE 25.10 and above, certificates cannot be revoked."
     type: str
     choices: [ absent, present ]
     default: present
@@ -65,6 +66,8 @@ options:
       - Only CAs with a private key can be revoked.
       - Note that once revoked, a CA cannot be restored. This module
         can try to un-revoke a CA, but it will fail.
+      - On SCALE 25.10 and above, certificates cannot be revoked.
+        This option does nothing.
     type: bool
     default: false
 notes:
@@ -409,14 +412,16 @@ class CA:
                 # Collect arguments to pass to certificate.create()
                 arg = {
                     "name": name,
-                    "create_type": "CA_CREATE_IMPORTED",
+                    "create_type": "CERTIFICATE_CREATE_IMPORTED",
+                    "cert_extensions": {
+                        "BasicConstraints": {
+                            "ca": True,
+                        },
+                    },
                 }
 
                 # AFAIK you can't create (or upload) a new cert that's
-                # already revoked. I don't know why you'd want to do that,
-                # but if it turns out to be useful, we may need to call
-                # certificate.create() followed by
-                # certificate.update(revoked=true)
+                # already revoked. I don't know why you'd want to do that.
 
                 if certificate is not None:
                     arg['certificate'] = certificate
@@ -445,7 +450,7 @@ class CA:
                         # the private key and any other arguments, but
                         # .update only allows us to change the name and
                         # revokedness, not update a key.
-                        err = self.mw.call("certificate.create", arg)
+                        err = self.mw.job("certificate.create", arg)
                         self.result['msg'] = err
                     except Exception as e:
                         self.result['failed_invocation'] = arg
@@ -454,22 +459,6 @@ class CA:
                     # Return whichever interesting bits certificate.create()
                     # returned.
                     self.result['ca_cert'] = err
-
-                if revoked is not None and revoked:
-                    # XXX - To revoke a CA, need its private key. Add this
-                    # to requirements.
-                    if self.module.check_mode:
-                        self.result['msg'] += f"Would mark CA {name} as revoked."
-                    else:
-                        arg2 = {
-                            "revoked": revoked,
-                        }
-
-                        try:
-                            err2 = self.mw.call("certificate.update", err['id'], arg2)
-                        except Exception as e:
-                            self.module.fail_json(msg=f"Error revoking CA certificate {name}: {e}")
-                            # XXX - Do we need to roll back the CA creation? Can we?
 
                 self.result['changed'] = True
             else:
@@ -485,39 +474,13 @@ class CA:
                 # Make list of differences between what is and what should
                 # be.
 
-                # Only the name and 'revoked' can be changed. And since
-                # this self.module uses 'name' as an identifier, the name can't
-                # be changed, either.
-                arg = {}
+                # Only the name can be changed. And since this
+                # self.module uses 'name' as an identifier, the name
+                # can't be changed, either.
 
-                if revoked is not None and ca_cert_info['revoked'] != revoked:
-                    # You can revoke a cert, but you can't un-revoke it.
-                    #
-                    # As of this writing, SCALE 25.04 will fail if you try
-                    # to un-revoke a cert, while CORE 13.0 will silently
-                    # do nothing.
-                    arg['revoked'] = revoked
+                # No changes
+                self.result['changed'] = False
 
-                # If there are any changes, certificate.update()
-                if len(arg) == 0:
-                    # No changes
-                    self.result['changed'] = False
-                else:
-                    #
-                    # Update the CA.
-                    #
-                    if self.module.check_mode:
-                        self.result['msg'] = f"Would have updated CA cert {name}: {arg}"
-                    else:
-                        try:
-                            err = self.mw.call("certificate.update",
-                                          ca_cert_info['id'],
-                                          arg)
-                        except Exception as e:
-                            self.module.fail_json(msg=f"Error updating CA cert {name} ({ca_cert_info['id']}) with {arg}: {e}")
-                            # Return any interesting bits from err
-                            self.result['status'] = err['status']
-                    self.result['changed'] = True
             else:
                 # CA is not supposed to exist
 
@@ -528,7 +491,7 @@ class CA:
                         #
                         # Delete CA.
                         #
-                        err = self.mw.call("certificate.delete",
+                        err = self.mw.job("certificate.delete",
                                       ca_cert_info['id'])
                     except Exception as e:
                         self.module.fail_json(msg=f"Error deleting CA cert {name}: {e}")
