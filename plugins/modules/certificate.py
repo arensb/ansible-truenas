@@ -131,6 +131,8 @@ certificate:
 
 from ansible.module_utils.basic import AnsibleModule
 from ..module_utils.middleware import MiddleWare as MW
+from ..module_utils import setup
+from packaging import version
 
 argument_spec=dict(
     name=dict(type='str', required=True),
@@ -140,6 +142,7 @@ argument_spec=dict(
     certificate=dict(type='str'),
     private_keyfile=dict(type='path'),
     private_key=dict(type='str'),
+    passphrase=dict(type='str'),
     revoked=dict(type='bool', default=False),
 )
 required_if = [
@@ -149,164 +152,317 @@ mutually_exclusive = [
     ('src', 'certificate'),
     ('private_keyfile', 'private_key'),
 ]
-def main():
-    global argument_spec
 
-    module = AnsibleModule(
-        argument_spec=argument_spec,
-        supports_check_mode=True,
-        required_if=required_if,
-        mutually_exclusive=mutually_exclusive,
-    )
+class Cert:
+    """Class to implement the certificate module, with support for
+    multiple API versions."""
 
-    result = dict(
-        changed=False,
-        msg=''
-    )
+    def __init__(self):
+        """Common initialization: handle module arguments before
+        control gets handed to one of the run*() methods."""
+        global argument_spec, required_if, mutually_exclusive
 
-    mw = MW.client()
+        self.module = AnsibleModule(
+            argument_spec=argument_spec,
+            supports_check_mode=True,
+            required_if=required_if,
+            mutually_exclusive=mutually_exclusive,
+        )
 
-    # Assign variables from properties, for convenience
-    name = module.params['name']
-    state = module.params['state']
-    certificate = module.params['certificate']
-    private_key = module.params['private_key']
-    revoked = module.params['revoked']
+        self.result = dict(
+            changed=False,
+            msg=''
+        )
 
-    # Look up the certificate
-    try:
-        cert_info = mw.call("certificate.query",
-                                [["name", "=", name]])
-        if len(cert_info) == 0:
-            # No such cert
-            cert_info = None
+        self.mw = MW.client()
+
+    def run1(self):
+        # Assign variables from properties, for convenience
+        name = self.module.params['name']
+        state = self.module.params['state']
+        certificate = self.module.params['certificate']
+        private_key = self.module.params['private_key']
+        passphrase = self.module.params['passphrase']
+        revoked = self.module.params['revoked']
+
+        # Look up the certificate
+        try:
+            cert_info = self.mw.call("certificate.query",
+                                    [["name", "=", name]])
+            if len(cert_info) == 0:
+                # No such cert
+                cert_info = None
+            else:
+                # Cert exists
+                cert_info = cert_info[0]
+        except Exception as e:
+            self.module.fail_json(msg=f"Error looking up certificate {name}: {e}")
+
+        # First, check whether the certificate even exists.
+        if cert_info is None:
+            # Cert doesn't exist
+
+            if state == 'present':
+                # Cert is supposed to exist, so create it.
+
+                # Collect arguments to pass to certificate.create()
+                arg = {
+                    "name": name,
+                    "create_type": "CERTIFICATE_CREATE_IMPORTED",
+                }
+
+                # When importing a key, 'certificate' and 'private_key'
+                # are required.
+                if certificate is not None:
+                    arg['certificate'] = certificate
+
+                if private_key is not None:
+                    arg['privatekey'] = private_key
+
+                if passphrase is not None:
+                    arg['passphrase'] = passphrase
+
+                if self.module.check_mode:
+                    self.result['msg'] = f"Would have created certificate {name} with {arg}"
+                else:
+                    #
+                    # Create new cert
+                    #
+                    try:
+                        # Note that this is a job, not a regular call.
+                        err = self.mw.job("certificate.create", arg)
+                        self.result['certificate'] = err
+                    except Exception as e:
+                        self.result['failed_invocation'] = arg
+                        self.module.fail_json(msg=f"Error creating certificate {name}: {e}")
+
+                    # Return whichever interesting bits certificate.create()
+                    # returned.
+                    self.result['certificate'] = err
+
+                if revoked is not None and revoked:
+                    # XXX - To revoke a cert, need its private key. Add
+                    # this to requirements.
+
+                    # XXX - Under SCALE 25.10, it looks as though you can't revoke a cert.
+                    # You can only change its name.
+                    if self.module.check_mode:
+                        self.result['msg'] += f"\nWould mark certificate {name} as revoked."
+                    else:
+                        arg2 = {
+                            "revoked": revoked,
+                        }
+
+                        try:
+                            err2 = self.mw.call("certificate.update", err['id'], arg2)
+                            # This overwrites the earlier result[certificate].
+                            self.result['certificate'] = err2
+                        except Exception as e:
+                            self.module.fail_json(msg=f"Error revoking certificate {name}: {e}")
+                            # XXX - Do we need to roll back the cert creation? Can we?
+
+                self.result['changed'] = True
+            else:
+                # Cert is not supposed to exist.
+                # All is well
+                self.result['changed'] = False
+
         else:
             # Cert exists
-            cert_info = cert_info[0]
-    except Exception as e:
-        module.fail_json(msg=f"Error looking up certificate {name}: {e}")
+            if state == 'present':
+                # Cert is supposed to exist
 
-    # First, check whether the certificate even exists.
-    if cert_info is None:
-        # Cert doesn't exist
-
-        if state == 'present':
-            # Cert is supposed to exist, so create it.
-
-            # Collect arguments to pass to certificate.create()
-            arg = {
-                "name": name,
-                "create_type": "CERTIFICATE_CREATE_IMPORTED",
-            }
-
-            # When importing a key, 'certificate' and 'private_key'
-            # are required.
-            if certificate is not None:
-                arg['certificate'] = certificate
-
-            if private_key is not None:
-                arg['privatekey'] = private_key
-
-            if module.check_mode:
-                result['msg'] = f"Would have created certificate {name} with {arg}"
-            else:
+                # Make list of differences between what is and what should
+                # be.
                 #
-                # Create new cert
-                #
-                try:
-                    # Note that this is a job, not a regular call.
-                    err = mw.job("certificate.create", arg)
-                    result['certificate'] = err
-                except Exception as e:
-                    result['failed_invocation'] = arg
-                    module.fail_json(msg=f"Error creating certificate {name}: {e}")
+                # Note that certificate.update() can only change 'name'
+                # and 'revoked'. And since we use 'name' as an identifier
+                arg = {}
 
-                # Return whichever interesting bits certificate.create()
-                # returned.
-                result['certificate'] = err
+                if revoked is not None and cert_info['revoked'] != revoked:
+                    # XXX - You can revoke a cert, but you can't un-revoke it.
+                    arg['revoked'] = revoked
 
-            if revoked is not None and revoked:
-                # XXX - To revoke a cert, need its private key. Add
-                # this to requirements.
-                if module.check_mode:
-                    result['msg'] += f"\nWould mark certificate {name} as revoked."
+                # If there are any changes, certificate.update()
+                if len(arg) == 0:
+                    # No changes
+                    self.result['changed'] = False
                 else:
-                    arg2 = {
-                        "revoked": revoked,
-                    }
-
-                    try:
-                        err2 = mw.call("certificate.update", err['id'], arg2)
-                        # This overwrites the earlier result[certificate].
-                        result['certificate'] = err2
-                    except Exception as e:
-                        module.fail_json(msg=f"Error revoking certificate {name}: {e}")
-                        # XXX - Do we need to roll back the cert creation? Can we?
-
-            result['changed'] = True
-        else:
-            # Cert is not supposed to exist.
-            # All is well
-            result['changed'] = False
-
-    else:
-        # Cert exists
-        if state == 'present':
-            # Cert is supposed to exist
-
-            # Make list of differences between what is and what should
-            # be.
-            #
-            # Note that certificate.update() can only change 'name'
-            # and 'revoked'. And since we use 'name' as an identifier
-            arg = {}
-
-            if revoked is not None and cert_info['revoked'] != revoked:
-                # XXX - You can revoke a cert, but you can't un-revoke it.
-                arg['revoked'] = revoked
-
-            # If there are any changes, certificate.update()
-            if len(arg) == 0:
-                # No changes
-                result['changed'] = False
-            else:
-                #
-                # Update certificate.
-                #
-                if module.check_mode:
-                    result['msg'] = f"Would have updated certificate {name}: {arg}"
-                else:
-                    try:
-                        err = mw.call("certificate.update",
-                                      cert_info['id'],
-                                      arg)
-                        # certificate.update
-                        result['status'] = err
-                    except Exception as e:
-                        module.fail_json(msg=f"Error updating certificate {name} with {arg}: {e}")
+                    #
+                    # Update certificate.
+                    #
+                    if self.module.check_mode:
+                        self.result['msg'] = f"Would have updated certificate {name}: {arg}"
+                    else:
+                        try:
+                            err = self.mw.job("certificate.update",
+                                          cert_info['id'],
+                                          arg)
+                            # certificate.update
+                            self.result['status'] = err
+                        except Exception as e:
+                            self.module.fail_json(msg=f"Error updating certificate {name} with {arg}: {e}")
                         # Return any interesting bits from err
-                        result['status'] = err['status']
-                result['changed'] = True
-        else:
-            # Cert is not supposed to exist
-
-            # XXX - "force" option?
-
-            if module.check_mode:
-                result['msg'] = f"Would have deleted certificate {name}"
+                        self.result['status'] = err['status']
+                    self.result['changed'] = True
             else:
-                try:
-                    #
-                    # Delete certificate.
-                    #
-                    err = mw.job("certificate.delete",
-                                 cert_info['id'])
-                except Exception as e:
-                    module.fail_json(msg=f"Error deleting certificate {name}: {e}")
-            result['changed'] = True
+                # Cert is not supposed to exist
 
-    module.exit_json(**result)
+                # XXX - "force" option?
 
+                if self.module.check_mode:
+                    self.result['msg'] = f"Would have deleted certificate {name}"
+                else:
+                    try:
+                        #
+                        # Delete certificate.
+                        #
+                        err = self.mw.job("certificate.delete",
+                                     cert_info['id'])
+                    except Exception as e:
+                        self.module.fail_json(msg=f"Error deleting certificate {name}: {e}")
+                self.result['changed'] = True
+
+        self.module.exit_json(**self.result)
+
+    def run_25_10(self):
+        """Run on SCALE 25.10 or above."""
+
+        # Assign variables from properties, for convenience
+        name = self.module.params['name']
+        state = self.module.params['state']
+        certificate = self.module.params['certificate']
+        private_key = self.module.params['private_key']
+        passphrase = self.module.params['passphrase']
+        revoked = self.module.params['revoked']
+
+        # Look up the certificate
+        try:
+            # XXX - We _could_ filter by "cert_type_CA == false", but
+            # if we want 'certificate' to take over
+            # 'certificate_authority' at some point in the future,
+            # let's leave it be.
+            cert_info = self.mw.call("certificate.query",
+                                    [["name", "=", name]])
+            if len(cert_info) == 0:
+                # No such cert
+                cert_info = None
+            else:
+                # Cert exists
+                cert_info = cert_info[0]
+        except Exception as e:
+            self.module.fail_json(msg=f"Error looking up certificate {name}: {e}")
+
+        # First, check whether the certificate even exists.
+        if cert_info is None:
+            # Cert doesn't exist
+
+            if state == 'present':
+                # Cert is supposed to exist, so create it.
+
+                # Collect arguments to pass to certificate.create()
+                arg = {
+                    "name": name,
+                    "create_type": "CERTIFICATE_CREATE_IMPORTED",
+                }
+
+                # When importing a key, 'certificate' and 'private_key'
+                # are required.
+                if certificate is not None:
+                    arg['certificate'] = certificate
+
+                if private_key is not None:
+                    arg['privatekey'] = private_key
+
+                if passphrase is not None:
+                    arg['passphrase'] = passphrase
+
+                if self.module.check_mode:
+                    self.result['msg'] = f"Would have created certificate {name} with {arg}"
+                else:
+                    #
+                    # Create new cert
+                    #
+                    try:
+                        # Note that this is a job, not a regular call.
+                        err = self.mw.job("certificate.create", arg)
+                        self.result['certificate'] = err
+                    except Exception as e:
+                        self.result['failed_invocation'] = arg
+                        self.module.fail_json(msg=f"Error creating certificate {name}: {e}")
+
+                    # Return whichever interesting bits certificate.create()
+                    # returned.
+                    self.result['certificate'] = err
+
+                self.result['changed'] = True
+            else:
+                # Cert is not supposed to exist.
+                # All is well
+                self.result['changed'] = False
+
+        else:
+            # Cert exists
+            if state == 'present':
+                # Cert is supposed to exist
+
+                # Make list of differences between what is and what should
+                # be.
+
+                # Only the name can be changed. And since this
+                # self.module uses 'name' as an identifier, the name
+                # can't be changed, either.
+
+                # No changes
+                self.result['changed'] = False
+
+            else:
+                # Cert is not supposed to exist
+
+                # XXX - "force" option?
+
+                if self.module.check_mode:
+                    self.result['msg'] = f"Would have deleted certificate {name}"
+                else:
+                    try:
+                        #
+                        # Delete certificate.
+                        #
+                        err = self.mw.job("certificate.delete",
+                                     cert_info['id'])
+                    except Exception as e:
+                        self.module.fail_json(msg=f"Error deleting certificate {name}: {e}")
+
+                    # Return any interesting bits from err
+                    self.result['status'] = err
+                self.result['changed'] = True
+
+        self.module.exit_json(**self.result)
+
+    def run(self):
+        # Figure out which version of TrueNAS we're running, and thus how
+        # to call middlewared.
+        try:
+            tn_version = setup.get_tn_version()
+        except Exception as e:
+            # Normally we'd module.exit_json(), but we don't have a module yet.
+            print(f'{{"failed":true, "msg": "Error getting TrueNAS version: {e}"}}')
+            sys.exit(1)
+
+        # Call the appropriate function to handle this.
+
+        # In TrueNAS SCALE 25.10, 'certificateauthority' was rolled into
+        # 'certificate'.
+        TC_25_10 = version.parse("25.10")
+        if tn_version['name'] == "TrueNAS" and \
+           tn_version['type'] in {"SCALE", "COMMUNITY_EDITION"} and \
+           tn_version['version'] >= TC_25_10:
+            return self.run_25_10()
+        else:
+            return self.run1()
+
+def main():
+    return Cert().run()
 
 # Main
 if __name__ == "__main__":
