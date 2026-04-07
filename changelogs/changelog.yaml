@@ -306,7 +306,9 @@ releases:
         - Added the ``webdav`` module, to configure the WebDAV service.
         - Added the ``sharing_webdav`` module, for creating and managing WebDAV shares.
   1.15.1:
-    release_summary: Fix certificate_authority module to work with SCALE 25.10.
+    release_summary: Fix modules to work with SCALE 25.10.
     changes:
       bugfixes:
-        - "PR59: certificate API changed in 25.10, breaking certificate_authrority module. Fixed."
+        - "PR59: certificate API changed in 25.10, breaking certificate_authority module. Fixed."
+        - "Update certificate module to work with 25.10."
+        - "Under 25.10, sharing.smb no longer recognizes purpose == NO_PRESET. Substitute DEFAULT_SHARE instead."

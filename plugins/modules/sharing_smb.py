@@ -103,6 +103,8 @@ options:
       - Note that the C(purpose) parameter may override other parameters.
         In particular, C(DEFAULT_SHARE) specifies an empty C(hostsallow)
         and C(hostsdeny).
+      - Under SCALE 25.10, C(NO_PRESET) has been dropped, so this module
+        silently replaces it with C(DEFAULT_SHARE).
   recyclebin:
     description:
       - |
@@ -167,9 +169,31 @@ status:
 
 from ansible.module_utils.basic import AnsibleModule
 from ..module_utils.middleware import MiddleWare as MW
+from ..module_utils import setup
+from packaging import version
 
 
 def main():
+    # Figure out which version of TrueNAS we're running.
+    try:
+        tn_version = setup.get_tn_version()
+    except Exception as e:
+        # Normally we'd module.exit_json(), but we don't have a module yet.
+        print(f'{{"failed":true, "msg": "Error getting TrueNAS version: {e}"}}')
+        sys.exit(1)
+
+    # Call the appropriate function to handle this.
+
+    # In TrueNAS SCALE 25.10, 'certificateauthority' was rolled into
+    # 'certificate'.
+    TC_25_10 = version.parse("25.10")
+    # if tn_version['name'] == "TrueNAS" and \
+    #    tn_version['type'] in {"SCALE", "COMMUNITY_EDITION"} and \
+    #    tn_version['version'] >= TC_25_10:
+    #     return self.run_25_10()
+    # else:
+    #     return self.run1()
+
     module = AnsibleModule(
         argument_spec=dict(
             # XXX - 'path' and 'name' are required to create a share, but
@@ -243,6 +267,14 @@ def main():
     streams = module.params['streams']
     fsrvp = module.params['fsrvp']
 
+    # SCALE 25.10 got rid of purpose: NO_PRESET. The default is
+    # DEFAULT_SHARE. Silently substitute it here.
+    if tn_version['name'] == "TrueNAS" and \
+       tn_version['type'] in {"SCALE", "COMMUNITY_EDITION"} and \
+       tn_version['version'] >= TC_25_10:
+        if purpose == "NO_PRESET":
+            purpose = "DEFAULT_SHARE"
+
     # Look up the share
     try:
         share_info = mw.call("sharing.smb.query",
@@ -269,6 +301,8 @@ def main():
                 "name": name,
             }
 
+            # XXX - SCALE 25.10 doesn't support NO_PRESET. The default
+            # is DEFAULT_SHARE. Use that instead.
             if purpose is not None:
                 arg['purpose'] = purpose
 
