@@ -276,7 +276,6 @@ class CA:
                         # .update only allows us to change the name and
                         # revokedness, not update a key.
                         err = self.mw.call("certificateauthority.create", arg)
-                        self.result['msg'] = err
                     except Exception as e:
                         self.result['failed_invocation'] = arg
                         self.module.fail_json(msg=f"Error creating CA certificate {name}: {e}")
@@ -454,7 +453,6 @@ class CA:
                         # .update only allows us to change the name and
                         # revokedness, not update a key.
                         err = self.mw.job("certificate.create", arg)
-                        self.result['msg'] = err
                     except Exception as e:
                         self.result['failed_invocation'] = arg
                         self.module.fail_json(msg=f"Error creating CA certificate {name}: {e}")
@@ -498,6 +496,7 @@ class CA:
                                       ca_cert_info['id'])
                     except Exception as e:
                         self.module.fail_json(msg=f"Error deleting CA cert {name}: {e}")
+
                     # Return any interesting bits from err
                     self.result['status'] = err
                 self.result['changed'] = True
