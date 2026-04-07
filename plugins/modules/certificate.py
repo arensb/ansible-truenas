@@ -21,6 +21,10 @@ __metaclass__ = type
 # host's https cert while also using https to talk to the API
 # endpoint?
 
+# XXX - Maybe add an 'is_CA' argument? At some point in the future,
+# might want to transition from having both certificate and
+# certificate_authority, to just having certificate.
+
 DOCUMENTATION = '''
 ---
 module: certificate
@@ -70,6 +74,8 @@ options:
         O(revoked=yes) will cause an error when the cert does not exist.
         This is because the cert needs to be uploaded before it can be
         revoked."
+      - Note that under TrueNAS SCALE 25.10, certificates cannot be revoked.
+        This option is ignored.
     type: bool
     default: false
 notes:
