@@ -517,7 +517,8 @@ def parse_volsize(value):
 
     if match:
         n = int(match[1])
-        unit = match[2]
+        unit = "" if match[2] is None else match[2]
+
         return n * unit_multiplier[unit]
     else:
         raise ValueError(f"Can't parse volsize={value}")
