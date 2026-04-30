@@ -33,8 +33,9 @@ options:
     type: int
   pool_avail_threshold:
     description:
-      - Pool free-space alert threshold, as a percentage. Set to C(0) to
-        disable.
+      - Pool free-space alert threshold, as a percentage. Valid range is
+        C(1) to C(99). Omit the parameter to leave the value alone; the
+        TrueNAS API does not accept C(0) here.
     type: int
   alua:
     description:

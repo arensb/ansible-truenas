@@ -54,8 +54,9 @@ options:
     type: bool
   avail_threshold:
     description:
-      - Per-extent free-space alert threshold (percentage). Set to C(0)
-        or null to disable.
+      - Per-extent free-space alert threshold (percentage). Valid range
+        is C(1) to C(99). Omit the parameter to leave the value alone;
+        the TrueNAS API does not accept C(0) here.
     type: int
   comment:
     description:
@@ -256,7 +257,16 @@ def main():
                     continue
                 if k in _SERVER_MANAGED:
                     continue
-                if extent.get(k) != v:
+                current = extent.get(k)
+                # TrueNAS 25.04+ stores filesize as a string. Cast both
+                # sides to int so we don't report a spurious change every
+                # run.
+                if k == 'filesize':
+                    try:
+                        current = int(current) if current is not None else current
+                    except (TypeError, ValueError):
+                        pass
+                if current != v:
                     arg[k] = v
 
             if len(arg) == 0:

@@ -127,10 +127,21 @@ def _normalize_group(g):
     }
 
 
+def _group_sort_key(g):
+    # Coerce None to a stable tuple-comparable sentinel.
+    return tuple((-1 if g[k] is None else g[k])
+                 for k in ('portal', 'initiator', 'authmethod', 'auth'))
+
+
 def _groups_equal(a, b):
+    # Server stores groups as a set; compare unordered to avoid
+    # spurious diffs when the user supplies them in a different order
+    # than the API returns.
     if a is None or b is None:
         return a == b
-    return [_normalize_group(g) for g in a] == [_normalize_group(g) for g in b]
+    na = sorted([_normalize_group(g) for g in a], key=_group_sort_key)
+    nb = sorted([_normalize_group(g) for g in b], key=_group_sort_key)
+    return na == nb
 
 
 def main():
