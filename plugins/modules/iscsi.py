@@ -30,6 +30,10 @@ options:
     description:
       - TCP port that the iSCSI target listens on.
       - Default is C(3260).
+      - Only available on TrueNAS SCALE / Community Edition (added in
+        SCALE 22.12). On TrueNAS CORE the listen port is configured
+        per-portal via the C(iscsi_portal) module instead. The value
+        is ignored with a warning when running against CORE.
     type: int
   pool_avail_threshold:
     description:
@@ -85,6 +89,7 @@ status:
 
 from ansible.module_utils.basic import AnsibleModule
 from ..module_utils.middleware import MiddleWare as MW
+from ..module_utils.setup import get_tn_version
 
 
 def main():
@@ -113,6 +118,13 @@ def main():
     alua = module.params['alua']
 
     try:
+        tn_version = get_tn_version()
+    except Exception as e:
+        module.fail_json(msg=f"Error getting TrueNAS version: {e}")
+
+    is_core = tn_version['type'] == 'CORE'
+
+    try:
         info = mw.call("iscsi.global.config")
     except Exception as e:
         module.fail_json(msg=f"Error looking up iSCSI global configuration: {e}")
@@ -128,8 +140,13 @@ def main():
        set(isns_servers) != set(info.get('isns_servers') or []):
         arg['isns_servers'] = isns_servers
 
-    if listen_port is not None and info.get('listen_port') != listen_port:
-        arg['listen_port'] = listen_port
+    if listen_port is not None:
+        if is_core:
+            module.warn("listen_port is ignored on TrueNAS CORE; "
+                        "configure the listen port per-portal via the "
+                        "iscsi_portal module instead.")
+        elif info.get('listen_port') != listen_port:
+            arg['listen_port'] = listen_port
 
     if pool_avail_threshold is not None and \
        info.get('pool_avail_threshold') != pool_avail_threshold:

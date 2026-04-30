@@ -258,9 +258,13 @@ def main():
                 if k in _SERVER_MANAGED:
                     continue
                 current = extent.get(k)
-                # TrueNAS 25.04+ stores filesize as a string. Cast both
-                # sides to int so we don't report a spurious change every
-                # run.
+                # The middleware stores filesize as a string in the DB
+                # (api model: ``filesize: str | int``). Its read-path
+                # ``extend()`` normalizes any legacy unit-suffixed values
+                # (e.g. "10GB") to bytes before returning, so what we get
+                # back here is always either an int or a digit-only
+                # string. Cast both sides to int so a spurious diff
+                # doesn't fire on every run.
                 if k == 'filesize':
                     try:
                         current = int(current) if current is not None else current

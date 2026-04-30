@@ -28,15 +28,29 @@ options:
       - Required when creating a portal.
     type: list
     elements: str
+  port:
+    description:
+      - TCP port the portal listens on. Only used on TrueNAS CORE,
+        where the listen port is configured per-portal. Ignored on
+        TrueNAS SCALE / Community Edition (use the C(listen_port)
+        option of the C(iscsi) module there). Default is C(3260).
+    type: int
+    default: 3260
   discovery_authmethod:
     description:
       - Authentication method to require for discovery-phase logins.
+      - Removed from C(iscsi.portal) in TrueNAS SCALE 25.04 and replaced
+        by C(discovery_auth) on C(iscsi_auth). On 25.04+ this option is
+        ignored with a warning.
     type: str
     choices: [ NONE, CHAP, CHAP_MUTUAL ]
   discovery_authgroup:
     description:
       - C(tag) of an C(iscsi_auth) entry to use for discovery
-        authentication. Set to C(0) or null to disable.
+        authentication. Use null (omit) to disable; the TrueNAS API
+        does not treat C(0) as "disabled".
+      - Removed from C(iscsi.portal) in TrueNAS SCALE 25.04. On 25.04+
+        this option is ignored with a warning.
     type: int
   state:
     description:
@@ -54,7 +68,14 @@ EXAMPLES = '''
     listen:
       - 0.0.0.0
 
-- name: Portal that requires mutual CHAP at discovery
+- name: Portal on a non-default port (TrueNAS CORE only)
+  arensb.truenas.iscsi_portal:
+    comment: alt-port
+    listen:
+      - 10.0.0.10
+    port: 3261
+
+- name: Portal that requires mutual CHAP at discovery (pre-25.04)
   arensb.truenas.iscsi_portal:
     comment: secured
     listen:
@@ -76,19 +97,43 @@ portal:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
+from packaging import version
 from ..module_utils.middleware import MiddleWare as MW
+from ..module_utils.setup import get_tn_version
 
 
-def _normalize_listen(items):
-    """Convert middleware listen entries (list of dicts with 'ip') to a
-    plain list of IP strings, suitable for set comparison.
+# TrueNAS SCALE 25.04 (Fangtooth) removed the discovery_auth* fields
+# from iscsi.portal; they moved to iscsi.auth.discovery_auth.
+TC_25_04 = version.parse("25.04")
+
+
+def _is_scale_or_ce(tnv):
+    return tnv['type'] in {"SCALE", "COMMUNITY_EDITION", "ENTERPRISE"}
+
+
+def _supports_discovery_auth_on_portal(tnv):
+    if tnv['type'] == 'CORE':
+        return True
+    if _is_scale_or_ce(tnv) and tnv['version'] < TC_25_04:
+        return True
+    return False
+
+
+def _normalize_listen(items, want_port=False):
+    """Reduce middleware listen entries to a comparable form.
+
+    On modern TrueNAS the items are dicts with only ``ip``. On TrueNAS
+    CORE they are dicts with ``ip`` and ``port``; ``want_port`` says
+    whether the caller wants a tuple including the port (for CORE diff).
     """
     out = []
     for item in items or []:
         if isinstance(item, dict):
-            out.append(item.get('ip'))
+            ip = item.get('ip')
+            port = item.get('port')
+            out.append((ip, port) if want_port else ip)
         else:
-            out.append(item)
+            out.append((item, None) if want_port else item)
     return out
 
 
@@ -97,6 +142,7 @@ def main():
         argument_spec=dict(
             comment=dict(type='str', required=True, aliases=['name']),
             listen=dict(type='list', elements='str'),
+            port=dict(type='int', default=3260),
             discovery_authmethod=dict(type='str',
                                       choices=['NONE', 'CHAP', 'CHAP_MUTUAL']),
             discovery_authgroup=dict(type='int'),
@@ -115,9 +161,37 @@ def main():
 
     comment = module.params['comment']
     listen = module.params['listen']
+    port = module.params['port']
     discovery_authmethod = module.params['discovery_authmethod']
     discovery_authgroup = module.params['discovery_authgroup']
     state = module.params['state']
+
+    try:
+        tn_version = get_tn_version()
+    except Exception as e:
+        module.fail_json(msg=f"Error getting TrueNAS version: {e}")
+
+    is_core = tn_version['type'] == 'CORE'
+    discovery_on_portal = _supports_discovery_auth_on_portal(tn_version)
+
+    if not is_core and module.params.get('port') != 3260:
+        module.warn("'port' is ignored on TrueNAS SCALE / Community "
+                    "Edition; configure the listen port via the "
+                    "'iscsi' module's listen_port option.")
+
+    if (discovery_authmethod is not None or discovery_authgroup is not None) \
+       and not discovery_on_portal:
+        module.warn("discovery_authmethod/discovery_authgroup are not "
+                    "available on iscsi.portal in TrueNAS SCALE 25.04+; "
+                    "use the iscsi_auth module's discovery_auth option "
+                    "instead. The supplied values are ignored.")
+        discovery_authmethod = None
+        discovery_authgroup = None
+
+    def build_listen(ip_list):
+        if is_core:
+            return [{"ip": ip, "port": port} for ip in ip_list]
+        return [{"ip": ip} for ip in ip_list]
 
     try:
         rows = mw.call("iscsi.portal.query",
@@ -133,7 +207,7 @@ def main():
 
             arg = {
                 "comment": comment,
-                "listen": [{"ip": ip} for ip in listen],
+                "listen": build_listen(listen),
             }
             if discovery_authmethod is not None:
                 arg['discovery_authmethod'] = discovery_authmethod
@@ -157,9 +231,15 @@ def main():
             arg = {}
 
             if listen is not None:
-                current = set(_normalize_listen(portal.get('listen')))
-                if set(listen) != current:
-                    arg['listen'] = [{"ip": ip} for ip in listen]
+                if is_core:
+                    current = set(_normalize_listen(portal.get('listen'),
+                                                    want_port=True))
+                    desired = {(ip, port) for ip in listen}
+                else:
+                    current = set(_normalize_listen(portal.get('listen')))
+                    desired = set(listen)
+                if desired != current:
+                    arg['listen'] = build_listen(listen)
 
             if discovery_authmethod is not None and \
                portal.get('discovery_authmethod') != discovery_authmethod:

@@ -61,6 +61,11 @@ options:
     description:
       - List of CIDR networks allowed to connect to this target.
         Empty list means "any network".
+      - This field is on C(iscsi.target) only on TrueNAS SCALE /
+        Community Edition. On TrueNAS CORE the equivalent setting is
+        C(auth_network) on the C(iscsi_initiator) module. Passing the
+        option on a CORE host produces a warning and is otherwise
+        ignored.
     type: list
     elements: str
   force:
@@ -114,6 +119,7 @@ target:
 
 from ansible.module_utils.basic import AnsibleModule
 from ..module_utils.middleware import MiddleWare as MW
+from ..module_utils.setup import get_tn_version
 
 
 def _normalize_group(g):
@@ -183,6 +189,18 @@ def main():
     auth_networks = module.params['auth_networks']
     force = module.params['force']
     state = module.params['state']
+
+    try:
+        tn_version = get_tn_version()
+    except Exception as e:
+        module.fail_json(msg=f"Error getting TrueNAS version: {e}")
+
+    if auth_networks is not None and tn_version['type'] == 'CORE':
+        module.warn("auth_networks is not available on iscsi.target on "
+                    "TrueNAS CORE; use the iscsi_initiator module's "
+                    "auth_network option instead. The supplied value is "
+                    "ignored.")
+        auth_networks = None
 
     try:
         rows = mw.call("iscsi.target.query",
