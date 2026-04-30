@@ -30,6 +30,11 @@ options:
       - LUN number to advertise. Auto-assigned (lowest free) if unset
         on create.
     type: int
+  force:
+    description:
+      - When deleting, bypass the active-session safety check.
+    type: bool
+    default: false
   state:
     description:
       - Whether the association should exist or not.
@@ -75,6 +80,7 @@ def main():
             target=dict(type='int', required=True),
             extent=dict(type='int', required=True),
             lunid=dict(type='int'),
+            force=dict(type='bool', default=False),
             state=dict(type='str', default='present',
                        choices=['absent', 'present']),
         ),
@@ -91,6 +97,7 @@ def main():
     target = module.params['target']
     extent = module.params['extent']
     lunid = module.params['lunid']
+    force = module.params['force']
     state = module.params['state']
 
     label = f"target={target}, extent={extent}"
@@ -142,10 +149,10 @@ def main():
                 result['changed'] = True
         else:
             if module.check_mode:
-                result['msg'] = f"Would have deleted targetextent ({label})"
+                result['msg'] = f"Would have deleted targetextent ({label}, force={force})"
             else:
                 try:
-                    mw.call("iscsi.targetextent.delete", row['id'])
+                    mw.call("iscsi.targetextent.delete", row['id'], force)
                 except Exception as e:
                     module.fail_json(msg=f"Error deleting targetextent ({label}): {e}")
             result['changed'] = True
