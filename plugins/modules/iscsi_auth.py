@@ -156,8 +156,7 @@ def main():
     except Exception as e:
         module.fail_json(msg=f"Error getting TrueNAS version: {e}")
 
-    is_scale_or_ce = tn_version['type'] in {"SCALE", "COMMUNITY_EDITION",
-                                            "ENTERPRISE"}
+    is_scale_or_ce = tn_version['type'] in {"SCALE", "COMMUNITY_EDITION"}
     has_discovery_auth = is_scale_or_ce and tn_version['version'] >= TC_25_04
 
     if discovery_auth is not None and not has_discovery_auth:

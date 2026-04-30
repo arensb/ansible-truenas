@@ -263,6 +263,7 @@ def main():
                                       target['id'], arg)
                         result['target'] = err
                     except Exception as e:
+                        result['failed_invocation'] = arg
                         module.fail_json(msg=f"Error updating target {name} with {arg}: {e}")
                 result['changed'] = True
         else:

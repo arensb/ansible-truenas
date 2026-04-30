@@ -148,10 +148,6 @@ from ansible.module_utils.basic import AnsibleModule
 from ..module_utils.middleware import MiddleWare as MW
 
 
-# Fields the middleware computes/manages and we should not diff against.
-_SERVER_MANAGED = {'naa', 'vendor', 'product_id', 'locked', 'id'}
-
-
 def main():
     module = AnsibleModule(
         argument_spec=dict(
@@ -255,8 +251,6 @@ def main():
             for k, v in inputs.items():
                 if v is None:
                     continue
-                if k in _SERVER_MANAGED:
-                    continue
                 current = extent.get(k)
                 # The middleware stores filesize as a string in the DB
                 # (api model: ``filesize: str | int``). Its read-path
@@ -273,6 +267,22 @@ def main():
                 if current != v:
                     arg[k] = v
 
+            # If the extent's type is changing, make sure the supporting
+            # fields for the new type are present (either in this update
+            # or already on the existing row). Leaves the actual DISK/FILE
+            # validity to the middleware but catches obvious mismatches
+            # the create path also catches.
+            if 'type' in arg:
+                new_type = arg['type']
+                if new_type == 'DISK' and \
+                   not (inputs.get('disk') or extent.get('disk')):
+                    module.fail_json(msg=f"Cannot change extent {name} to DISK: 'disk' is required")
+                if new_type == 'FILE':
+                    if not (inputs.get('path') or extent.get('path')):
+                        module.fail_json(msg=f"Cannot change extent {name} to FILE: 'path' is required")
+                    if not (inputs.get('filesize') or extent.get('filesize')):
+                        module.fail_json(msg=f"Cannot change extent {name} to FILE: 'filesize' is required")
+
             if len(arg) == 0:
                 result['changed'] = False
                 result['extent'] = extent
@@ -285,6 +295,7 @@ def main():
                                       extent['id'], arg)
                         result['extent'] = err
                     except Exception as e:
+                        result['failed_invocation'] = arg
                         module.fail_json(msg=f"Error updating extent {name} with {arg}: {e}")
                 result['changed'] = True
         else:

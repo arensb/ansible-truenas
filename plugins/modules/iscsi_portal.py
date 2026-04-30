@@ -33,9 +33,10 @@ options:
       - TCP port the portal listens on. Only used on TrueNAS CORE,
         where the listen port is configured per-portal. Ignored on
         TrueNAS SCALE / Community Edition (use the C(listen_port)
-        option of the C(iscsi) module there). Default is C(3260).
+        option of the C(iscsi) module there).
+      - Omit to leave the existing port alone on update, or to use
+        C(3260) on create.
     type: int
-    default: 3260
   discovery_authmethod:
     description:
       - Authentication method to require for discovery-phase logins.
@@ -108,7 +109,7 @@ TC_25_04 = version.parse("25.04")
 
 
 def _is_scale_or_ce(tnv):
-    return tnv['type'] in {"SCALE", "COMMUNITY_EDITION", "ENTERPRISE"}
+    return tnv['type'] in {"SCALE", "COMMUNITY_EDITION"}
 
 
 def _supports_discovery_auth_on_portal(tnv):
@@ -142,7 +143,7 @@ def main():
         argument_spec=dict(
             comment=dict(type='str', required=True, aliases=['name']),
             listen=dict(type='list', elements='str'),
-            port=dict(type='int', default=3260),
+            port=dict(type='int'),
             discovery_authmethod=dict(type='str',
                                       choices=['NONE', 'CHAP', 'CHAP_MUTUAL']),
             discovery_authgroup=dict(type='int'),
@@ -174,7 +175,7 @@ def main():
     is_core = tn_version['type'] == 'CORE'
     discovery_on_portal = _supports_discovery_auth_on_portal(tn_version)
 
-    if not is_core and module.params.get('port') != 3260:
+    if port is not None and not is_core:
         module.warn("'port' is ignored on TrueNAS SCALE / Community "
                     "Edition; configure the listen port via the "
                     "'iscsi' module's listen_port option.")
@@ -188,10 +189,31 @@ def main():
         discovery_authmethod = None
         discovery_authgroup = None
 
+    def _existing_port_map():
+        """Return ip->port for the IPs already on this portal."""
+        if not is_core:
+            return {}
+        return {ip: prt
+                for ip, prt in _normalize_listen(
+                    (portal or {}).get('listen'), want_port=True)
+                if prt is not None}
+
     def build_listen(ip_list):
-        if is_core:
-            return [{"ip": ip, "port": port} for ip in ip_list]
-        return [{"ip": ip} for ip in ip_list]
+        if not is_core:
+            return [{"ip": ip} for ip in ip_list]
+        existing = _existing_port_map()
+        out = []
+        for ip in ip_list:
+            # Explicit port wins; otherwise reuse the existing port for
+            # this IP if known; otherwise fall back to 3260 on create.
+            if port is not None:
+                prt = port
+            elif ip in existing:
+                prt = existing[ip]
+            else:
+                prt = 3260
+            out.append({"ip": ip, "port": prt})
+        return out
 
     try:
         rows = mw.call("iscsi.portal.query",
@@ -234,7 +256,8 @@ def main():
                 if is_core:
                     current = set(_normalize_listen(portal.get('listen'),
                                                     want_port=True))
-                    desired = {(ip, port) for ip in listen}
+                    desired = {(item['ip'], item['port'])
+                               for item in build_listen(listen)}
                 else:
                     current = set(_normalize_listen(portal.get('listen')))
                     desired = set(listen)
@@ -261,6 +284,7 @@ def main():
                                       portal['id'], arg)
                         result['portal'] = err
                     except Exception as e:
+                        result['failed_invocation'] = arg
                         module.fail_json(msg=f"Error updating portal {comment} with {arg}: {e}")
                 result['changed'] = True
         else:

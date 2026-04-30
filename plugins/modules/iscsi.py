@@ -152,7 +152,7 @@ def main():
        info.get('pool_avail_threshold') != pool_avail_threshold:
         arg['pool_avail_threshold'] = pool_avail_threshold
 
-    if alua is not None and info.get('alua') is not alua:
+    if alua is not None and info.get('alua') != alua:
         arg['alua'] = alua
 
     if len(arg) == 0:

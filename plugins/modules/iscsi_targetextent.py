@@ -145,6 +145,7 @@ def main():
                                       row['id'], arg)
                         result['targetextent'] = err
                     except Exception as e:
+                        result['failed_invocation'] = arg
                         module.fail_json(msg=f"Error updating targetextent ({label}) with {arg}: {e}")
                 result['changed'] = True
         else:

@@ -169,6 +169,7 @@ def main():
                                       ig['id'], arg)
                         result['initiator'] = err
                     except Exception as e:
+                        result['failed_invocation'] = arg
                         module.fail_json(msg=f"Error updating initiator group {comment} with {arg}: {e}")
                 result['changed'] = True
         else:
