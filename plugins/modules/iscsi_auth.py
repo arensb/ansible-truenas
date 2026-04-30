@@ -47,6 +47,18 @@ options:
       - Always counts as a change when supplied (cannot be read back).
     type: str
     no_log: true
+  discovery_auth:
+    description:
+      - Authentication method to require for discovery-phase logins
+        when this entry is referenced as the discovery auth group.
+      - Available on TrueNAS SCALE 25.04 (Fangtooth) and later, where
+        the C(discovery_authmethod) and C(discovery_authgroup) fields
+        on C(iscsi.portal) were retired in favor of this field. On
+        earlier versions configure discovery auth via the
+        C(iscsi_portal) module instead; passing C(discovery_auth) on
+        an older host produces a warning and is otherwise ignored.
+    type: str
+    choices: [ NONE, CHAP, CHAP_MUTUAL ]
   state:
     description:
       - Whether the entry should exist or not.
@@ -87,7 +99,15 @@ auth:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
+from packaging import version
 from ..module_utils.middleware import MiddleWare as MW
+from ..module_utils.setup import get_tn_version
+
+
+# discovery_auth was added to iscsi.auth in TrueNAS SCALE 25.04
+# (Fangtooth), replacing the per-portal discovery_authmethod/group
+# fields.
+TC_25_04 = version.parse("25.04")
 
 
 def _scrub(row):
@@ -108,6 +128,8 @@ def main():
             secret=dict(type='str', no_log=True),
             peeruser=dict(type='str'),
             peersecret=dict(type='str', no_log=True),
+            discovery_auth=dict(type='str',
+                                choices=['NONE', 'CHAP', 'CHAP_MUTUAL']),
             state=dict(type='str', default='present',
                        choices=['absent', 'present']),
         ),
@@ -126,7 +148,25 @@ def main():
     secret = module.params['secret']
     peeruser = module.params['peeruser']
     peersecret = module.params['peersecret']
+    discovery_auth = module.params['discovery_auth']
     state = module.params['state']
+
+    try:
+        tn_version = get_tn_version()
+    except Exception as e:
+        module.fail_json(msg=f"Error getting TrueNAS version: {e}")
+
+    is_scale_or_ce = tn_version['type'] in {"SCALE", "COMMUNITY_EDITION",
+                                            "ENTERPRISE"}
+    has_discovery_auth = is_scale_or_ce and tn_version['version'] >= TC_25_04
+
+    if discovery_auth is not None and not has_discovery_auth:
+        module.warn("discovery_auth requires TrueNAS SCALE 25.04 or "
+                    "later; on older versions configure discovery auth "
+                    "via iscsi_portal's discovery_authmethod/"
+                    "discovery_authgroup options. The supplied value "
+                    "is ignored.")
+        discovery_auth = None
 
     try:
         rows = mw.call("iscsi.auth.query",
@@ -150,6 +190,8 @@ def main():
                 arg['peeruser'] = peeruser
             if peersecret is not None:
                 arg['peersecret'] = peersecret
+            if discovery_auth is not None:
+                arg['discovery_auth'] = discovery_auth
 
             if module.check_mode:
                 result['msg'] = f"Would have created iscsi auth (tag={tag}, user={user})"
@@ -168,6 +210,10 @@ def main():
 
             if peeruser is not None and row.get('peeruser') != peeruser:
                 arg['peeruser'] = peeruser
+
+            if discovery_auth is not None and \
+               row.get('discovery_auth') != discovery_auth:
+                arg['discovery_auth'] = discovery_auth
 
             # Secrets cannot be read back; if the user supplied one,
             # treat it as a requested change.
