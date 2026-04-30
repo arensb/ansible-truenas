@@ -1,0 +1,7 @@
+major_changes:
+  - >
+    Added iSCSI sharing support across seven new modules: ``iscsi`` (global
+    service config), ``iscsi_portal``, ``iscsi_initiator``, ``iscsi_auth``,
+    ``iscsi_extent``, ``iscsi_target``, and ``iscsi_targetextent``. Together
+    these cover the full TrueNAS iSCSI configuration surface; the existing
+    ``service`` module handles starting/stopping the ``iscsitarget`` daemon.
