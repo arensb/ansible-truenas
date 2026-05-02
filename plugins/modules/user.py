@@ -110,9 +110,6 @@ options:
         the password field in C(/etc/master.passwd) is set to C(*), so
         if you set C(password_disabled=false) again, they won't be able to
         log in with their old password."
-      - If you need that functionality, do something like prepend "*LOCK*"
-        to the crypt string when locking a user, then remove it when
-        unlocking.
       - "Note that under TrueNAS SCALE, a user with C(password_disabled)
         may not use SMB, so be sure to set C(smb: false)."
     type: bool
@@ -763,6 +760,8 @@ def main():
                 arg['uid'] = uid
 
             # Compare the given password to the existing hash.
+
+            # XXX - Need to hash the password
             if password is not None and user_info['unixhash'] != password:
                 result['msg'] += f"\ntrace 0, password {password}, info {user_info['unixhash']}"
                 arg['password'] = password
