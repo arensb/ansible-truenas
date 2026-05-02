@@ -236,23 +236,34 @@ from ..module_utils.middleware import MiddleWare as MW
 from ..module_utils import setup
 # For parsing version numbers
 from packaging import version
+
+# Define a function compare_pw() to compare a plaintext password to a
+# hashed one returned by user.query, and return True iff they match.
+#
+# CORE uses crypt.crypt() for this, but crypt is deprecated and is removed in Python 3.13.
+# SCALE uses cryptit.cryptit(), which isn't installed on CORE.
+#
+# So we resort to trying to use cryptit, and falling back on crypt if
+# that's not available.
 try:
-    import passlib.hash             # To check passwords.
-except Exception as e:
-    # TrueNAS SCALE doesn't have passlib.
-    # XXX - maybe use bcrypt.hashpw()? Or hashlib. Both of these exist
-    # in both CORE and SCALE.
-    # https://www.geeksforgeeks.org/python/how-to-hash-passwords-in-python/
-    #
-    # CORE uses crypt.crypt() to generate hashed password.
-    # But that's deprecated in Python 3.13. hashlib is one replacement.
-    #   password_hash = hashlib.sha256(salt + password.encode())
-    #   # (from https://www.askpython.com/python/examples/storing-retrieving-passwords-securely)
-    # SCALE uses
-    # from middlewared.utils.crypto import sha512_crypt
-    # which in turn uses cryptit.cryptit(), which doesn't exist in CORE.
-    # Need a wrapper function, I guess.
-    pass
+    import cryptit
+
+    def compare_pw(plaintext, unixhash):
+        return unixhash == cryptit.cryptit(plaintext, unixhash)
+
+    comparer = cryptit.cryptit
+
+except ImportError:
+    # cryptit not installed. Try falling back on crypt. Crypt is
+    # deprecated and is removed in Python 3.13, so this is only
+    # intended for TrueNAS CORE.
+
+    import crypt
+
+    def compare_pw(plaintext, unixhash):
+        return unixhash == crypt.crypt(plaintext, unixhash)
+
+    comparer = crypt.crypt
 
 def main():
     # Figure out which version of TrueNAS we're running, and thus how
@@ -760,10 +771,9 @@ def main():
                 arg['uid'] = uid
 
             # Compare the given password to the existing hash.
-
-            # XXX - Need to hash the password
-            if password is not None and user_info['unixhash'] != password:
-                result['msg'] += f"\ntrace 0, password {password}, info {user_info['unixhash']}"
+            # Earlier, we defined the compare_pw() function to do this.
+            if password is not None and \
+               not compare_pw(password, user_info['unixhash']):
                 arg['password'] = password
 
             if password_disabled is not None and \
