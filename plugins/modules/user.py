@@ -439,6 +439,7 @@ def main():
     mod_mutually_exclusive = []
     mod_required_if = [
         ['password_disabled', False, ['password']],
+        ['password_disabled', None, ['password']],
         ]
 
     # Make adjustments for systems using the old API.
@@ -543,6 +544,8 @@ def main():
 
             # Easy cases first
             if password_disabled is not None:
+                # 'password_disabled' is set, so it might be either
+                # True or False.
                 arg['password_disabled'] = password_disabled
 
                 # SCALE at least doesn't like you passing in an empty
@@ -555,8 +558,6 @@ def main():
                     arg['password'] = password
             else:
                 # password_disabled is not set.
-                # XXX - Can we ever get here? password_disabled has a
-                # default of False.
                 arg['password'] = password
 
             if comment is None:
