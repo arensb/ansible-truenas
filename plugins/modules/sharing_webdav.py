@@ -73,7 +73,7 @@ EXAMPLES = '''
       arensb.truenas.webdav:
         protocol: HTTP
         port: 9100
-        password: "{{ webdav_password }"
+        password: "{{ webdav_password }}"
         auth_type: BASIC
     - name: Enable WebDAV service
       arensb.truenas.service:
