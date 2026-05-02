@@ -97,8 +97,10 @@ options:
     aliases: [ user ]
   password:
     description:
-      - User's password, as a crypted string.
+      - User's password, as a plaintext string.
       - Required unless C(password_disabled) is true.
+      - This should be kept encrypted, in a secure location, e.g., Ansible
+        Vault, or as appropriate for your situation.
     type: str
   password_disabled:
     description:
@@ -108,9 +110,6 @@ options:
         the password field in C(/etc/master.passwd) is set to C(*), so
         if you set C(password_disabled=false) again, they won't be able to
         log in with their old password."
-      - If you need that functionality, do something like prepend "*LOCK*"
-        to the crypt string when locking a user, then remove it when
-        unlocking.
       - "Note that under TrueNAS SCALE, a user with C(password_disabled)
         may not use SMB, so be sure to set C(smb: false)."
     type: bool
@@ -238,6 +237,34 @@ from ..module_utils import setup
 # For parsing version numbers
 from packaging import version
 
+# Define a function compare_pw() to compare a plaintext password to a
+# hashed one returned by user.query, and return True iff they match.
+#
+# CORE uses crypt.crypt() for this, but crypt is deprecated and is removed in Python 3.13.
+# SCALE uses cryptit.cryptit(), which isn't installed on CORE.
+#
+# So we resort to trying to use cryptit, and falling back on crypt if
+# that's not available.
+try:
+    import cryptit
+
+    def compare_pw(plaintext, unixhash):
+        return unixhash == cryptit.cryptit(plaintext, unixhash)
+
+    comparer = cryptit.cryptit
+
+except ImportError:
+    # cryptit not installed. Try falling back on crypt. Crypt is
+    # deprecated and is removed in Python 3.13, so this is only
+    # intended for TrueNAS CORE.
+
+    import crypt
+
+    def compare_pw(plaintext, unixhash):
+        return unixhash == crypt.crypt(plaintext, unixhash)
+
+    comparer = crypt.crypt
+
 def main():
     # Figure out which version of TrueNAS we're running, and thus how
     # to call middlewared.
@@ -316,11 +343,16 @@ def main():
             # and something sensible will happen.
             create_group=dict(type='bool', default=True),
 
-            password=dict(type='str', default='', no_log=True),
+            password=dict(type='str', default=None, no_log=True),
 
             # We set no_log explicitly to False, because otherwise
             # module_utils.basic sees "password" in the name and gets
             # worried.
+            #
+            # We also don't default to False because we want to
+            # distinguish between "user says the password shouldn't be
+            # disabled" and "user doesn't care whether the password is
+            # disabled". None is the latter.
             password_disabled=dict(type='bool', no_log=False),
 
             # XXX - There should probably be an option saying whether
@@ -407,6 +439,7 @@ def main():
     mod_mutually_exclusive = []
     mod_required_if = [
         ['password_disabled', False, ['password']],
+        ['password_disabled', None, ['password']],
         ]
 
     # Make adjustments for systems using the old API.
@@ -511,6 +544,8 @@ def main():
 
             # Easy cases first
             if password_disabled is not None:
+                # 'password_disabled' is set, so it might be either
+                # True or False.
                 arg['password_disabled'] = password_disabled
 
                 # SCALE at least doesn't like you passing in an empty
@@ -518,6 +553,8 @@ def main():
                 # specified. So let's make sure that a password is
                 # wanted, first.
                 if not password_disabled:
+                    # We've said earlier that if 'password_disabled'
+                    # is false, the caller must specify 'password'.
                     arg['password'] = password
             else:
                 # password_disabled is not set.
@@ -735,7 +772,9 @@ def main():
                 arg['uid'] = uid
 
             # Compare the given password to the existing hash.
-            if password is not None and user_info['unixhash'] != password:
+            # Earlier, we defined the compare_pw() function to do this.
+            if password is not None and \
+               not compare_pw(password, user_info['unixhash']):
                 arg['password'] = password
 
             if password_disabled is not None and \
@@ -1007,7 +1046,7 @@ def main():
                 # Update user.
                 #
                 if module.check_mode:
-                    result['msg'] = f"Would have updated user {username}: {arg}"
+                    result['msg'] += f"Would have updated user {username}: {arg}"
                 else:
                     try:
                         err = mw.call("user.update",
