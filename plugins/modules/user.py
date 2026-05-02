@@ -779,7 +779,6 @@ def main():
 
             if password_disabled is not None and \
                user_info['password_disabled'] != password_disabled:
-                result['msg'] += f"\ntrace 1, password {password_disabled}, info {user_info['password_disabled']}"
                 arg['password_disabled'] = password_disabled
 
             if comment is not None and user_info['full_name'] != comment:
