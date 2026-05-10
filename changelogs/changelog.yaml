@@ -318,3 +318,8 @@ releases:
       - User module can now detect when the password needs to be changed.
       major_changes:
       - In the user module, the password option is now the plaintext password.
+  2.0.2:
+    changes:
+      minor_changes:
+      - Update release-making documentation.
+      - Fix some missing braces that confused antsibull-changelog.
