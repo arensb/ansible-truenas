@@ -850,7 +850,10 @@ def main():
                     else:
                         # sudo_commands == None
                         # sudo_commands_nopasswd == [...]
-                        want_sudo = True
+
+                        # If user passes in an empty list of commands,
+                        # that's the same as saying don't allow sudo.
+                        want_sudo = len(sudo_commands_nopasswd) > 0
                         want_sudo_nopasswd = True
                         want_sudo_commands = \
                             [] if 'ALL' in sudo_commands_nopasswd \
@@ -859,7 +862,10 @@ def main():
                     if sudo_commands_nopasswd is None:
                         # sudo_commands == [...]
                         # sudo_commands_nopasswd == None
-                        want_sudo = True
+
+                        # If user passes in an empty list of commands,
+                        # that's the same as saying don't allow sudo.
+                        want_sudo = len(sudo_commands) > 0
                         want_sudo_nopasswd = False
                         want_sudo_commands = \
                             [] if 'ALL' in sudo_commands \
